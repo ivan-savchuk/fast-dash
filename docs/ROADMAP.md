@@ -42,9 +42,8 @@ Duplicate. Three or four starter templates.
 Basic shortcuts already landed in Phase 1: `1`–`5` add, arrows move, `Delete` removes,
 `Esc` deselects. Remaining, in the order they are worth doing:
 
-1. **Undo/redo** — non-negotiable per the design principles, and nearly free: the
-   reducer already routes every change, so this is a list of past documents. Do it
-   first, because until it exists a mis-drag or stray `Delete` is unrecoverable.
+1. ~~**Undo/redo**~~ — **done** (2026-07-26). History of past documents, with bursts of
+   typing collapsed into one step and no-ops excluded. See `docs/NOTES.md`.
 2. **Duplicate** (`Cmd+D`) — a real dashboard is six KPI cards with different metrics;
    today that is six add-and-retitle cycles.
 3. **Quick picker** — click empty canvas, choose a type at the cursor. This is the item

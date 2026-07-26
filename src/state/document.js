@@ -1,6 +1,7 @@
 // The document is the whole saved state: title + pages + components.
-// Everything the user does goes through `reducer` below, so undo stays cheap
-// to add later (Phase 2) and the JSON export is always just `state.doc`.
+// Everything the user does goes through `reducer` below, which is what makes
+// undo cheap: history is just a list of previous documents. The JSON export is
+// always exactly `state.doc`.
 
 import { COMPONENT_TYPES } from '../components/registry.jsx'
 
@@ -21,8 +22,20 @@ export function createDocument() {
   }
 }
 
-export function initialState() {
-  return { doc: createDocument(), selectedId: null }
+// How many steps back you can go. Documents are small; 100 is generous.
+const HISTORY_LIMIT = 100
+
+// Consecutive edits of the same kind to the same target within this window
+// collapse into one history entry, so typing a description is one undo, not
+// one per keystroke. Holding an arrow key is likewise one undo.
+const COALESCE_MS = 800
+
+// Edits that arrive in bursts and should be collapsed. A drag or a delete is
+// a single deliberate act and is never coalesced.
+const BURST_EDITS = new Set(['rename', 'setComment', 'setDocTitle', 'nudge'])
+
+export function initialState(doc = createDocument()) {
+  return { doc, selectedId: null, past: [], future: [], lastEdit: null }
 }
 
 // Find the first free row so a new component lands below existing ones
@@ -50,8 +63,71 @@ function createComponent(componentType, components) {
   }
 }
 
-// Every action returns a brand new state object — no mutation.
+// Undo and redo are handled here; every other action is applied by
+// `applyAction` below and then recorded in history. Keeping the two apart
+// means no individual action has to remember to maintain history.
 export function reducer(state, action) {
+  switch (action.type) {
+    case 'undo': {
+      if (state.past.length === 0) return state
+      const previous = state.past[state.past.length - 1]
+      return {
+        ...state,
+        doc: previous,
+        past: state.past.slice(0, -1),
+        future: [state.doc, ...state.future],
+        selectedId: componentExists(previous, state.selectedId) ? state.selectedId : null,
+        lastEdit: null,
+      }
+    }
+
+    case 'redo': {
+      if (state.future.length === 0) return state
+      const [next, ...rest] = state.future
+      return {
+        ...state,
+        doc: next,
+        past: [...state.past, state.doc],
+        future: rest,
+        selectedId: componentExists(next, state.selectedId) ? state.selectedId : null,
+        lastEdit: null,
+      }
+    }
+
+    default: {
+      const next = applyAction(state, action)
+      // Selection changes and no-ops are not history.
+      if (next.doc === state.doc) return next
+      return record(state, next, action)
+    }
+  }
+}
+
+// Push the outgoing document onto the undo stack, collapsing bursts of the
+// same edit, and drop the redo stack — the timeline has branched.
+function record(state, next, action) {
+  const now = Date.now()
+  const target = action.id ?? state.selectedId ?? null
+  const coalesce =
+    BURST_EDITS.has(action.type) &&
+    state.lastEdit?.type === action.type &&
+    state.lastEdit?.target === target &&
+    now - state.lastEdit.at < COALESCE_MS
+
+  return {
+    ...next,
+    past: coalesce ? state.past : [...state.past, state.doc].slice(-HISTORY_LIMIT),
+    future: [],
+    lastEdit: { type: action.type, target, at: now },
+  }
+}
+
+function componentExists(doc, id) {
+  return id != null && doc.pages.some((p) => p.components.some((c) => c.id === id))
+}
+
+// Every action returns a brand new state object — no mutation.
+function applyAction(state, action) {
   const page = state.doc.pages[0]
 
   switch (action.type) {
@@ -87,6 +163,9 @@ export function reducer(state, action) {
           l.x === c.layout.x && l.y === c.layout.y && l.w === c.layout.w && l.h === c.layout.h
         return same ? c : { ...c, layout: { x: l.x, y: l.y, w: l.w, h: l.h } }
       })
+      // A click that starts a drag but goes nowhere must not become an undo
+      // step. Unchanged components keep their identity, so this is cheap.
+      if (moved.every((c, i) => c === page.components[i])) return state
       return { ...state, doc: replaceComponents(state.doc, moved) }
     }
 
@@ -97,8 +176,11 @@ export function reducer(state, action) {
         if (c.id !== state.selectedId) return c
         const x = clamp(c.layout.x + action.dx, 0, GRID_COLS - c.layout.w)
         const y = Math.max(0, c.layout.y + action.dy)
+        if (x === c.layout.x && y === c.layout.y) return c
         return { ...c, layout: { ...c.layout, x, y } }
       })
+      // Arrow key held against the edge of the canvas: nothing moved.
+      if (moved.every((c, i) => c === page.components[i])) return state
       return { ...state, doc: replaceComponents(state.doc, moved) }
     }
 
@@ -119,12 +201,13 @@ export function reducer(state, action) {
     case 'setDocTitle':
       return { ...state, doc: { ...state.doc, title: action.title } }
 
-    // Used by both file import and localStorage restore.
+    // Import and New both stay undoable: they go through the same history
+    // path as any other action, so an accidental import is recoverable.
     case 'load':
-      return { doc: action.doc, selectedId: null }
+      return { ...state, doc: action.doc, selectedId: null }
 
     case 'reset':
-      return initialState()
+      return { ...state, doc: createDocument(), selectedId: null }
 
     default:
       return state

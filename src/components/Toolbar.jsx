@@ -2,7 +2,16 @@ import { useRef } from 'react'
 
 import { COMPONENT_TYPES, TYPE_ORDER } from './registry.jsx'
 
-export default function Toolbar({ doc, dispatch, onExport, onImportFile, onNew, count }) {
+export default function Toolbar({
+  doc,
+  dispatch,
+  onExport,
+  onImportFile,
+  onNew,
+  count,
+  canUndo,
+  canRedo,
+}) {
   const fileInput = useRef(null)
 
   return (
@@ -18,6 +27,17 @@ export default function Toolbar({ doc, dispatch, onExport, onImportFile, onNew, 
           {count} {count === 1 ? 'component' : 'components'}
         </span>
         <div className="flex shrink-0 items-center gap-1">
+          <Button onClick={() => dispatch({ type: 'undo' })} disabled={!canUndo} title="Undo (⌘Z)">
+            Undo
+          </Button>
+          <Button
+            onClick={() => dispatch({ type: 'redo' })}
+            disabled={!canRedo}
+            title="Redo (⇧⌘Z)"
+          >
+            Redo
+          </Button>
+          <span className="mx-1 h-5 w-px bg-gray-200" />
           <Button onClick={onExport}>Export JSON</Button>
           <Button onClick={() => fileInput.current?.click()}>Import</Button>
           <Button onClick={onNew}>New</Button>
@@ -43,18 +63,20 @@ export default function Toolbar({ doc, dispatch, onExport, onImportFile, onNew, 
           </Button>
         ))}
         <span className="ml-auto text-xs text-gray-400">
-          arrows move · delete removes · esc deselects
+          arrows move · delete removes · esc deselects · ⌘Z undo · ⇧⌘Z redo
         </span>
       </div>
     </header>
   )
 }
 
-function Button({ onClick, children }) {
+function Button({ onClick, children, disabled, title }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-sm border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+      disabled={disabled}
+      title={title}
+      className="rounded-sm border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:cursor-default disabled:border-gray-200 disabled:text-gray-300 disabled:hover:bg-transparent"
     >
       {children}
     </button>

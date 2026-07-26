@@ -13,7 +13,9 @@ const STORAGE_KEY = 'fastdash:document:v1'
 function bootstrap() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) return { doc: JSON.parse(saved), selectedId: null }
+    // initialState builds the empty history around the restored document —
+    // you cannot undo past the start of a session.
+    if (saved) return initialState(JSON.parse(saved))
   } catch {
     // ignore and start clean
   }
@@ -53,6 +55,23 @@ export default function App() {
   // Keyboard-first: number keys add, arrows move, delete removes.
   useEffect(() => {
     function onKeyDown(e) {
+      // Undo/redo is checked first, and deliberately works while a text field
+      // has focus. The title and description are controlled inputs, so the
+      // browser's own undo cannot restore them anyway — and because a burst of
+      // typing collapses into one history entry, one press undoes the whole
+      // burst rather than a single character.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        dispatch({ type: e.shiftKey ? 'redo' : 'undo' })
+        return
+      }
+      // Ctrl+Y is the Windows redo convention.
+      if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        dispatch({ type: 'redo' })
+        return
+      }
+
       const tag = e.target.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -109,6 +128,8 @@ export default function App() {
         doc={doc}
         dispatch={dispatch}
         count={components.length}
+        canUndo={state.past.length > 0}
+        canRedo={state.future.length > 0}
         onExport={() => downloadDocument(doc)}
         onImportFile={handleImportFile}
         onNew={handleNew}

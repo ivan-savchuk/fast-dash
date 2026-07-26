@@ -27,8 +27,28 @@ One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is exported
 saved; `selectedId` is view state.
 
 Actions: `add`, `delete`, `select`, `setLayout`, `nudge`, `rename`, `setComment`,
-`setDocTitle`, `load`, `reset`. No component mutates state directly, so undo/redo in
-Phase 2 is "keep a list of previous `doc` values" and nothing more.
+`setDocTitle`, `load`, `reset`, `undo`, `redo`.
+
+`reducer` handles only `undo` and `redo`; everything else runs through `applyAction`
+and is then recorded by `record`. That split is deliberate — no individual action has
+to remember to maintain history, so a new action cannot forget to.
+
+History rules, all of which exist because the naive version is annoying to use:
+
+- **Bursts collapse.** Consecutive `rename` / `setComment` / `setDocTitle` / `nudge` on
+  the same target within 800ms are one entry. Typing a description is one undo, not one
+  per character.
+- **No-ops are not recorded.** `setLayout` where nothing moved (a click that begins a
+  drag and goes nowhere) and `nudge` against the canvas edge return the previous state
+  unchanged. Otherwise undo appears to do nothing.
+- **`select` is not history.** Only document changes are.
+- **`load` and `reset` are history**, so an accidental Import or New is recoverable.
+- Cap 100 entries. You cannot undo past the start of a session; a restored autosave is
+  the floor.
+
+The reducer is a pure function, so its behaviour is testable in Node without a browser —
+`npx vite-node` a script that drives it and asserts on the result. That is how the
+history rules above were checked.
 
 Autosave writes the whole document to `localStorage` under `fastdash:document:v1`,
 inside `requestIdleCallback`. A corrupt saved value must never block startup — the
@@ -39,6 +59,10 @@ bootstrap falls back to an empty document.
 `1`–`5` add a component · arrows move the selected card one cell · `Delete` /
 `Backspace` removes it · `Esc` deselects. Shortcuts are ignored while a text field has
 focus.
+
+`⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These are the exception: they fire even while a text
+field has focus, because the title and description are controlled inputs where the
+browser's native undo cannot restore anything.
 
 ---
 
