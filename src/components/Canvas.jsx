@@ -89,7 +89,8 @@ export default function Canvas({ components, selectedId, dispatch, onEmptyClick 
     >
       {components.length === 0 && (
         <p className="px-1 pt-6 text-sm text-gray-400">
-          Empty canvas. Click anywhere to add a component, or press 1–5.
+          Empty canvas. Click anywhere to add a component, press 1–5, or start from a
+          template in the toolbar.
         </p>
       )}
 

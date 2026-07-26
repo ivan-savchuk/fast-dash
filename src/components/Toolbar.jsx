@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 import { COMPONENT_TYPES, TYPE_ORDER } from './registry.jsx'
+import { TEMPLATE_LIST } from '../templates.js'
 
 export default function Toolbar({
   doc,
@@ -8,11 +9,13 @@ export default function Toolbar({
   onExport,
   onImportFile,
   onNew,
+  onPickTemplate,
   count,
   canUndo,
   canRedo,
 }) {
   const fileInput = useRef(null)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
@@ -38,6 +41,29 @@ export default function Toolbar({
             Redo
           </Button>
           <span className="mx-1 h-5 w-px bg-gray-200" />
+          <div className="relative">
+            <Button onClick={() => setTemplatesOpen((open) => !open)}>Templates ▾</Button>
+            {templatesOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onMouseDown={() => setTemplatesOpen(false)} />
+                <div className="absolute right-0 z-50 mt-1 w-64 overflow-hidden rounded-sm border border-gray-300 bg-white py-1 shadow-lg">
+                  {TEMPLATE_LIST.map((template) => (
+                    <button
+                      key={template.id}
+                      className="block w-full px-3 py-2 text-left hover:bg-gray-100"
+                      onClick={() => {
+                        setTemplatesOpen(false)
+                        onPickTemplate(template.id)
+                      }}
+                    >
+                      <span className="block text-sm text-gray-800">{template.name}</span>
+                      <span className="block text-xs text-gray-400">{template.summary}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <Button onClick={onExport}>Export JSON</Button>
           <Button onClick={() => fileInput.current?.click()}>Import</Button>
           <Button onClick={onNew}>New</Button>

@@ -50,7 +50,13 @@ Basic shortcuts already landed in Phase 1: `1`–`5` add, arrows move, `Delete` 
 3. ~~**Quick picker**~~ — **done** (2026-07-26). Click empty canvas, choose a type at
    the cursor, and the component lands on the cell you clicked. Mouse, `1`–`5`, or
    arrows plus Enter.
-4. **Starter templates** — so a newcomer begins from something rather than a blank grid.
+4. ~~**Starter templates**~~ — **done** (2026-07-26). Three: executive overview,
+   operational monitor, analysis deep dive. Every component ships with a written
+   description, so the templates also demonstrate what a useful spec note looks like.
+
+**Phase 2 work is complete. The gate is not.** "Productive within 60 seconds with no
+instruction from you" needs a real person who has never seen the tool — our own judgement
+does not count here. Until that has happened, Phase 3 has not started.
 
 **Gate:** someone who has never seen the tool is productive within 60 seconds, with no
 instruction from you.

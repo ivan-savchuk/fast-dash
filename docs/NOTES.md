@@ -15,6 +15,7 @@ Status: **Phase 1 complete.** Phase 2 (speed layer) and Phase 3 (spec layer) not
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder SVG |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas |
+| `src/templates.js` | The three starter dashboards |
 | `src/components/Card.jsx` | Card chrome: header, title, type label, delete, description |
 | `src/components/Toolbar.jsx` | Dashboard title, add buttons, export / import / new |
 | `src/io/documentFile.js` | JSON download and file read, with validation |
@@ -31,9 +32,11 @@ Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
 `setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
 
 `add` takes an optional `at: {x, y}` grid cell, which is what the quick picker passes;
-without one the component goes below everything, which is what the toolbar buttons and
-the number keys do. `x` is clamped so a wide component clicked near the right edge
-slides left to fit rather than hanging off the grid.
+`x` is clamped so a wide component clicked near the right edge slides left to fit rather
+than hanging off the grid. Without a cell — the toolbar buttons and the number keys —
+the component takes the first gap it fits in, scanning left to right then down. That is
+what lets four presses of `1` build a KPI row instead of four rows that each need
+dragging into place, and it means a card added after a deletion reuses the hole.
 
 `duplicate` places the copy directly under its source and pushes anything in those
 columns down by the copy's height. Do not delegate that to the grid: left to resolve
@@ -97,7 +100,7 @@ has to do the same.
 ## Traps in react-grid-layout v2
 
 Version 2 is a TypeScript rewrite with a different API from every tutorial online.
-All four of these cost real time; none of them fail loudly.
+All five of these cost real time; none of them fail loudly.
 
 ### 1. `process.env` kills all dragging and resizing
 
@@ -134,7 +137,24 @@ on every keystroke and every drag update. This is what made the canvas feel slug
 Same reasoning for `React.memo` on `Card`, which is why `Card` takes `dispatch` rather
 than four inline callback props.
 
-### 4. `react-resizable/css/styles.css` is required
+### 4. Vertical compaction is load-bearing — and it is a package deal
+
+The grid runs the default vertical compactor. It is what keeps cards from overlapping
+and what makes the canvas rearrange itself when you move something. It also pulls every
+card up to the first free row, which means **arrow-key nudges into empty space appear to
+do nothing**: the move is applied, then immediately undone by compaction.
+
+Switching to `noCompactor` was tried and reverted (2026-07-26). It does fix the arrows
+and allows deliberate whitespace, but it removes auto-rearrangement, and every code path
+that writes positions directly then has to do its own collision work — nudge, duplicate,
+quick-picker placement. Ivan judged the result worse.
+
+So: the arrow limitation and auto-rearranging are the same mechanism. Any future attempt
+has to keep compaction and give the arrows a different meaning — most plausibly swapping
+a card with its neighbour rather than moving it one cell. Do not reach for `noCompactor`
+again without reading this paragraph first.
+
+### 5. `react-resizable/css/styles.css` is required
 
 Not optional. Without it grid items are not `position: relative`, so the resize handle
 anchors to the whole canvas instead of the card corner.

@@ -14,6 +14,10 @@ export const GRID_ROW_HEIGHT = 40
 let idCounter = 0
 const nextId = (prefix) => `${prefix}${++idCounter}_${Date.now().toString(36)}`
 
+// Templates are built from this so a template opened twice never produces two
+// components with the same id.
+export const newComponentId = () => nextId('c')
+
 export function createDocument() {
   return {
     version: SCHEMA_VERSION,
@@ -38,26 +42,38 @@ export function initialState(doc = createDocument()) {
   return { doc, selectedId: null, past: [], future: [], lastEdit: null }
 }
 
-// Find the first free row so a new component lands below existing ones
-// instead of on top of them.
-function firstFreeRow(components) {
-  return components.reduce((max, c) => Math.max(max, c.layout.y + c.layout.h), 0)
+const collide = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+
+// Where a new component goes when you have not pointed at a cell: the first
+// gap it fits in, scanning left to right then down. Four KPI cards therefore
+// fill a row rather than stacking into four rows that each need dragging into
+// place — a KPI row is the most common thing anyone builds here.
+//
+// A component too wide for what is left of a row simply drops to the next one.
+function firstFreeSlot(components, w, h) {
+  const bottom = components.reduce((max, c) => Math.max(max, c.layout.y + c.layout.h), 0)
+
+  for (let y = 0; y <= bottom; y++) {
+    for (let x = 0; x + w <= GRID_COLS; x++) {
+      const candidate = { x, y, w, h }
+      if (!components.some((c) => collide(c.layout, candidate))) return { x, y }
+    }
+  }
+  return { x: 0, y: bottom }
 }
 
 // `at` is the grid cell the quick picker was opened on. Without one — the
-// toolbar buttons and the number keys — the component goes below everything.
+// toolbar buttons and the number keys — we find a slot.
 function createComponent(componentType, components, at) {
   const def = COMPONENT_TYPES[componentType]
   const { w, h } = def.defaultSize
+  const slot = at
+    ? { x: clamp(at.x, 0, GRID_COLS - w), y: Math.max(0, at.y) }
+    : firstFreeSlot(components, w, h)
   return {
     id: nextId('c'),
     type: componentType,
-    layout: {
-      x: at ? clamp(at.x, 0, GRID_COLS - w) : 0,
-      y: at ? Math.max(0, at.y) : firstFreeRow(components),
-      w,
-      h,
-    },
+    layout: { ...slot, w, h },
     title: def.defaultTitle,
     // The spec layer lands in Phase 3. The keys exist now so an early
     // export already round-trips through the final shape.

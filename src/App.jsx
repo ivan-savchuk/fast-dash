@@ -6,6 +6,7 @@ import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
 import { initialState, reducer } from './state/document.js'
+import { buildTemplate } from './templates.js'
 
 const STORAGE_KEY = 'fastdash:document:v1'
 
@@ -139,6 +140,15 @@ export default function App() {
     }
   }
 
+  function handlePickTemplate(templateId) {
+    const doc = buildTemplate(templateId)
+    if (!doc) return
+    // No confirmation prompt: this is undoable like any other change, and a
+    // dialog in the way of "show me what this looks like" is the wrong trade.
+    dispatch({ type: 'load', doc })
+    setError(null)
+  }
+
   function handleNew() {
     if (components.length > 0 && !window.confirm('Discard the current dashboard?')) return
     dispatch({ type: 'reset' })
@@ -156,6 +166,7 @@ export default function App() {
         onExport={() => downloadDocument(doc)}
         onImportFile={handleImportFile}
         onNew={handleNew}
+        onPickTemplate={handlePickTemplate}
       />
 
       {error && (
