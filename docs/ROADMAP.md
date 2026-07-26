@@ -12,6 +12,9 @@ doesn't visibly improve her dashboard, the tool won't either.
 
 **Gate:** the paper session produced a better dashboard than the prose spec did.
 
+**MET** (2026-07-26, Ivan's call). The core premise is treated as validated — sketching
+boxes together does improve the result.
+
 *Cheapest possible test of the core premise. If you skip this, note that you skipped it —
 you're carrying the risk forward, not eliminating it.*
 
@@ -24,12 +27,29 @@ delete. JSON export and import.
 
 **Gate:** you can mock a real dashboard in under 10 minutes.
 
+**MET** (2026-07-26). Composed a real one-page dashboard; Ivan's words were "blazingly
+fast". Shipped: 12-column canvas, five component types, place / move / resize / delete /
+rename, per-card description, JSON export and import, localStorage autosave, keyboard
+shortcuts. See `docs/NOTES.md`.
+
 ---
 
-## Phase 2 — speed layer
+## Phase 2 — speed layer — *current*
 
 Click-to-place quick picker (5 most common components). Keyboard shortcuts. Undo/redo.
 Duplicate. Three or four starter templates.
+
+Basic shortcuts already landed in Phase 1: `1`–`5` add, arrows move, `Delete` removes,
+`Esc` deselects. Remaining, in the order they are worth doing:
+
+1. **Undo/redo** — non-negotiable per the design principles, and nearly free: the
+   reducer already routes every change, so this is a list of past documents. Do it
+   first, because until it exists a mis-drag or stray `Delete` is unrecoverable.
+2. **Duplicate** (`Cmd+D`) — a real dashboard is six KPI cards with different metrics;
+   today that is six add-and-retitle cycles.
+3. **Quick picker** — click empty canvas, choose a type at the cursor. This is the item
+   that most affects the 60-second gate.
+4. **Starter templates** — so a newcomer begins from something rather than a blank grid.
 
 **Gate:** someone who has never seen the tool is productive within 60 seconds, with no
 instruction from you.
