@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+/* react-grid-layout ships a bright red drop placeholder. Grayscale keeps the
+   canvas neutral — the point is arguing about structure, not colour.
+   The extra `.react-grid-layout` is for specificity: the library's stylesheet
+   is imported after this file, so a same-strength selector would lose.
+   The grey box is also untransitioned: the library eases it over 100ms, which
+   makes the drop target visibly trail the cursor. It is a preview, not an
+   object — it should be wherever the pointer is, immediately. */
+.react-grid-layout .react-grid-item.react-grid-placeholder {
+  background: #9ca3af;
+  opacity: 0.25;
+  border-radius: 2px;
+  transition: none;
+}
+
+/* Speed is the product, so the library's 200ms glide is cut short. It is not
+   removed outright: while you drag one card, the others are being reflowed
+   around it, and with no transition at all every intermediate position renders
+   raw, which reads as twitching. 90ms is short enough to feel immediate and
+   long enough to absorb that. The card actually being dragged or resized is
+   untransitioned by the library itself, so it still tracks the cursor exactly.
+   The doubled class is a specificity trick, same reason as below: this file is
+   imported before the library's stylesheet. */
+.react-grid-layout .react-grid-item {
+  transition-duration: 60ms;
+}
+
+/* The canvas animating its own height serves no purpose. */
+.react-grid-layout.react-grid-layout {
+  transition: none;
+}
+
+/* Dragging a card otherwise sweeps a text selection across every other card,
+   which flickers the whole canvas. Nothing on a card is real text worth
+   selecting; the title and description fields opt back in. */
+.react-grid-layout {
+  user-select: none;
+}
+
+.react-grid-layout input,
+.react-grid-layout textarea {
+  user-select: text;
+}

@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FastDash</title>
+    <!--
+      react-draggable (which react-grid-layout uses for dragging and resizing)
+      has a debug helper that reads `process.env.DRAGGABLE_DEBUG`. A browser has
+      no `process`, so that line throws on the first mousedown and silently
+      kills every drag and resize. This stub makes the read return undefined.
+      It must run before any module loads, which is why it lives here.
+    -->
+    <script>
+      window.process = window.process || { env: {} }
+    </script>
   </head>
   <body>
     <div id="root"></div>
