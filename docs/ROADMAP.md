@@ -34,7 +34,7 @@ shortcuts. See `docs/NOTES.md`.
 
 ---
 
-## Phase 2 — speed layer — *current*
+## Phase 2 — speed layer
 
 Click-to-place quick picker (5 most common components). Keyboard shortcuts. Undo/redo.
 Duplicate. Three or four starter templates.
@@ -54,23 +54,53 @@ Basic shortcuts already landed in Phase 1: `1`–`5` add, arrows move, `Delete` 
    operational monitor, analysis deep dive. Every component ships with a written
    description, so the templates also demonstrate what a useful spec note looks like.
 
-**Phase 2 work is complete. The gate is not.** "Productive within 60 seconds with no
-instruction from you" needs a real person who has never seen the tool — our own judgement
-does not count here. Until that has happened, Phase 3 has not started.
-
 **Gate:** someone who has never seen the tool is productive within 60 seconds, with no
 instruction from you.
 
+**MET** (2026-07-26, Ivan's call) — on his own use, not an observed session with a
+newcomer. The unprompted 60-second test was not run, so the risk it was meant to catch is
+carried forward rather than eliminated: the things a first-time user trips over are still
+unknown. Worth running opportunistically during the Phase 5 pilot.
+
 ---
 
-## Phase 3 — the spec layer
+## Phase 3 — the spec layer — *current*
 
 Per-component metadata (metric, dimension, granularity, aggregation, filters, source,
 refresh) plus comments. HTML and PDF export.
 
+Comments landed in Phase 1 as the per-card description. The `spec: {}` key has been
+written into every component since then, so filling it in is not a schema change.
+
+Order of work, one per session:
+
+1. **Inspector panel** — a right-hand rail holding the spec fields for the selected
+   component. The card is too small to hold them and cramming them in would wreck the
+   canvas, which is the thing that already works. Dropdowns where a vocabulary exists,
+   free text elsewhere; see the table in `SPEC.md`. Everything goes through the reducer,
+   so it is undoable, and text edits coalesce the way titles and descriptions already do.
+2. **Unfilled-spec affordance** — a quiet marker on cards with no metric, and a count in
+   the toolbar. Without it nobody notices a half-specified dashboard until the BI
+   developer does, which is exactly the gate.
+3. **HTML export** — one self-contained file: the layout, then a spec table per
+   component. This is the artefact you actually send to someone.
+4. **Print stylesheet** — `window.print()`. No PDF library.
+
 **Gate:** a BI developer reads the exported JSON and says "I could build this."
 
+Judge it on a *real* dashboard someone asked for, not a demo, and let the developer read
+it without narration — the moment it needs explaining, it has failed.
+
 **This phase is the whole differentiator. Do not let it slip behind fidelity work.**
+
+Deferred until the fields have been used in anger, because guessing now is how the spec
+layer becomes a form nobody fills in:
+
+- Dashboard-level defaults for source and refresh, inherited by components. Obvious
+  duplication to remove, but only once we know whether they really are the same across a
+  page.
+- Per-type field sets (a KPI has no granularity; a table has no aggregation). Cheap to
+  add later, and hiding fields too early hides the vocabulary.
 
 ---
 

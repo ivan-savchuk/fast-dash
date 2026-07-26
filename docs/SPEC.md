@@ -85,6 +85,30 @@ position:
 
 Filled in, the JSON export stops being a layout file and becomes a requirements document.
 
+### How the fields are captured (decided 2026-07-26)
+
+The fields live in a **right-hand inspector panel** for the selected component, not on the
+card and not in a modal. The canvas stays visible and usable, so you can select card after
+card and keep typing — specifying a dashboard is a sweep across it, not eight dialogs.
+
+Fields with a known vocabulary are **dropdowns**; the rest are free text. The point of the
+export is that a BI developer can rely on it, and `mnth` / `monthly` / `Month` appearing
+across three cards defeats that.
+
+| Field | Input | Values |
+|---|---|---|
+| metric | free text | e.g. `net_revenue` |
+| dimension | free text | e.g. `region` |
+| granularity | dropdown | none · day · week · month · quarter · year |
+| aggregation | dropdown | none · sum · avg · count · count distinct · min · max · median |
+| filters | list of free text | each entry one clause, e.g. `region = EMEA` |
+| source | free text | e.g. `dwh.fact_sales` |
+| refresh | dropdown | none · realtime · hourly · daily · weekly · monthly |
+| comment | free text, 280 max | already shipped as the card description |
+
+Unset stays unset: a field nobody touched is absent from the export rather than exported
+as an empty string, so "not specified" and "specified as nothing" stay distinguishable.
+
 ## Draft JSON schema
 
 Proposal — refine in Phase 3, but keep it flat and hand-editable.
