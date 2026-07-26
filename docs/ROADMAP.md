@@ -47,8 +47,9 @@ Basic shortcuts already landed in Phase 1: `1`–`5` add, arrows move, `Delete` 
 2. ~~**Duplicate** (`Cmd+D`)~~ — **done** (2026-07-26). Copy lands directly below its
    source, carrying type, size, title and description; cards in the way are pushed
    down rather than the copy being sent to the bottom of the page.
-3. **Quick picker** — click empty canvas, choose a type at the cursor. This is the item
-   that most affects the 60-second gate.
+3. ~~**Quick picker**~~ — **done** (2026-07-26). Click empty canvas, choose a type at
+   the cursor, and the component lands on the cell you clicked. Mouse, `1`–`5`, or
+   arrows plus Enter.
 4. **Starter templates** — so a newcomer begins from something rather than a blank grid.
 
 **Gate:** someone who has never seen the tool is productive within 60 seconds, with no

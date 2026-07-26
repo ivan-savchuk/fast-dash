@@ -13,7 +13,8 @@ Status: **Phase 1 complete.** Phase 2 (speed layer) and Phase 3 (spec layer) not
 |---|---|
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder SVG |
-| `src/components/Canvas.jsx` | `react-grid-layout` wiring |
+| `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
+| `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas |
 | `src/components/Card.jsx` | Card chrome: header, title, type label, delete, description |
 | `src/components/Toolbar.jsx` | Dashboard title, add buttons, export / import / new |
 | `src/io/documentFile.js` | JSON download and file read, with validation |
@@ -28,6 +29,11 @@ saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
 `setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
+
+`add` takes an optional `at: {x, y}` grid cell, which is what the quick picker passes;
+without one the component goes below everything, which is what the toolbar buttons and
+the number keys do. `x` is clamped so a wide component clicked near the right edge
+slides left to fit rather than hanging off the grid.
 
 `duplicate` places the copy directly under its source and pushes anything in those
 columns down by the copy's height. Do not delegate that to the grid: left to resolve
@@ -70,6 +76,14 @@ focus.
 while a text field has focus — the title and description are controlled inputs where
 the browser's native undo cannot restore anything, and intercepting `⌘D` stops the
 browser opening its bookmark dialog.
+
+While the quick picker is open it owns the keyboard — the global handler bails out
+early — otherwise `1`–`5` would both pick from the menu and add a second component.
+
+The canvas wrapper carries `min-h-[70vh]` and `pb-40`. Both exist so there is always
+somewhere to click: the minimum height covers an empty canvas, the padding survives
+however tall the grid grows. Delete either and a full dashboard has no empty space left
+to summon the picker from.
 
 **Focus is manual here.** Suppressing text selection means calling `preventDefault` on
 mousedown, which also suppresses the browser's focus change — so a title or description

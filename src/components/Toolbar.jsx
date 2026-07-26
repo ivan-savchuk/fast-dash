@@ -63,7 +63,7 @@ export default function Toolbar({
           </Button>
         ))}
         <span className="ml-auto text-xs text-gray-400">
-          arrows move · ⌘D duplicates · delete removes · esc deselects · ⌘Z undo · ⇧⌘Z redo
+          click canvas to add · ⌘D duplicates · arrows move · delete removes · ⌘Z undo
         </span>
       </div>
     </header>

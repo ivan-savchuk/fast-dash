@@ -44,16 +44,19 @@ function firstFreeRow(components) {
   return components.reduce((max, c) => Math.max(max, c.layout.y + c.layout.h), 0)
 }
 
-function createComponent(componentType, components) {
+// `at` is the grid cell the quick picker was opened on. Without one — the
+// toolbar buttons and the number keys — the component goes below everything.
+function createComponent(componentType, components, at) {
   const def = COMPONENT_TYPES[componentType]
+  const { w, h } = def.defaultSize
   return {
     id: nextId('c'),
     type: componentType,
     layout: {
-      x: 0,
-      y: firstFreeRow(components),
-      w: def.defaultSize.w,
-      h: def.defaultSize.h,
+      x: at ? clamp(at.x, 0, GRID_COLS - w) : 0,
+      y: at ? Math.max(0, at.y) : firstFreeRow(components),
+      w,
+      h,
     },
     title: def.defaultTitle,
     // The spec layer lands in Phase 3. The keys exist now so an early
@@ -132,7 +135,7 @@ function applyAction(state, action) {
 
   switch (action.type) {
     case 'add': {
-      const component = createComponent(action.componentType, page.components)
+      const component = createComponent(action.componentType, page.components, action.at)
       return {
         ...state,
         selectedId: component.id,

@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
+import QuickPicker from './components/QuickPicker.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
@@ -25,6 +26,9 @@ function bootstrap() {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, null, bootstrap)
   const [error, setError] = useState(null)
+  // Where the quick picker was summoned: viewport coords to draw it, grid
+  // coords to place whatever gets chosen.
+  const [picker, setPicker] = useState(null)
   const { doc, selectedId } = state
   const components = doc.pages[0].components
 
@@ -55,6 +59,10 @@ export default function App() {
   // Keyboard-first: number keys add, arrows move, delete removes.
   useEffect(() => {
     function onKeyDown(e) {
+      // The quick picker owns the keyboard while it is open — otherwise 1-5
+      // would both pick from the menu and add a second component below.
+      if (picker) return
+
       // Undo/redo is checked first, and deliberately works while a text field
       // has focus. The title and description are controlled inputs, so the
       // browser's own undo cannot restore them anyway — and because a burst of
@@ -120,7 +128,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId])
+  }, [selectedId, picker])
 
   async function handleImportFile(file) {
     try {
@@ -170,8 +178,24 @@ export default function App() {
           }
         }}
       >
-        <Canvas components={components} selectedId={selectedId} dispatch={dispatch} />
+        <Canvas
+          components={components}
+          selectedId={selectedId}
+          dispatch={dispatch}
+          onEmptyClick={setPicker}
+        />
       </main>
+
+      {picker && (
+        <QuickPicker
+          at={picker}
+          onClose={() => setPicker(null)}
+          onPick={(componentType) => {
+            dispatch({ type: 'add', componentType, at: { x: picker.x, y: picker.y } })
+            setPicker(null)
+          }}
+        />
+      )}
     </div>
   )
 }

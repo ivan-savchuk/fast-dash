@@ -5,7 +5,7 @@ import 'react-grid-layout/css/styles.css'
 // of the corner of the whole canvas.
 import 'react-resizable/css/styles.css'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 
 import Card from './Card.jsx'
 import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
@@ -31,10 +31,29 @@ const RESIZE_CONFIG = { enabled: true, handles: ['se'] }
 // positions back through onDragStop / onResizeStop, which we push into the
 // reducer so the document stays the single source of truth.
 
-export default function Canvas({ components, selectedId, dispatch }) {
+export default function Canvas({ components, selectedId, dispatch, onEmptyClick }) {
   // `mounted` is false until the container has been measured. Rendering the
   // grid before that places cards using a guessed 1280px width.
   const { width, containerRef, mounted } = useContainerWidth()
+  const gridAreaRef = useRef(null)
+
+  // Turn a click into the grid cell under the cursor, so a component added
+  // from the quick picker lands where you pointed rather than at the bottom.
+  function handleBackgroundClick(e) {
+    // Clicks that land on a card are the card's business.
+    if (e.target.closest('.react-grid-item')) return
+
+    const rect = gridAreaRef.current.getBoundingClientRect()
+    const [gapX, gapY] = GRID_CONFIG.margin
+    const columnWidth = (width - gapX * (GRID_COLS - 1)) / GRID_COLS
+
+    onEmptyClick({
+      clientX: e.clientX,
+      clientY: e.clientY,
+      x: Math.floor((e.clientX - rect.left) / (columnWidth + gapX)),
+      y: Math.floor((e.clientY - rect.top) / (GRID_ROW_HEIGHT + gapY)),
+    })
+  }
 
   // Same reason: a stable array identity keeps the library from re-syncing
   // its internal layout on unrelated renders.
@@ -69,11 +88,16 @@ export default function Canvas({ components, selectedId, dispatch }) {
       }}
     >
       {components.length === 0 && (
-        <p className="px-1 py-8 text-sm text-gray-400">
-          Empty canvas. Add a component from the toolbar, or press 1–5.
+        <p className="px-1 pt-6 text-sm text-gray-400">
+          Empty canvas. Click anywhere to add a component, or press 1–5.
         </p>
       )}
 
+      {/* The grid is only as tall as its content, so this wrapper provides the
+          empty space the quick picker is summoned from: a minimum height for an
+          empty canvas, and padding below that survives however tall the grid
+          grows. Without the padding a full dashboard leaves nowhere to click. */}
+      <div ref={gridAreaRef} className="min-h-[70vh] pb-40" onClick={handleBackgroundClick}>
       {/* v2 of react-grid-layout groups its settings into config objects.
           Passing cols/rowHeight/draggableCancel at the top level does
           nothing — they are silently ignored. */}
@@ -94,6 +118,7 @@ export default function Canvas({ components, selectedId, dispatch }) {
           ))}
         </GridLayout>
       )}
+      </div>
     </div>
   )
 }
