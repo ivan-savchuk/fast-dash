@@ -28,30 +28,36 @@ Adding a dependency requires a reason stated out loud first. Default answer is n
 
 ## Repo state
 
-Pre-Phase 1. No code scaffolded yet — `docs/` and this file only. If `src/` does not
-exist, the first task is scaffolding, not editing.
-
-Scaffold:
-
-```bash
-npm create vite@latest . -- --template react
-npm install -D tailwindcss @tailwindcss/vite
-npm install react-grid-layout
-```
+Phase 1 complete: grid canvas, five component types, place / move / resize / delete /
+rename, per-card description, JSON export and import, localStorage autosave, keyboard
+shortcuts. Phase 2 and Phase 3 not started.
 
 ## Commands
 
 ```bash
 npm run dev      # local dev server
 npm run build    # static production build
-npm run preview  # verify the build before shipping
+npm run preview  # verify the build before shipping — judge speed here, not in dev
+npm run lint     # oxlint
 ```
 
 ## Architecture
 
-Fill in once Phase 1 lands. Must document: the document object shape, the reducer's
-action names, and how a component type maps to its SVG placeholder + spec fields.
-That mapping is the one thing not readable from a single file.
+`docs/NOTES.md` is the file map and the list of `react-grid-layout` v2 traps. **Read it
+before touching the canvas** — four of its gotchas fail silently rather than erroring,
+and one of them (a `process.env` read inside `react-draggable`) disables all dragging
+and resizing with no visible error.
+
+The short version:
+
+- One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is saved or
+  exported. Every change is an action, so undo is a list of past `doc` values.
+- `src/components/registry.jsx` maps a component type to its label, default size,
+  number-key shortcut and placeholder SVG. A new component type is one entry there.
+- `react-grid-layout` owns placement; its callbacks feed positions back into the
+  reducer, which stays the source of truth.
+- Overrides in `src/index.css` need extra specificity — that file is imported before
+  the library stylesheets. Verify overrides in `dist/assets/*.css`, not by eye.
 
 ## Design principles (these override feature requests)
 

@@ -123,6 +123,29 @@ Proposal — refine in Phase 3, but keep it flat and hand-editable.
 Rules: every field optional except `id`, `type`, `layout`. Unknown fields survive a
 round-trip. Version the schema from day one.
 
+### Settled in Phase 1
+
+- `layout` is in grid cells, not pixels: **12 columns**, row height **40px**, 12px
+  gutters. A card's pixel size is therefore a function of viewport width, and a
+  document opens correctly on a different screen.
+- Every component is written with `spec: {}` and `comment: ""` present, even when
+  empty. Phase 3 fills the `spec` keys; the shape does not change when it does, so an
+  export made today round-trips through the final schema.
+- `comment` is capped at **280 characters** — a tweet. It is the one-line answer to
+  "what question does this card answer?". Longer reasoning belongs in the spec fields,
+  not the card, and an uncapped field invites prose that layout cannot expose.
+- Import validates only `id`, `type` and a numeric `layout`; every other field is
+  passed through untouched. A component whose `type` this build does not recognise
+  renders as a labelled empty box rather than failing the import — a newer file must
+  still open in an older build.
+- Single page for now. The `pages` array exists anyway so that adding tabs in Phase 4
+  is not a schema change.
+
+### Implemented component types
+
+KPI card, time series, bar, table, text. Each carries a default size and a number-key
+shortcut; see `docs/NOTES.md` for where to add a sixth.
+
 ## Planned, not yet designed
 
 - **Interaction annotations** — draw.io-style arrows meaning "clicking this cross-filters
@@ -138,6 +161,10 @@ round-trip. Version the schema from day one.
 | HTML | Serialize the document into a self-contained string. |
 | PDF | `window.print()` plus a print stylesheet. **No PDF library.** |
 | YAML | Last, via `js-yaml`, or never. JSON already round-trips. |
+
+JSON export is live: it downloads `<dashboard-title>.json` and re-imports. HTML and PDF
+are Phase 3. There is also a `localStorage` autosave, which is a convenience, not an
+export — the JSON file is the artefact you hand to a BI developer.
 
 ## Open question
 
