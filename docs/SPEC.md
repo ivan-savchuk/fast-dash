@@ -1,0 +1,147 @@
+# SPEC — Dashboard Prototyping Tool
+
+## Problem
+
+Departments spec dashboards in prose. Prose can't expose layout problems. You only feel
+"this is too crowded" or "these three charts answer the same question" when you see boxes
+on a canvas. The result is dashboards that get built, then redesigned.
+
+## Solution
+
+A browser app — draw.io for dashboards. Place components on a grid, resize them, attach a
+comment and structured metadata to each one, export the result as a machine-readable spec.
+
+## Users
+
+Non-technical stakeholders sketching what they want, usually in a live session with an
+analyst. They will not read documentation. They must be productive within 60 seconds.
+
+## Prior art and the gap
+
+Mokkup.ai is closest (drag-drop dashboard wireframing, exports to Tableau/Power BI).
+Balsamiq, Figma dashboard kits, PowerMockup and Excalidraw are general-purpose. All are
+either heavyweight design tools or SaaS with accounts and pricing.
+
+What this has that they don't:
+
+- Zero friction — no login, one file
+- Comment-per-component baked into the data model, not floating sticky notes
+- A JSON round-trip that is a genuine machine-readable spec
+
+**Everyone else exports pictures. This exports requirements.**
+
+---
+
+## Component set
+
+### Tier 1 — the 80% (not viable without these)
+
+| Component | Notes |
+|---|---|
+| KPI card | Big number, delta vs. prior period, optional sparkline. Most-used object in BI. |
+| Time series | Line/area, single and multi-series |
+| Bar | Vertical, horizontal, grouped, stacked |
+| Table / data grid | Sortable columns, totals row |
+| Pie / donut | People will demand it regardless of our opinion |
+| Filter controls | Dropdown, multi-select, date range, search box, toggle |
+| Text block | Headings, markdown notes, annotations |
+| Tabs / pages | Dashboards are rarely one screen |
+
+### Tier 2 — professional credibility
+
+Combo chart (bar + line, dual axis) · pivot table / crosstab · scatter & bubble ·
+heatmap and calendar heatmap · map (choropleth and point) · gauge, progress bar, bullet ·
+funnel · histogram, box plot · treemap · waterfall
+
+Combo charts are extremely common in real BI and rare in mockup tools — good early Tier 2 pick.
+
+### Tier 3 — chrome (underrated, nearly free)
+
+Header bar with title and last-refreshed timestamp · collapsible filter sidebar ·
+section containers/groups · legends · axis labels · export/refresh buttons · breadcrumbs.
+
+Static divs, no rendering. This is most of what makes a mockup *feel* like a real BI tool.
+
+### Deliberately excluded
+
+Sankey, chord, radar, word cloud, anything 3D. These signal "I discovered a chart type,"
+not "I have a question to answer." Leaving them out is a feature.
+
+---
+
+## The spec layer
+
+This is the differentiator. Each component carries structured fields beyond title and
+position:
+
+- **metric / measure**
+- **dimension** (breakdown)
+- **time granularity**
+- **aggregation**
+- **filters applied**
+- **data source**
+- **refresh cadence**
+- **free-text comment**
+
+Filled in, the JSON export stops being a layout file and becomes a requirements document.
+
+## Draft JSON schema
+
+Proposal — refine in Phase 3, but keep it flat and hand-editable.
+
+```json
+{
+  "version": 1,
+  "title": "Regional Sales Overview",
+  "pages": [
+    {
+      "id": "p1",
+      "name": "Overview",
+      "components": [
+        {
+          "id": "c1",
+          "type": "kpi",
+          "layout": { "x": 0, "y": 0, "w": 3, "h": 2 },
+          "title": "Net Revenue",
+          "spec": {
+            "metric": "net_revenue",
+            "dimension": null,
+            "granularity": "month",
+            "aggregation": "sum",
+            "filters": ["region = EMEA"],
+            "source": "dwh.fact_sales",
+            "refresh": "daily"
+          },
+          "comment": "Show delta vs. same month last year, not prior month."
+        }
+      ]
+    }
+  ]
+}
+```
+
+Rules: every field optional except `id`, `type`, `layout`. Unknown fields survive a
+round-trip. Version the schema from day one.
+
+## Planned, not yet designed
+
+- **Interaction annotations** — draw.io-style arrows meaning "clicking this cross-filters
+  that" or "drill-down to detail"
+- **Component count warning** — a gentle nudge past ~8 panels per page. Dashboard sprawl
+  is the exact failure this tool exists to prevent.
+
+## Exports
+
+| Format | Approach |
+|---|---|
+| JSON | Native. Round-trips for import and further editing. |
+| HTML | Serialize the document into a self-contained string. |
+| PDF | `window.print()` plus a print stylesheet. **No PDF library.** |
+| YAML | Last, via `js-yaml`, or never. JSON already round-trips. |
+
+## Open question
+
+Superset is the default visual reference, but **what do the departments actually deliver
+in?** If they ship in Power BI, Power BI's layout grammar takes precedence — the mockup
+should resemble the destination tool, or people will mock up things their platform can't
+build. Resolve this before Phase 4.
