@@ -140,6 +140,24 @@ function applyAction(state, action) {
       }
     }
 
+    case 'duplicate': {
+      const source = page.components.find((c) => c.id === (action.id ?? state.selectedId))
+      if (!source) return state
+      const copy = {
+        ...source,
+        id: nextId('c'),
+        layout: { ...source.layout, y: source.layout.y + source.layout.h },
+        // structuredClone so the copy does not share the spec object with its
+        // source — phase 3 fills that in with nested values.
+        spec: structuredClone(source.spec ?? {}),
+      }
+      return {
+        ...state,
+        selectedId: copy.id,
+        doc: replaceComponents(state.doc, [...makeRoomFor(page.components, source, copy), copy]),
+      }
+    }
+
     case 'delete': {
       const rest = page.components.filter((c) => c.id !== action.id)
       return {
@@ -212,6 +230,23 @@ function applyAction(state, action) {
     default:
       return state
   }
+}
+
+// A copy lands directly under its source. Anything that occupied that space is
+// pushed straight down by the height of the copy — without this the grid
+// resolves the overlap by sending the copy to the bottom of the page, which is
+// nowhere near what you were looking at. Only components sharing columns with
+// the copy move; the rest of the canvas is left alone, and react-grid-layout
+// closes any gap left behind when it compacts.
+function makeRoomFor(components, source, copy) {
+  const top = copy.layout.y
+  const overlapsColumns = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w
+
+  return components.map((c) => {
+    const sitsInTheWay = c.layout.y + c.layout.h > top
+    if (c.id === source.id || !sitsInTheWay || !overlapsColumns(c.layout, copy.layout)) return c
+    return { ...c, layout: { ...c.layout, y: c.layout.y + copy.layout.h } }
+  })
 }
 
 function replaceComponents(doc, components) {

@@ -34,6 +34,7 @@ function Card({ component, selected, dispatch }) {
   // handle is covered too.
   const onSelect = () => dispatch({ type: 'select', id })
   const onDelete = () => dispatch({ type: 'delete', id })
+  const onDuplicate = () => dispatch({ type: 'duplicate', id })
   const onRename = (title) => dispatch({ type: 'rename', id, title })
   const onComment = (comment) => dispatch({ type: 'setComment', id, comment })
 
@@ -64,6 +65,14 @@ function Card({ component, selected, dispatch }) {
         <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase">
           {def.label}
         </span>
+        <button
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          onClick={onDuplicate}
+          title="Duplicate component (⌘D)"
+          aria-label="Duplicate component"
+        >
+          ⧉
+        </button>
         <button
           className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
           onClick={onDelete}

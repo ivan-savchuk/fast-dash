@@ -26,8 +26,14 @@ Adding a sixth component type is one entry in `registry.jsx` and nothing else.
 One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is exported or
 saved; `selectedId` is view state.
 
-Actions: `add`, `delete`, `select`, `setLayout`, `nudge`, `rename`, `setComment`,
-`setDocTitle`, `load`, `reset`, `undo`, `redo`.
+Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
+`setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
+
+`duplicate` places the copy directly under its source and pushes anything in those
+columns down by the copy's height. Do not delegate that to the grid: left to resolve
+the overlap itself, react-grid-layout sends the copy to the bottom of the page, far
+from what you were looking at. The copy's `spec` is `structuredClone`d — sharing that
+object would mean editing one card's metric silently changed its twin's in phase 3.
 
 `reducer` handles only `undo` and `redo`; everything else runs through `applyAction`
 and is then recorded by `record`. That split is deliberate — no individual action has
@@ -60,9 +66,17 @@ bootstrap falls back to an empty document.
 `Backspace` removes it · `Esc` deselects. Shortcuts are ignored while a text field has
 focus.
 
-`⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These are the exception: they fire even while a text
-field has focus, because the title and description are controlled inputs where the
-browser's native undo cannot restore anything.
+`⌘D` duplicates the selected card. `⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These fire even
+while a text field has focus — the title and description are controlled inputs where
+the browser's native undo cannot restore anything, and intercepting `⌘D` stops the
+browser opening its bookmark dialog.
+
+**Focus is manual here.** Suppressing text selection means calling `preventDefault` on
+mousedown, which also suppresses the browser's focus change — so a title or description
+field keeps focus forever and swallows every shortcut, and arrow keys scroll the page
+instead of moving a card. Clicking a card, clicking empty canvas and pressing `Esc` all
+call `blur()` explicitly to compensate. Anything new that suppresses a mousedown default
+has to do the same.
 
 ---
 

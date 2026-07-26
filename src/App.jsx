@@ -72,6 +72,22 @@ export default function App() {
         return
       }
 
+      // Also checked before the text-field guard, so the browser never gets
+      // the chance to open its bookmark dialog.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        if (selectedId) dispatch({ type: 'duplicate', id: selectedId })
+        return
+      }
+
+      // Escape is handled before the text-field guard so it doubles as "give
+      // me the keyboard back" when a title or description has focus.
+      if (e.key === 'Escape') {
+        e.target.blur?.()
+        dispatch({ type: 'select', id: null })
+        return
+      }
+
       const tag = e.target.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -100,7 +116,6 @@ export default function App() {
         return
       }
 
-      if (e.key === 'Escape') dispatch({ type: 'select', id: null })
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -147,8 +162,12 @@ export default function App() {
       <main
         className="p-4"
         onMouseDown={(e) => {
-          // Click on empty canvas clears the selection.
-          if (e.target === e.currentTarget) dispatch({ type: 'select', id: null })
+          // Click on empty canvas clears the selection and hands the keyboard
+          // back, in case a title or description still had focus.
+          if (e.target === e.currentTarget) {
+            document.activeElement?.blur()
+            dispatch({ type: 'select', id: null })
+          }
         }}
       >
         <Canvas components={components} selectedId={selectedId} dispatch={dispatch} />

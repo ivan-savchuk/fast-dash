@@ -58,7 +58,14 @@ export default function Canvas({ components, selectedId, dispatch }) {
       ref={containerRef}
       className="min-h-full"
       onMouseDownCapture={(e) => {
-        if (!e.target.closest('input, textarea, button')) e.preventDefault()
+        if (e.target.closest('input, textarea, button')) return
+        e.preventDefault()
+        // preventDefault suppresses the text selection, but it also suppresses
+        // the browser's focus change. Without this, a title or description
+        // field you typed in earlier keeps focus forever, and every keyboard
+        // shortcut is then swallowed by the "ignore while typing" guard —
+        // arrow keys scroll the page instead of moving the selected card.
+        document.activeElement?.blur()
       }}
     >
       {components.length === 0 && (
