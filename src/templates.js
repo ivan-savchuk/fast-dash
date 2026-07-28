@@ -5,15 +5,20 @@
 // example: they show what a useful spec note looks like, so the habit is
 // already established before anyone reads the docs.
 
-import { SCHEMA_VERSION, newComponentId } from './state/document.js'
+import { SCHEMA_VERSION, newComponentId, newFilterId } from './state/document.js'
 
 // [type, x, y, w, h, title, description]
+// filters: [label, type]
 const TEMPLATES = [
   {
     id: 'executive',
     name: 'Executive overview',
     summary: 'KPI row, trend, breakdown, detail',
     title: 'Executive overview',
+    filters: [
+      ['Region', 'multi-select'],
+      ['Date', 'date range'],
+    ],
     components: [
       ['kpi', 0, 0, 3, 4, 'Revenue', 'Net of returns. Delta vs. same period last year.'],
       ['kpi', 3, 0, 3, 4, 'Orders', 'Count of completed orders. Excludes cancellations.'],
@@ -29,6 +34,11 @@ const TEMPLATES = [
     name: 'Operational monitor',
     summary: 'Status row, wide trend, working table',
     title: 'Operational monitor',
+    filters: [
+      ['Team', 'dropdown'],
+      ['Severity', 'multi-select'],
+      ['Open only', 'toggle'],
+    ],
     components: [
       ['kpi', 0, 0, 3, 4, 'Open tickets', 'Currently unresolved. Refreshed hourly.'],
       ['kpi', 3, 0, 3, 4, 'Breached SLA', 'Past due. Red when above zero.'],
@@ -43,6 +53,7 @@ const TEMPLATES = [
     name: 'Analysis deep dive',
     summary: 'Question up top, evidence below',
     title: 'Analysis deep dive',
+    filters: [['Segment', 'dropdown']],
     components: [
       ['text', 0, 0, 12, 3, 'The question', 'State the decision this page supports, in one sentence.'],
       ['timeseries', 0, 3, 6, 6, 'Trend', 'The measure over time. Annotate anything that moved it.'],
@@ -66,6 +77,11 @@ export function buildTemplate(templateId) {
   return {
     version: SCHEMA_VERSION,
     title: template.title,
+    filters: (template.filters ?? []).map(([label, type]) => ({
+      id: newFilterId(),
+      label,
+      type,
+    })),
     pages: [
       {
         id: 'p1',

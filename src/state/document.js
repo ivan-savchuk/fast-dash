@@ -14,14 +14,32 @@ export const GRID_ROW_HEIGHT = 40
 let idCounter = 0
 const nextId = (prefix) => `${prefix}${++idCounter}_${Date.now().toString(36)}`
 
-// Templates are built from this so a template opened twice never produces two
-// components with the same id.
+// Templates are built from these so a template opened twice never produces two
+// items with the same id.
 export const newComponentId = () => nextId('c')
+export const newFilterId = () => nextId('f')
+
+// Dashboard-level filter controls (Superset's filter rail). Each is a label
+// plus a control type; they carry no data, but they export as part of the
+// document so a BI developer sees which filters the dashboard is meant to have.
+// Mirrors Superset's native filter set: value (dropdown / multi-select),
+// numerical range, time range (date range), time grain, plus search and a
+// boolean toggle.
+export const FILTER_TYPES = [
+  'dropdown',
+  'multi-select',
+  'range',
+  'date range',
+  'time grain',
+  'search',
+  'toggle',
+]
 
 export function createDocument() {
   return {
     version: SCHEMA_VERSION,
     title: 'Untitled dashboard',
+    filters: [],
     pages: [{ id: 'p1', name: 'Overview', components: [] }],
   }
 }
@@ -36,7 +54,7 @@ const COALESCE_MS = 800
 
 // Edits that arrive in bursts and should be collapsed. A drag or a delete is
 // a single deliberate act and is never coalesced.
-const BURST_EDITS = new Set(['rename', 'setComment', 'setDocTitle', 'nudge'])
+const BURST_EDITS = new Set(['rename', 'setComment', 'setDocTitle', 'nudge', 'renameFilter'])
 
 export function initialState(doc = createDocument()) {
   return { doc, selectedId: null, past: [], future: [], lastEdit: null }
@@ -238,6 +256,45 @@ function applyAction(state, action) {
     case 'setDocTitle':
       return { ...state, doc: { ...state.doc, title: action.title } }
 
+    case 'addFilter': {
+      const filter = { id: nextId('f'), label: 'New filter', type: 'dropdown' }
+      return { ...state, doc: replaceFilters(state.doc, [...docFilters(state.doc), filter]) }
+    }
+
+    case 'renameFilter': {
+      const filters = docFilters(state.doc).map((f) =>
+        f.id === action.id ? { ...f, label: action.label } : f,
+      )
+      return { ...state, doc: replaceFilters(state.doc, filters) }
+    }
+
+    case 'setFilterType': {
+      const filters = docFilters(state.doc).map((f) =>
+        f.id === action.id ? { ...f, type: action.filterType } : f,
+      )
+      return { ...state, doc: replaceFilters(state.doc, filters) }
+    }
+
+    case 'removeFilter': {
+      const filters = docFilters(state.doc).filter((f) => f.id !== action.id)
+      if (filters.length === docFilters(state.doc).length) return state
+      return { ...state, doc: replaceFilters(state.doc, filters) }
+    }
+
+    // Reorder: pull the filter out and reinsert it at `toIndex`. Drives both
+    // the up/down buttons and drag-and-drop.
+    case 'moveFilter': {
+      const list = docFilters(state.doc)
+      const from = list.findIndex((f) => f.id === action.id)
+      if (from === -1) return state
+      const to = clamp(action.toIndex, 0, list.length - 1)
+      if (to === from) return state
+      const filters = [...list]
+      const [moved] = filters.splice(from, 1)
+      filters.splice(to, 0, moved)
+      return { ...state, doc: replaceFilters(state.doc, filters) }
+    }
+
     // Import and New both stay undoable: they go through the same history
     // path as any other action, so an accidental import is recoverable.
     case 'load':
@@ -271,6 +328,16 @@ function makeRoomFor(components, source, copy) {
 function replaceComponents(doc, components) {
   const [page, ...rest] = doc.pages
   return { ...doc, pages: [{ ...page, components }, ...rest] }
+}
+
+// Documents from before filters existed have no `filters` key; treat that as
+// an empty list everywhere rather than special-casing at every read.
+function docFilters(doc) {
+  return doc.filters ?? []
+}
+
+function replaceFilters(doc, filters) {
+  return { ...doc, filters }
 }
 
 function clamp(n, min, max) {

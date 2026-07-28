@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
+import FilterRail from './components/FilterRail.jsx'
 import QuickPicker from './components/QuickPicker.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
@@ -30,6 +31,15 @@ export default function App() {
   // Where the quick picker was summoned: viewport coords to draw it, grid
   // coords to place whatever gets chosen.
   const [picker, setPicker] = useState(null)
+  // Filter rail open/closed. UI state, not part of the document, but remembered
+  // across sessions so it opens the way you left it.
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    try {
+      return localStorage.getItem('fastdash:filtersOpen') !== 'false'
+    } catch {
+      return true
+    }
+  })
   const { doc, selectedId } = state
   const components = doc.pages[0].components
 
@@ -98,7 +108,9 @@ export default function App() {
       }
 
       const tag = e.target.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) {
+        return
+      }
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
       if (TYPE_BY_KEY[e.key]) {
@@ -155,8 +167,22 @@ export default function App() {
     setError(null)
   }
 
+  function toggleFilters() {
+    setFiltersOpen((open) => {
+      const next = !open
+      try {
+        localStorage.setItem('fastdash:filtersOpen', String(next))
+      } catch {
+        // remembering the panel state is a nicety, not worth failing over
+      }
+      return next
+    })
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    // App shell: fixed to the viewport, with the filter rail and the canvas
+    // each scrolling on their own.
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900">
       <Toolbar
         doc={doc}
         dispatch={dispatch}
@@ -178,24 +204,33 @@ export default function App() {
         </div>
       )}
 
-      <main
-        className="p-4"
-        onMouseDown={(e) => {
-          // Click on empty canvas clears the selection and hands the keyboard
-          // back, in case a title or description still had focus.
-          if (e.target === e.currentTarget) {
-            document.activeElement?.blur()
-            dispatch({ type: 'select', id: null })
-          }
-        }}
-      >
-        <Canvas
-          components={components}
-          selectedId={selectedId}
+      <div className="flex min-h-0 flex-1">
+        <FilterRail
+          filters={doc.filters ?? []}
+          open={filtersOpen}
+          onToggle={toggleFilters}
           dispatch={dispatch}
-          onEmptyClick={setPicker}
         />
-      </main>
+
+        <main
+          className="flex-1 overflow-auto p-4"
+          onMouseDown={(e) => {
+            // Click on empty canvas clears the selection and hands the keyboard
+            // back, in case a title or description still had focus.
+            if (e.target === e.currentTarget) {
+              document.activeElement?.blur()
+              dispatch({ type: 'select', id: null })
+            }
+          }}
+        >
+          <Canvas
+            components={components}
+            selectedId={selectedId}
+            dispatch={dispatch}
+            onEmptyClick={setPicker}
+          />
+        </main>
+      </div>
 
       {picker && (
         <QuickPicker

@@ -40,7 +40,24 @@ function validate(doc) {
     return { ...page, id: page.id ?? `p${i + 1}`, name: page.name ?? `Page ${i + 1}` }
   })
 
-  return { ...doc, version: doc.version ?? 1, title: doc.title ?? 'Untitled dashboard', pages }
+  // Filters are optional and only lightly checked: give each a stable id and a
+  // type so the rail can render it, but keep any other fields the file carried.
+  const filters = Array.isArray(doc.filters)
+    ? doc.filters.map((f, i) => ({
+        ...f,
+        id: f?.id ?? `f${i + 1}`,
+        label: f?.label ?? 'Filter',
+        type: f?.type ?? 'dropdown',
+      }))
+    : []
+
+  return {
+    ...doc,
+    version: doc.version ?? 1,
+    title: doc.title ?? 'Untitled dashboard',
+    filters,
+    pages,
+  }
 }
 
 function slug(title) {

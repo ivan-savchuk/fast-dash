@@ -3,7 +3,8 @@
 What is actually in the code, and the traps that cost time. `SPEC.md` says what the
 tool should be; this says how it currently is.
 
-Status: **Phase 1 complete.** Phase 2 (speed layer) and Phase 3 (spec layer) not started.
+Status: **Phase 1 and 2 complete.** Phase 3 in progress: the global filter rail shipped;
+per-component metadata was tried and parked (see `SPEC.md`).
 
 ---
 
@@ -16,6 +17,7 @@ Status: **Phase 1 complete.** Phase 2 (speed layer) and Phase 3 (spec layer) not
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas |
 | `src/templates.js` | The three starter dashboards |
+| `src/components/FilterRail.jsx` | The collapsible left filter rail |
 | `src/components/Card.jsx` | Card chrome: header, title, type label, delete, description |
 | `src/components/Toolbar.jsx` | Dashboard title, add buttons, export / import / new |
 | `src/io/documentFile.js` | JSON download and file read, with validation |
@@ -30,6 +32,12 @@ saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
 `setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
+
+Global filters live on `doc.filters` (`[{ id, label, type }]`), not on components.
+Reducer actions: `addFilter`, `renameFilter` (coalesces), `setFilterType`, `removeFilter`,
+`moveFilter` (reorder, drives buttons and Alt+↑/↓). All undoable. Drag-and-drop reorder
+was built and removed — native HTML5 DnD felt laggy in a narrow rail and no amount of
+memoising the rows fixed the browser's own drag latency.
 
 `add` takes an optional `at: {x, y}` grid cell, which is what the quick picker passes;
 `x` is clamped so a wide component clicked near the right edge slides left to fit rather

@@ -85,29 +85,44 @@ position:
 
 Filled in, the JSON export stops being a layout file and becomes a requirements document.
 
-### How the fields are captured (decided 2026-07-26)
+### Where the spec is captured — the history
 
-The fields live in a **right-hand inspector panel** for the selected component, not on the
-card and not in a modal. The canvas stays visible and usable, so you can select card after
-card and keep typing — specifying a dashboard is a sweep across it, not eight dialogs.
+A **per-component inspector** was built (2026-07-26) and then discarded (2026-07-29)
+before commit. A right-hand rail held metric, dimension, granularity, aggregation,
+source, refresh and per-card filters. Two problems killed it:
 
-Fields with a known vocabulary are **dropdowns**; the rest are free text. The point of the
-export is that a BI developer can rely on it, and `mnth` / `monthly` / `Month` appearing
-across three cards defeats that.
+- It was always open and ate a large slice of the canvas, which is the thing that
+  already works.
+- One metric / one dimension per card is wrong. A table or a combo chart carries
+  several of each, and forcing them into single fields either lies or balloons into a
+  form — the opposite of fast dashboard building.
 
-| Field | Input | Values |
-|---|---|---|
-| metric | free text | e.g. `net_revenue` |
-| dimension | free text | e.g. `region` |
-| granularity | dropdown | none · day · week · month · quarter · year |
-| aggregation | dropdown | none · sum · avg · count · count distinct · min · max · median |
-| filters | list of free text | each entry one clause, e.g. `region = EMEA` |
-| source | free text | e.g. `dwh.fact_sales` |
-| refresh | dropdown | none · realtime · hourly · daily · weekly · monthly |
-| comment | free text, 280 max | already shipped as the card description |
+Per-component metadata is **parked**, not cancelled. If it returns it needs a model that
+admits multiple metrics and dimensions, and it must not be a permanent panel. The
+`spec: {}` key stays on every component so the door is open.
 
-Unset stays unset: a field nobody touched is absent from the export rather than exported
-as an empty string, so "not specified" and "specified as nothing" stay distinguishable.
+### Global filters — the current model (2026-07-29)
+
+What shipped instead is a **collapsible filter rail** on the left (Superset's
+convention), holding the dashboard-level filters. Each filter is a label plus a control
+type. They carry no data — the grayscale control under each is a placeholder — but they
+live on the document and export, so a BI developer sees which filters the dashboard is
+meant to have.
+
+Filter types mirror Superset's native set:
+
+| Type | Placeholder reads as |
+|---|---|
+| dropdown | single value select |
+| multi-select | value select, several chips |
+| range | numerical min/max slider |
+| date range | time range, from–to |
+| time grain | day/week/month selector |
+| search | text search box |
+| toggle | boolean switch |
+
+Stored as `doc.filters: [{ id, label, type }]`. Reorder by up/down buttons or Alt+↑/↓.
+Old files without a `filters` key load as an empty list.
 
 ## Draft JSON schema
 

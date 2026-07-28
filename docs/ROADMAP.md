@@ -72,19 +72,20 @@ refresh) plus comments. HTML and PDF export.
 Comments landed in Phase 1 as the per-card description. The `spec: {}` key has been
 written into every component since then, so filling it in is not a schema change.
 
-Order of work, one per session:
+Order of work:
 
-1. **Inspector panel** — a right-hand rail holding the spec fields for the selected
-   component. The card is too small to hold them and cramming them in would wreck the
-   canvas, which is the thing that already works. Dropdowns where a vocabulary exists,
-   free text elsewhere; see the table in `SPEC.md`. Everything goes through the reducer,
-   so it is undoable, and text edits coalesce the way titles and descriptions already do.
-2. **Unfilled-spec affordance** — a quiet marker on cards with no metric, and a count in
-   the toolbar. Without it nobody notices a half-specified dashboard until the BI
-   developer does, which is exactly the gate.
-3. **HTML export** — one self-contained file: the layout, then a spec table per
-   component. This is the artefact you actually send to someone.
+1. ~~**Per-component inspector**~~ — built, then **discarded** (2026-07-29) before
+   commit. It ate the canvas and forced one-metric-one-dimension, which is wrong for
+   tables and combo charts. Parked, not cancelled; see `SPEC.md`.
+2. ~~**Global filter rail**~~ — **done** (2026-07-29). Collapsible left rail of
+   dashboard-level filters (label + Superset-native type), stored on the document and
+   exported. Reorder by buttons or Alt+↑/↓. Templates ship with filters.
+3. **HTML export** — one self-contained file: the layout, then the filters and a spec
+   table per component. This is the artefact you actually send to someone. *(next)*
 4. **Print stylesheet** — `window.print()`. No PDF library.
+5. **Per-component metadata, take two** — only if a real dashboard shows it is needed,
+   and only with a model that admits several metrics and dimensions and is not a
+   permanent panel.
 
 **Gate:** a BI developer reads the exported JSON and says "I could build this."
 

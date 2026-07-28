@@ -15,15 +15,18 @@
 }
 
 /* Speed is the product, so the library's 200ms glide is cut short. It is not
-   removed outright: while you drag one card, the others are being reflowed
-   around it, and with no transition at all every intermediate position renders
-   raw, which reads as twitching. 90ms is short enough to feel immediate and
-   long enough to absorb that. The card actually being dragged or resized is
-   untransitioned by the library itself, so it still tracks the cursor exactly.
-   The doubled class is a specificity trick, same reason as below: this file is
-   imported before the library's stylesheet. */
+   removed outright: while you drag one card, the others are reflowed around it,
+   and with no transition every intermediate position renders raw, which reads
+   as twitching. This same transition also runs when a dragged card is dropped
+   and snaps to its cell, so a purely linear, very short value made that landing
+   feel abrupt. 130ms with an ease-out curve keeps the reflow prompt while
+   letting a card decelerate into place instead of stopping dead. The card being
+   dragged or resized is untransitioned by the library itself, so it still
+   tracks the cursor exactly until release. The doubled class is a specificity
+   trick, same reason as below: this file is imported before the library's. */
 .react-grid-layout .react-grid-item {
-  transition-duration: 60ms;
+  transition-duration: 130ms;
+  transition-timing-function: ease-out;
 }
 
 /* The canvas animating its own height serves no purpose. */
