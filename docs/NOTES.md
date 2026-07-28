@@ -18,6 +18,7 @@ per-component metadata was tried and parked (see `SPEC.md`).
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas |
 | `src/templates.js` | The three starter dashboards |
 | `src/components/FilterRail.jsx` | The collapsible left filter rail |
+| `src/io/htmlExport.js` | Read-only self-contained HTML export |
 | `src/components/Card.jsx` | Card chrome: header, title, type label, delete, description |
 | `src/components/Toolbar.jsx` | Dashboard title, add buttons, export / import / new |
 | `src/io/documentFile.js` | JSON download and file read, with validation |
@@ -32,6 +33,18 @@ saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
 `setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
+
+HTML export (`htmlExport.js`) is a pure `doc -> string` function plus a browser download
+wrapper, so it is Node-testable. The output is one self-contained file — all CSS inline,
+no React, no Tailwind, no external URLs, no `<script>` — and deliberately read-only: no
+button, input, select, textarea, contenteditable or draggable. All user text is escaped.
+The same 12-col / 40px / 12px-gap geometry is reproduced with CSS grid so the export
+matches the canvas.
+
+**Known divergence:** the placeholder art (chart silhouettes, filter controls) is
+re-implemented in plain SVG/CSS in `htmlExport.js` rather than reused from the React
+components, so the file needs no Tailwind at runtime. If a canvas placeholder changes,
+the export must be updated by hand to match.
 
 Global filters live on `doc.filters` (`[{ id, label, type }]`), not on components.
 Reducer actions: `addFilter`, `renameFilter` (coalesces), `setFilterType`, `removeFilter`,

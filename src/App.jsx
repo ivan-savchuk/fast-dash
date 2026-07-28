@@ -6,6 +6,7 @@ import QuickPicker from './components/QuickPicker.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
+import { downloadHtmlExport } from './io/htmlExport.js'
 import { initialState, reducer } from './state/document.js'
 import { buildTemplate } from './templates.js'
 
@@ -190,6 +191,7 @@ export default function App() {
         canUndo={state.past.length > 0}
         canRedo={state.future.length > 0}
         onExport={() => downloadDocument(doc)}
+        onExportHtml={() => downloadHtmlExport(doc)}
         onImportFile={handleImportFile}
         onNew={handleNew}
         onPickTemplate={handlePickTemplate}

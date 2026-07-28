@@ -7,6 +7,7 @@ export default function Toolbar({
   doc,
   dispatch,
   onExport,
+  onExportHtml,
   onImportFile,
   onNew,
   onPickTemplate,
@@ -65,6 +66,7 @@ export default function Toolbar({
             )}
           </div>
           <Button onClick={onExport}>Export JSON</Button>
+          <Button onClick={onExportHtml}>Export HTML</Button>
           <Button onClick={() => fileInput.current?.click()}>Import</Button>
           <Button onClick={onNew}>New</Button>
         </div>

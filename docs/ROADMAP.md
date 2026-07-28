@@ -80,9 +80,9 @@ Order of work:
 2. ~~**Global filter rail**~~ — **done** (2026-07-29). Collapsible left rail of
    dashboard-level filters (label + Superset-native type), stored on the document and
    exported. Reorder by buttons or Alt+↑/↓. Templates ship with filters.
-3. **HTML export** — one self-contained file: the layout, the filters, and each
-   component's title and description. This is the artefact you actually send to someone,
-   and it is the whole of what remains in Phase 3. *(next)*
+3. ~~**HTML export**~~ — **done** (2026-07-29). One self-contained, read-only file: the
+   filter rail and the card grid, with each component's title and description. No build
+   controls of any kind. This is the artefact you hand over.
 
 Cut from the phase (2026-07-29, Ivan's call):
 
@@ -96,6 +96,10 @@ Cut from the phase (2026-07-29, Ivan's call):
 **Gate:** a BI developer reads the export and says "I could build this" — now judged on
 the **HTML** export carrying titles, descriptions and the global filters, since
 per-component metadata is out of scope.
+
+**Everything in Phase 3 is now built. The gate is not met** — it needs a real BI developer
+reading a real dashboard's HTML export, unprompted. Same discipline as the Phase 2 gate:
+our own reading does not count. Run it before starting Phase 4.
 
 Judge it on a *real* dashboard someone asked for, not a demo, and let the developer read
 it without narration — the moment it needs explaining, it has failed.
