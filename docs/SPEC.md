@@ -197,13 +197,13 @@ shortcut; see `docs/NOTES.md` for where to add a sixth.
 | Format | Approach |
 |---|---|
 | JSON | Native. Round-trips for import and further editing. |
-| HTML | Serialize the document into a self-contained string. |
-| PDF | `window.print()` plus a print stylesheet. **No PDF library.** |
+| HTML | Serialize the document into a self-contained string. The hand-over artefact. |
+| ~~PDF~~ | Dropped (2026-07-29). HTML is enough; print the page from the browser if paper is needed. |
 | YAML | Last, via `js-yaml`, or never. JSON already round-trips. |
 
-JSON export is live: it downloads `<dashboard-title>.json` and re-imports. HTML and PDF
-are Phase 3. There is also a `localStorage` autosave, which is a convenience, not an
-export — the JSON file is the artefact you hand to a BI developer.
+JSON export is live: it downloads `<dashboard-title>.json` and re-imports. HTML is the
+remaining Phase 3 export. There is also a `localStorage` autosave, which is a convenience,
+not an export.
 
 ## Open question
 

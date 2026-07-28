@@ -80,14 +80,22 @@ Order of work:
 2. ~~**Global filter rail**~~ — **done** (2026-07-29). Collapsible left rail of
    dashboard-level filters (label + Superset-native type), stored on the document and
    exported. Reorder by buttons or Alt+↑/↓. Templates ship with filters.
-3. **HTML export** — one self-contained file: the layout, then the filters and a spec
-   table per component. This is the artefact you actually send to someone. *(next)*
-4. **Print stylesheet** — `window.print()`. No PDF library.
-5. **Per-component metadata, take two** — only if a real dashboard shows it is needed,
-   and only with a model that admits several metrics and dimensions and is not a
-   permanent panel.
+3. **HTML export** — one self-contained file: the layout, the filters, and each
+   component's title and description. This is the artefact you actually send to someone,
+   and it is the whole of what remains in Phase 3. *(next)*
 
-**Gate:** a BI developer reads the exported JSON and says "I could build this."
+Cut from the phase (2026-07-29, Ivan's call):
+
+- **PDF / print stylesheet** — dropped. HTML is good enough to hand over; anyone who
+  needs paper can print the page from the browser. Not worth a print stylesheet of our own.
+- **Per-component metadata, take two** — dropped. The per-card inspector was already
+  discarded once this phase; rebuilding a multi-metric version now is overkill. The
+  `spec: {}` key stays on components so a future phase can still pick it up, but it is
+  not Phase 3 work.
+
+**Gate:** a BI developer reads the export and says "I could build this" — now judged on
+the **HTML** export carrying titles, descriptions and the global filters, since
+per-component metadata is out of scope.
 
 Judge it on a *real* dashboard someone asked for, not a demo, and let the developer read
 it without narration — the moment it needs explaining, it has failed.
