@@ -90,6 +90,35 @@ function TablePlaceholder() {
   )
 }
 
+function DonutPlaceholder() {
+  // A donut ring split into three grayscale slices. Circumference of an r=18
+  // circle is ~113.1; each slice is a dash of that length, offset so they sit
+  // end to end. Rotated -90° so the first slice starts at twelve o'clock.
+  const C = 113.097
+  const slices = [
+    { len: 50.89, off: 0, color: GRAY.dark }, // ~45%
+    { len: 39.58, off: -50.89, color: GRAY.mid }, // ~35%
+    { len: 22.62, off: -90.48, color: GRAY.light }, // ~20%
+  ]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60">
+      <g transform="rotate(-90 50 30)" fill="none" strokeWidth="11">
+        {slices.map((s, i) => (
+          <circle
+            key={i}
+            cx="50"
+            cy="30"
+            r="18"
+            stroke={s.color}
+            strokeDasharray={`${s.len} ${C - s.len}`}
+            strokeDashoffset={s.off}
+          />
+        ))}
+      </g>
+    </svg>
+  )
+}
+
 function TextPlaceholder() {
   const widths = ['92%', '84%', '96%', '60%']
   return (
@@ -138,11 +167,26 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 4, h: 4 },
     Placeholder: TextPlaceholder,
   },
+  // From here down: catalog-only types. No number key — they are reached
+  // through the quick picker's search, not the toolbar or the digits. The
+  // five above are the popular ones and keep their shortcut.
+  pie: {
+    label: 'Pie / Donut',
+    defaultTitle: 'Share of total',
+    defaultSize: { w: 4, h: 6 },
+    Placeholder: DonutPlaceholder,
+  },
 }
 
+// The keyed five: toolbar buttons and number-key shortcuts, in this order.
 export const TYPE_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text']
 
-// Reverse lookup for the number-key shortcuts.
+// The full catalog the quick picker searches, in the order it lists them.
+// The keyed five come first; everything after is search-only.
+export const CATALOG_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text', 'pie']
+
+// Reverse lookup for the number-key shortcuts. Only the keyed five are here,
+// so a search-only type can never be triggered by a stray digit.
 export const TYPE_BY_KEY = Object.fromEntries(
   TYPE_ORDER.map((type) => [COMPONENT_TYPES[type].key, type]),
 )

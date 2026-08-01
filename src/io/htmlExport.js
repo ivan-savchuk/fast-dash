@@ -111,6 +111,12 @@ ${[34, 46, 26, 52, 40, 56, 30].map((hh, i) => `<rect x="${i * 14 + 2}" y="${58 -
   },
   text: () =>
     `<div class="textblock">${['92%', '84%', '96%', '60%'].map((wdt) => `<i class="line" style="width:${wdt}"></i>`).join('')}</div>`,
+  // Donut: three grayscale slices, dash lengths mirroring registry.jsx.
+  pie: () => `<svg class="fill" viewBox="0 0 100 60"><g transform="rotate(-90 50 30)" fill="none" stroke-width="11">
+<circle cx="50" cy="30" r="18" stroke="${GRAY.dark}" stroke-dasharray="50.89 62.21" stroke-dashoffset="0"/>
+<circle cx="50" cy="30" r="18" stroke="${GRAY.mid}" stroke-dasharray="39.58 73.52" stroke-dashoffset="-50.89"/>
+<circle cx="50" cy="30" r="18" stroke="${GRAY.light}" stroke-dasharray="22.62 90.48" stroke-dashoffset="-90.48"/>
+</g></svg>`,
 }
 
 function placeholderUnknown() {

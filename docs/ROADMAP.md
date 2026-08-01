@@ -97,9 +97,11 @@ Cut from the phase (2026-07-29, Ivan's call):
 the **HTML** export carrying titles, descriptions and the global filters, since
 per-component metadata is out of scope.
 
-**Everything in Phase 3 is now built. The gate is not met** — it needs a real BI developer
-reading a real dashboard's HTML export, unprompted. Same discipline as the Phase 2 gate:
-our own reading does not count. Run it before starting Phase 4.
+**MET** (2026-08-01, Ivan's call). Everything in Phase 3 is built and the phase is closed
+by owner decision. As with the Phase 2 and Phase 3-earlier gates, the unprompted test — a
+real BI developer reading a real dashboard's HTML export without narration — was **not**
+run, so the risk it was meant to catch is carried forward, not eliminated. Worth running
+opportunistically during the Phase 5 pilot.
 
 Judge it on a *real* dashboard someone asked for, not a demo, and let the developer read
 it without narration — the moment it needs explaining, it has failed.
@@ -117,11 +119,22 @@ layer becomes a form nobody fills in:
 
 ---
 
-## Phase 4 — fidelity and breadth
+## Phase 4 — fidelity and breadth — *current*
 
 Tier 2 components. Superset-style chrome. Interaction annotations. Component count warning.
 
+Also completes the Tier 1 set left unbuilt since Phase 1: pie/donut and tabs/pages
+(filter controls exist only as the global rail, not as placeable components).
+
 **Gate:** only start after Phase 3 has been used in a real meeting with a real stakeholder.
+Started 2026-08-01 by owner decision; the real-meeting test was not run first, so that
+risk is carried forward.
+
+Scope note: this is ~25 component types plus chrome. One component (or one chrome piece)
+per session, as always — not a single mass-add. Two prerequisites before mass-adding
+types: (1) the number-key model `1`–`5` cannot address 25 types, so the QuickPicker needs
+categories or type-to-filter search; (2) hold the anti-sprawl line — more types tempt
+cramming, which is the failure the tool exists to prevent (principle #1).
 
 ---
 
