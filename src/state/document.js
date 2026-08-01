@@ -18,6 +18,7 @@ const nextId = (prefix) => `${prefix}${++idCounter}_${Date.now().toString(36)}`
 // items with the same id.
 export const newComponentId = () => nextId('c')
 export const newFilterId = () => nextId('f')
+export const newPageId = () => nextId('p')
 
 // Dashboard-level filter controls (Superset's filter rail). Each is a label
 // plus a control type; they carry no data, but they export as part of the
@@ -54,10 +55,31 @@ const COALESCE_MS = 800
 
 // Edits that arrive in bursts and should be collapsed. A drag or a delete is
 // a single deliberate act and is never coalesced.
-const BURST_EDITS = new Set(['rename', 'setComment', 'setDocTitle', 'nudge', 'renameFilter'])
+const BURST_EDITS = new Set([
+  'rename',
+  'setComment',
+  'setDocTitle',
+  'nudge',
+  'renameFilter',
+  'renamePage',
+])
 
 export function initialState(doc = createDocument()) {
-  return { doc, selectedId: null, past: [], future: [], lastEdit: null }
+  // activePageId is view state, not part of the saved document — a reload
+  // always opens on the first page. selectedId is likewise view state.
+  return { doc, selectedId: null, activePageId: doc.pages[0].id, past: [], future: [], lastEdit: null }
+}
+
+// The page the user is currently looking at; every component action targets it.
+// Falls back to the first page if the id ever goes stale.
+function activePage(state) {
+  return state.doc.pages.find((p) => p.id === state.activePageId) ?? state.doc.pages[0]
+}
+
+// Keep an active-page id valid against a given document — after undo, redo or
+// import the page it named may be gone.
+function validPageId(doc, id) {
+  return doc.pages.some((p) => p.id === id) ? id : doc.pages[0].id
 }
 
 const collide = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
@@ -114,6 +136,7 @@ export function reducer(state, action) {
         past: state.past.slice(0, -1),
         future: [state.doc, ...state.future],
         selectedId: componentExists(previous, state.selectedId) ? state.selectedId : null,
+        activePageId: validPageId(previous, state.activePageId),
         lastEdit: null,
       }
     }
@@ -127,6 +150,7 @@ export function reducer(state, action) {
         past: [...state.past, state.doc],
         future: rest,
         selectedId: componentExists(next, state.selectedId) ? state.selectedId : null,
+        activePageId: validPageId(next, state.activePageId),
         lastEdit: null,
       }
     }
@@ -165,7 +189,7 @@ function componentExists(doc, id) {
 
 // Every action returns a brand new state object — no mutation.
 function applyAction(state, action) {
-  const page = state.doc.pages[0]
+  const page = activePage(state)
 
   switch (action.type) {
     case 'add': {
@@ -173,7 +197,7 @@ function applyAction(state, action) {
       return {
         ...state,
         selectedId: component.id,
-        doc: replaceComponents(state.doc, [...page.components, component]),
+        doc: replaceComponents(state.doc, page.id, [...page.components, component]),
       }
     }
 
@@ -191,7 +215,10 @@ function applyAction(state, action) {
       return {
         ...state,
         selectedId: copy.id,
-        doc: replaceComponents(state.doc, [...makeRoomFor(page.components, source, copy), copy]),
+        doc: replaceComponents(state.doc, page.id, [
+          ...makeRoomFor(page.components, source, copy),
+          copy,
+        ]),
       }
     }
 
@@ -200,7 +227,7 @@ function applyAction(state, action) {
       return {
         ...state,
         selectedId: state.selectedId === action.id ? null : state.selectedId,
-        doc: replaceComponents(state.doc, rest),
+        doc: replaceComponents(state.doc, page.id, rest),
       }
     }
 
@@ -221,7 +248,7 @@ function applyAction(state, action) {
       // A click that starts a drag but goes nowhere must not become an undo
       // step. Unchanged components keep their identity, so this is cheap.
       if (moved.every((c, i) => c === page.components[i])) return state
-      return { ...state, doc: replaceComponents(state.doc, moved) }
+      return { ...state, doc: replaceComponents(state.doc, page.id, moved) }
     }
 
     // Keyboard nudge: arrow keys move the selected component one cell.
@@ -236,25 +263,77 @@ function applyAction(state, action) {
       })
       // Arrow key held against the edge of the canvas: nothing moved.
       if (moved.every((c, i) => c === page.components[i])) return state
-      return { ...state, doc: replaceComponents(state.doc, moved) }
+      return { ...state, doc: replaceComponents(state.doc, page.id, moved) }
     }
 
     case 'rename': {
       const renamed = page.components.map((c) =>
         c.id === action.id ? { ...c, title: action.title } : c,
       )
-      return { ...state, doc: replaceComponents(state.doc, renamed) }
+      return { ...state, doc: replaceComponents(state.doc, page.id, renamed) }
     }
 
     case 'setComment': {
       const commented = page.components.map((c) =>
         c.id === action.id ? { ...c, comment: action.comment } : c,
       )
-      return { ...state, doc: replaceComponents(state.doc, commented) }
+      return { ...state, doc: replaceComponents(state.doc, page.id, commented) }
     }
 
     case 'setDocTitle':
       return { ...state, doc: { ...state.doc, title: action.title } }
+
+    // --- pages ---
+
+    case 'addPage': {
+      const newPage = {
+        id: nextId('p'),
+        name: `Page ${state.doc.pages.length + 1}`,
+        components: [],
+      }
+      return {
+        ...state,
+        selectedId: null,
+        activePageId: newPage.id,
+        doc: { ...state.doc, pages: [...state.doc.pages, newPage] },
+      }
+    }
+
+    // Switching pages changes only view state, so — like `select` — it is not
+    // recorded in history: the outgoing doc is returned unchanged.
+    case 'selectPage': {
+      if (action.id === state.activePageId) return state
+      if (!state.doc.pages.some((p) => p.id === action.id)) return state
+      return { ...state, activePageId: action.id, selectedId: null }
+    }
+
+    case 'renamePage': {
+      const pages = state.doc.pages.map((p) =>
+        p.id === action.id ? { ...p, name: action.name } : p,
+      )
+      return { ...state, doc: { ...state.doc, pages } }
+    }
+
+    case 'deletePage': {
+      // The last page is never deletable — a dashboard always has one page.
+      if (state.doc.pages.length <= 1) return state
+      const idx = state.doc.pages.findIndex((p) => p.id === action.id)
+      if (idx === -1) return state
+      const pages = state.doc.pages.filter((p) => p.id !== action.id)
+      // If the active page was the one removed, move to its neighbour: the page
+      // that slid into its slot, or the new last page if it was the last.
+      const activePageId =
+        action.id === state.activePageId
+          ? pages[Math.min(idx, pages.length - 1)].id
+          : state.activePageId
+      const nextDoc = { ...state.doc, pages }
+      return {
+        ...state,
+        activePageId,
+        selectedId: componentExists(nextDoc, state.selectedId) ? state.selectedId : null,
+        doc: nextDoc,
+      }
+    }
 
     case 'addFilter': {
       const filter = { id: nextId('f'), label: 'New filter', type: 'dropdown' }
@@ -298,10 +377,17 @@ function applyAction(state, action) {
     // Import and New both stay undoable: they go through the same history
     // path as any other action, so an accidental import is recoverable.
     case 'load':
-      return { ...state, doc: action.doc, selectedId: null }
+      return {
+        ...state,
+        doc: action.doc,
+        selectedId: null,
+        activePageId: action.doc.pages[0].id,
+      }
 
-    case 'reset':
-      return { ...state, doc: createDocument(), selectedId: null }
+    case 'reset': {
+      const fresh = createDocument()
+      return { ...state, doc: fresh, selectedId: null, activePageId: fresh.pages[0].id }
+    }
 
     default:
       return state
@@ -325,9 +411,11 @@ function makeRoomFor(components, source, copy) {
   })
 }
 
-function replaceComponents(doc, components) {
-  const [page, ...rest] = doc.pages
-  return { ...doc, pages: [{ ...page, components }, ...rest] }
+function replaceComponents(doc, pageId, components) {
+  return {
+    ...doc,
+    pages: doc.pages.map((p) => (p.id === pageId ? { ...p, components } : p)),
+  }
 }
 
 // Documents from before filters existed have no `filters` key; treat that as

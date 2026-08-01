@@ -119,6 +119,32 @@ function DonutPlaceholder() {
   )
 }
 
+function TabsPlaceholder() {
+  // A Superset-style in-page Tabs element: a strip of tab labels over an empty
+  // region. A placeholder only — it names the tabs and shows the shape, but it
+  // does not host real child components.
+  const tabs = ['Tab A', 'Tab B', 'Tab C']
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex gap-1 border-b border-gray-200 text-[11px]">
+        {tabs.map((t, i) => (
+          <span
+            key={t}
+            className={`rounded-t-sm border border-b-0 px-2 py-0.5 ${
+              i === 0
+                ? 'border-gray-300 bg-gray-100 text-gray-500'
+                : 'border-transparent text-gray-400'
+            }`}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+      <div className="mt-2 flex-1 rounded-sm border border-dashed border-gray-200 bg-gray-50" />
+    </div>
+  )
+}
+
 function TextPlaceholder() {
   const widths = ['92%', '84%', '96%', '60%']
   return (
@@ -176,6 +202,12 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 4, h: 6 },
     Placeholder: DonutPlaceholder,
   },
+  tabs: {
+    label: 'Tabs',
+    defaultTitle: 'Tabbed section',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: TabsPlaceholder,
+  },
 }
 
 // The keyed five: toolbar buttons and number-key shortcuts, in this order.
@@ -183,7 +215,7 @@ export const TYPE_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text']
 
 // The full catalog the quick picker searches, in the order it lists them.
 // The keyed five come first; everything after is search-only.
-export const CATALOG_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text', 'pie']
+export const CATALOG_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text', 'pie', 'tabs']
 
 // Reverse lookup for the number-key shortcuts. Only the keyed five are here,
 // so a search-only type can never be triggered by a stray digit.

@@ -1,7 +1,12 @@
 // HTML export: a single self-contained file that shows the dashboard the way a
 // viewer would see it — the filters and the cards, laid out — with none of the
-// tools used to build it. No toolbar, no add/edit controls, no inputs, no
-// buttons, no scripts. Just a dashboard to look at.
+// tools used to build it. No toolbar, no add/edit controls, no inputs. It stays
+// read-only: nothing here lets a viewer change the data or the layout.
+//
+// The one script in the file is navigation-only: it switches page tabs without
+// the viewport jumping (which is what a CSS `:target` anchor does). It is only
+// emitted when there is more than one page, and it touches nothing but a
+// visibility class. Everything else is plain HTML and CSS.
 //
 // The placeholder art is written here in plain SVG rather than reused from the
 // React components, so the exported file needs neither React nor Tailwind. That
@@ -28,7 +33,7 @@ export function downloadHtmlExport(doc) {
 export function renderDashboardHtml(doc) {
   const title = doc.title || 'Untitled dashboard'
   const filters = doc.filters ?? []
-  const components = doc.pages?.[0]?.components ?? []
+  const pages = doc.pages ?? []
 
   return `<!doctype html>
 <html lang="en">
@@ -42,11 +47,48 @@ export function renderDashboardHtml(doc) {
 <header class="head"><h1>${esc(title)}</h1></header>
 <div class="shell">
 ${renderFilters(filters)}
-<main class="canvas-wrap">${renderCanvas(components)}</main>
+<main class="canvas-wrap">${renderPages(pages)}</main>
 </div>
 </body>
 </html>`
 }
+
+// One page reads exactly as before — just its grid. Two or more become a tab
+// strip: a row of tabs plus one section per page, only the active one shown.
+// A viewer clicks a tab and the page swaps in place. The switch is a class
+// toggle driven by TAB_SCRIPT (emitted alongside), rather than a CSS `:target`
+// anchor, so the viewport does not scroll on switch.
+function renderPages(pages) {
+  if (pages.length <= 1) return renderCanvas(pages[0]?.components ?? [])
+  const tabs = pages
+    .map(
+      (p, i) =>
+        `<a class="ptab${i === 0 ? ' on' : ''}" role="tab" tabindex="0" data-tab="pg-${esc(p.id)}">${esc(p.name ?? `Page ${i + 1}`)}</a>`,
+    )
+    .join('')
+  const sections = pages
+    .map(
+      (p, i) =>
+        `<section class="page${i === 0 ? ' on' : ''}" data-page="pg-${esc(p.id)}">${renderCanvas(p.components ?? [])}</section>`,
+    )
+    .join('\n')
+  return `<nav class="ptabs">${tabs}</nav>\n<div class="pages">${sections}</div>\n<script>${TAB_SCRIPT}</script>`
+}
+
+// Navigation only: swap which page tab is active, on click or Enter/Space. No
+// data touched, nothing editable — the file stays read-only.
+const TAB_SCRIPT = `
+(function(){
+  var tabs=document.querySelectorAll('.ptab');
+  function show(id){
+    document.querySelectorAll('.ptab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-tab')===id);});
+    document.querySelectorAll('.page').forEach(function(p){p.classList.toggle('on',p.getAttribute('data-page')===id);});
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){show(this.getAttribute('data-tab'));});
+    t.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(this.getAttribute('data-tab'));}});
+  });
+})();`
 
 function renderFilters(filters) {
   if (filters.length === 0) return ''
@@ -117,6 +159,11 @@ ${[34, 46, 26, 52, 40, 56, 30].map((hh, i) => `<rect x="${i * 14 + 2}" y="${58 -
 <circle cx="50" cy="30" r="18" stroke="${GRAY.mid}" stroke-dasharray="39.58 73.52" stroke-dashoffset="-50.89"/>
 <circle cx="50" cy="30" r="18" stroke="${GRAY.light}" stroke-dasharray="22.62 90.48" stroke-dashoffset="-90.48"/>
 </g></svg>`,
+  // In-page Tabs element: label strip over an empty region. Placeholder only.
+  tabs: () => `<div class="tabs-ph">
+<div class="tabs-strip"><span class="t on">Tab A</span><span class="t">Tab B</span><span class="t">Tab C</span></div>
+<div class="tabs-panel"></div>
+</div>`,
 }
 
 function placeholderUnknown() {
@@ -158,6 +205,12 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .filter-label{font-size:12px;font-weight:500;color:#374151;margin-bottom:6px}
 .canvas-wrap{flex:1;padding:16px;min-width:0}
 .canvas{display:grid;grid-template-columns:repeat(${GRID_COLS},1fr);grid-auto-rows:${ROW}px;gap:12px}
+.ptabs{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:16px;border-bottom:1px solid #e5e7eb}
+.ptab{padding:7px 14px;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;margin-bottom:-1px}
+.ptab:hover{background:#f3f4f6;color:#111827}
+.ptab.on{color:#111827;background:#fff;border-color:#e5e7eb}
+.pages .page{display:none}
+.pages .page.on{display:block}
 .empty{color:#9ca3af;padding:24px}
 .card{display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e5e7eb;border-radius:2px;min-width:0}
 .card-head{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid #f3f4f6}
@@ -177,6 +230,11 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .trow .bar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.tabs-ph{display:flex;flex-direction:column;height:100%}
+.tabs-strip{display:flex;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
+.tabs-strip .t{padding:2px 8px;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}
+.tabs-strip .t.on{border-color:#d1d5db;background:#f3f4f6;color:#6b7280}
+.tabs-panel{flex:1;margin-top:8px;border:1px dashed #e5e7eb;border-radius:2px;background:#f9fafb}
 .unknown{display:flex;align-items:center;justify-content:center;height:100%;border:1px dashed #e5e7eb;border-radius:2px;font-size:11px;color:#9ca3af}
 .box{display:flex;align-items:center;height:24px;border:1px solid #e5e7eb;border-radius:2px;background:#f9fafb;padding:0 8px;font-size:11px;color:#9ca3af}
 .box.between{justify-content:space-between}

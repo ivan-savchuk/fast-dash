@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
 import FilterRail from './components/FilterRail.jsx'
+import PageTabs from './components/PageTabs.jsx'
 import QuickPicker from './components/QuickPicker.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
@@ -41,8 +42,11 @@ export default function App() {
       return true
     }
   })
-  const { doc, selectedId } = state
-  const components = doc.pages[0].components
+  const { doc, selectedId, activePageId } = state
+  // The page the user is looking at; the reducer keeps activePageId valid, but
+  // fall back to the first page defensively for the very first render.
+  const activePage = doc.pages.find((p) => p.id === activePageId) ?? doc.pages[0]
+  const components = activePage.components
 
   // Autosave, but a beat after you stop rather than on every keystroke:
   // localStorage writes are synchronous: stringifying the document and writing
@@ -205,6 +209,8 @@ export default function App() {
           </button>
         </div>
       )}
+
+      <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
 
       <div className="flex min-h-0 flex-1">
         <FilterRail

@@ -3,8 +3,10 @@
 What is actually in the code, and the traps that cost time. `SPEC.md` says what the
 tool should be; this says how it currently is.
 
-Status: **Phase 1 and 2 complete.** Phase 3 in progress: the global filter rail shipped;
-per-component metadata was tried and parked (see `SPEC.md`).
+Status: **Phase 1, 2 and 3 complete.** Phase 4 in progress: the quick picker is now a
+searchable catalog (the keyed five keep their number keys; everything else is search-only),
+Pie/Donut and a Tabs placeholder landed as the first catalog-only types, and dashboards are
+now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 
 ---
 
@@ -15,7 +17,8 @@ per-component metadata was tried and parked (see `SPEC.md`).
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder SVG |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
-| `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas |
+| `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
+| `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
 | `src/templates.js` | The three starter dashboards |
 | `src/components/FilterRail.jsx` | The collapsible left filter rail |
 | `src/io/htmlExport.js` | Read-only self-contained HTML export |
@@ -32,7 +35,22 @@ One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is exported
 saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
-`setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`.
+`setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`, plus the filter and page
+actions below.
+
+**Pages.** `doc.pages` was always an array but only `pages[0]` was ever used; it now holds
+many. `activePageId` is view state on the reducer (like `selectedId`), not part of the
+saved document — a reload always opens on the first page. Every component action targets
+the active page via `activePage(state)` / `replaceComponents(doc, pageId, components)`.
+Page actions: `addPage`, `selectPage` (view-only, not history, like `select`),
+`renamePage` (coalesces), `deletePage` (never removes the last page; moves to a neighbour
+if the active one goes). `validPageId` keeps `activePageId` pointing at a real page after
+undo, redo, import or reset. Dashboard filters stay document-level, shared across pages.
+
+The HTML export renders every page. One page looks exactly as before; two or more get a
+tab strip whose switching is driven by a small **navigation-only** inline script (the one
+script in the file), so the viewport does not jump the way a CSS `:target` anchor makes it.
+The export stays read-only — the script only toggles a visibility class, nothing editable.
 
 HTML export (`htmlExport.js`) is a pure `doc -> string` function plus a browser download
 wrapper, so it is Node-testable. The output is one self-contained file — all CSS inline,
