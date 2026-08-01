@@ -136,6 +136,38 @@ types: (1) the number-key model `1`–`5` cannot address 25 types, so the QuickP
 categories or type-to-filter search; (2) hold the anti-sprawl line — more types tempt
 cramming, which is the failure the tool exists to prevent (principle #1).
 
+Shipped so far in Phase 4:
+
+1. ~~**Searchable quick picker**~~ — **done** (2026-08-01). The popular five keep their
+   number keys and toolbar buttons; everything else is search-only, reached by typing in
+   the picker. `TYPE_ORDER` (keyed five) and `CATALOG_ORDER` (full list) in `registry.jsx`.
+2. ~~**Pie/Donut**~~ — **done** (2026-08-01). First catalog-only type.
+3. ~~**Multi-page dashboards**~~ — **done** (2026-08-01). Top-level page tabs (Superset's
+   convention). `activePageId` is reducer view state; filters stay document-level. HTML
+   export renders every page, switchable by a navigation-only inline script.
+4. ~~**Tabs element, placeholder**~~ — **done** (2026-08-01). A catalog-only card: label
+   strip over an empty region. Intentionally a placeholder — the next item makes it real.
+
+Next up — **real nested Tabs (place charts inside a tab)**. Owner chose a nested grid per
+tab over a simple list (2026-08-01). This is a core-model change, so it is phased and each
+phase must be tested and committed before the next:
+
+- **4a** — data model + nested render + place-into-tab. The Tabs card grows
+  `tabs: [{ id, name, components: [] }]`; each child is an ordinary component with a layout
+  in the tab's own 12-col grid. Add a chart into the active tab (auto-placed, no inner drag
+  yet). Reducer actions gain a container target; new `addTab` / `renameTab` / `deleteTab` /
+  `selectTab`. Export and import handle the nesting. This phase alone delivers the value:
+  charts live in a tab, persist, and export per tab.
+- **4b** — inner drag / resize / nudge. Nested `react-grid-layout` inside the card. The
+  risky bit: re-hits the v2 traps and the outer/inner drag conflict (dragging a child must
+  not drag the container — needs `draggableCancel` and event-propagation care).
+- **4c** — polish: nested duplicate, per-tab delete/rename, inner export tab switch,
+  keyboard reach.
+
+Do not start 4b until 4a is committed and tested; do not let the nested-grid work balloon
+the diff. If a phase makes the canvas worse, revert it rather than debug (working
+agreement).
+
 ---
 
 ## Phase 5 — rollout
