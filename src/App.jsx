@@ -42,6 +42,25 @@ export default function App() {
       return true
     }
   })
+  // Dark theme. Persisted; falls back to the OS preference the first time.
+  const [dark, setDark] = useState(() => {
+    try {
+      const saved = localStorage.getItem('fastdash:theme')
+      if (saved) return saved === 'dark'
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    try {
+      localStorage.setItem('fastdash:theme', dark ? 'dark' : 'light')
+    } catch {
+      // remembering the theme is a nicety, not worth failing over
+    }
+  }, [dark])
+
   // True while the rail is animating its width. During that window the cards'
   // CSS transition is switched off so react-grid-layout can track the animating
   // canvas width frame-by-frame; otherwise the transition fights the per-frame
@@ -203,13 +222,15 @@ export default function App() {
   return (
     // App shell: fixed to the viewport, with the filter rail and the canvas
     // each scrolling on their own.
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900">
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
       <Toolbar
         doc={doc}
         dispatch={dispatch}
         count={components.length}
         canUndo={state.past.length > 0}
         canRedo={state.future.length > 0}
+        dark={dark}
+        onToggleTheme={() => setDark((d) => !d)}
         onExport={() => downloadDocument(doc)}
         onExportHtml={() => downloadHtmlExport(doc)}
         onImportFile={handleImportFile}
@@ -218,7 +239,7 @@ export default function App() {
       />
 
       {error && (
-        <div className="border-b border-gray-300 bg-gray-100 px-4 py-2 text-xs text-gray-700">
+        <div className="border-b border-gray-300 bg-gray-100 px-4 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
           {error}
           <button className="ml-2 underline" onClick={() => setError(null)}>
             dismiss

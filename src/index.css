@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Manual dark mode: `dark:` utilities apply when <html> carries the `dark`
+   class, which App toggles from a persisted preference — not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* react-grid-layout ships a bright red drop placeholder. Grayscale keeps the
    canvas neutral — the point is arguing about structure, not colour.
    The extra `.react-grid-layout` is for specificity: the library's stylesheet

@@ -15,16 +15,16 @@ import { FILTER_TYPES } from '../state/document.js'
 export default function FilterRail({ filters, open, onToggle, dispatch }) {
   return (
     <aside
-      className={`flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out ${
+      className={`flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out dark:border-gray-700 dark:bg-gray-800 ${
         open ? 'w-60' : 'w-11'
       }`}
     >
       {open ? (
         <div className="flex h-full w-60 flex-col overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2 dark:border-gray-700">
             <span className="text-[10px] tracking-wide text-gray-400 uppercase">Filters</span>
             <button
-              className="flex size-6 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100"
+              className="flex size-6 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
               onClick={onToggle}
               title="Hide filters"
               aria-label="Hide filters"
@@ -53,7 +53,7 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
             ))}
 
             <button
-              className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+              className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
               onClick={() => dispatch({ type: 'addFilter' })}
             >
               + add filter
@@ -63,15 +63,15 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
       ) : (
         // The whole strip is the button, so the target is large and obvious.
         <button
-          className="group flex h-full w-11 flex-col items-center gap-2 py-2 hover:bg-gray-50"
+          className="group flex h-full w-11 flex-col items-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700"
           onClick={onToggle}
           title="Show filters"
           aria-label="Show filters"
         >
-          <span className="flex size-8 items-center justify-center rounded-sm bg-gray-800 text-sm text-white group-hover:bg-gray-900">
+          <span className="flex size-8 items-center justify-center rounded-sm bg-gray-800 text-sm text-white group-hover:bg-gray-900 dark:bg-gray-600 dark:group-hover:bg-gray-500">
             »
           </span>
-          <span className="text-[11px] font-medium tracking-wide text-gray-600 uppercase [writing-mode:vertical-rl]">
+          <span className="text-[11px] font-medium tracking-wide text-gray-600 uppercase [writing-mode:vertical-rl] dark:text-gray-300">
             Filters{filters.length > 0 ? ` · ${filters.length}` : ''}
           </span>
         </button>
@@ -97,10 +97,10 @@ function FilterRow({ filter, dispatch, isFirst, isLast, onUp, onDown }) {
   }
 
   return (
-    <div onKeyDown={onKeyDown} className="rounded-sm border border-gray-200 p-2">
+    <div onKeyDown={onKeyDown} className="rounded-sm border border-gray-200 p-2 dark:border-gray-700">
       <div className="mb-1 flex items-center gap-1">
         <input
-          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-gray-700 outline-none focus:bg-gray-50"
+          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-gray-700 outline-none focus:bg-gray-50 dark:text-gray-200 dark:focus:bg-gray-700"
           value={filter.label}
           onChange={(e) => dispatch({ type: 'renameFilter', id: filter.id, label: e.target.value })}
           aria-label="Filter label"
@@ -133,7 +133,7 @@ function FilterRow({ filter, dispatch, isFirst, isLast, onUp, onDown }) {
       </div>
 
       <select
-        className="mb-2 w-full rounded-sm border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-600 outline-none focus:border-gray-400"
+        className="mb-2 w-full rounded-sm border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-600 outline-none focus:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         value={filter.type}
         onChange={(e) => dispatch({ type: 'setFilterType', id: filter.id, filterType: e.target.value })}
         aria-label="Filter type"
@@ -153,7 +153,7 @@ function FilterRow({ filter, dispatch, isFirst, isLast, onUp, onDown }) {
 // A neutral, grayscale placeholder that reads as the right kind of control at a
 // glance — the whole point of the tool: real BI silhouettes, no real data.
 function ControlPreview({ type }) {
-  const box = 'flex h-6 items-center rounded-sm border border-gray-200 bg-gray-50 px-2 text-[11px] text-gray-400'
+  const box = 'flex h-6 items-center rounded-sm border border-gray-200 bg-gray-50 px-2 text-[11px] text-gray-400 dark:border-gray-600 dark:bg-gray-700'
 
   switch (type) {
     case 'range':

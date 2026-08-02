@@ -59,7 +59,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
     // itself for clicks in here (children select themselves), and so the outer
     // grid does not drag the container when you interact inside a tab.
     <div data-tabs-content className="flex h-full flex-col">
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 pb-1">
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 pb-1 dark:border-gray-700">
         {tabs.map((t) => {
           if (editingId === t.id) {
             return (
@@ -76,7 +76,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
                     e.target.blur()
                   }
                 }}
-                className="no-drag w-24 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs outline-none"
+                className="no-drag w-24 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                 aria-label="Tab name"
               />
             )
@@ -87,8 +87,8 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
               key={t.id}
               className={`flex shrink-0 items-center rounded-sm border text-xs ${
                 on
-                  ? 'border-gray-300 bg-gray-100 text-gray-800'
-                  : 'border-transparent text-gray-500 hover:bg-gray-50'
+                  ? 'border-gray-300 bg-gray-100 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
               }`}
             >
               <button
@@ -101,7 +101,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
               </button>
               {tabs.length > 1 && (
                 <button
-                  className="px-1 text-gray-400 hover:text-gray-700"
+                  className="px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   onClick={() => dispatch({ type: 'deleteTab', containerId: component.id, tabId: t.id })}
                   title="Delete tab"
                   aria-label={`Delete ${t.name}`}
@@ -113,7 +113,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
           )
         })}
         <button
-          className="shrink-0 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+          className="shrink-0 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           onClick={() => dispatch({ type: 'addTab', id: component.id })}
           title="Add tab"
         >
@@ -141,7 +141,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
         )}
         {active && (
           <button
-            className="mt-2 flex w-full items-center justify-center rounded-sm border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:border-gray-400 hover:text-gray-600"
+            className="mt-2 flex w-full items-center justify-center rounded-sm border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:border-gray-400 hover:text-gray-600 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-300"
             onClick={(e) => onAddInto(component.id, active.id, { clientX: e.clientX, clientY: e.clientY })}
           >
             + Add chart

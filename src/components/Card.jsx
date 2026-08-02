@@ -15,7 +15,7 @@ export const COMMENT_MAX = 280
 
 function UnknownPlaceholder() {
   return (
-    <div className="flex h-full items-center justify-center rounded-sm border border-dashed border-gray-200 text-[11px] text-gray-400">
+    <div className="flex h-full items-center justify-center rounded-sm border border-dashed border-gray-200 text-[11px] text-gray-400 dark:border-gray-600">
       unknown component type
     </div>
   )
@@ -62,21 +62,21 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
     return (
       <div
         onMouseDown={onSelect}
-        className={`flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white px-3 select-none ${
-          selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200'
+        className={`flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white dark:bg-gray-800 px-3 select-none ${
+          selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200 dark:border-gray-700'
         }`}
       >
         <input
-          className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold tracking-wide text-gray-600 uppercase outline-none select-text focus:bg-gray-50"
+          className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold tracking-wide text-gray-600 uppercase outline-none select-text focus:bg-gray-50 dark:text-gray-200 dark:focus:bg-gray-700"
           value={component.title}
           onChange={(e) => onRename(e.target.value)}
           aria-label="Section title"
         />
-        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase">
+        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
           {def.label}
         </span>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -84,7 +84,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
@@ -100,22 +100,22 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   return (
     <div
       onMouseDown={onSelect}
-      className={`flex h-full cursor-move flex-col overflow-hidden rounded-sm border bg-white select-none ${
-        selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200'
+      className={`flex h-full cursor-move flex-col overflow-hidden rounded-sm border bg-white dark:bg-gray-800 select-none ${
+        selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200 dark:border-gray-700'
       }`}
     >
-      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5">
+      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
         <input
-          className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold text-gray-800 outline-none select-text focus:bg-gray-50"
+          className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold text-gray-800 outline-none select-text focus:bg-gray-50 dark:text-gray-100 dark:focus:bg-gray-700"
           value={component.title}
           onChange={(e) => onRename(e.target.value)}
           aria-label="Component title"
         />
-        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase">
+        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
           {def.label}
         </span>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -123,7 +123,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
@@ -147,7 +147,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
       </div>
 
       <textarea
-        className="no-drag h-10 shrink-0 cursor-text resize-none border-t border-gray-100 bg-transparent px-3 py-1.5 text-[11px] leading-snug text-gray-600 outline-none select-text placeholder:text-gray-300 focus:bg-gray-50"
+        className="no-drag h-10 shrink-0 cursor-text resize-none border-t border-gray-100 bg-transparent px-3 py-1.5 text-[11px] leading-snug text-gray-600 outline-none select-text placeholder:text-gray-300 focus:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:focus:bg-gray-700"
         value={component.comment ?? ''}
         maxLength={COMMENT_MAX}
         onChange={(e) => onComment(e.target.value)}

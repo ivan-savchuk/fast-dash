@@ -27,7 +27,7 @@ export default function PageTabs({ pages, activeId, dispatch }) {
   }
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-1.5">
+    <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-1.5 dark:border-gray-700 dark:bg-gray-800">
       {pages.map((page) => {
         const active = page.id === activeId
         if (editingId === page.id) {
@@ -45,7 +45,7 @@ export default function PageTabs({ pages, activeId, dispatch }) {
                   e.target.blur()
                 }
               }}
-              className="w-32 rounded-sm border border-gray-300 px-2 py-1 text-sm outline-none"
+              className="w-32 rounded-sm border border-gray-300 px-2 py-1 text-sm outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               aria-label="Page name"
             />
           )
@@ -55,8 +55,8 @@ export default function PageTabs({ pages, activeId, dispatch }) {
             key={page.id}
             className={`flex shrink-0 items-center rounded-sm border text-sm ${
               active
-                ? 'border-gray-300 bg-gray-100 text-gray-900'
-                : 'border-transparent text-gray-500 hover:bg-gray-50'
+                ? 'border-gray-300 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                : 'border-transparent text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
             }`}
           >
             <button
@@ -81,7 +81,7 @@ export default function PageTabs({ pages, activeId, dispatch }) {
         )
       })}
       <button
-        className="shrink-0 rounded-sm border border-gray-300 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50"
+        className="shrink-0 rounded-sm border border-gray-300 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
         onClick={() => dispatch({ type: 'addPage' })}
         title="Add page"
       >

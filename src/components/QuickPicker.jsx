@@ -68,7 +68,7 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
       {/* Anything outside the menu dismisses it. */}
       <div className="fixed inset-0 z-40" onMouseDown={onClose} />
       <div
-        className="fixed z-50 overflow-hidden rounded-sm border border-gray-300 bg-white shadow-lg"
+        className="fixed z-50 overflow-hidden rounded-sm border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
         style={{ left, top, width: WIDTH }}
         role="menu"
       >
@@ -81,18 +81,20 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
           }}
           placeholder="Search components…"
           aria-label="Search components"
-          className="w-full border-b border-gray-200 px-3 py-2 text-sm outline-none placeholder:text-gray-400"
+          className="w-full border-b border-gray-200 px-3 py-2 text-sm outline-none placeholder:text-gray-400 dark:border-gray-700 dark:text-gray-100"
         />
         <div className="max-h-64 overflow-auto py-1">
           {matches.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-400">No match</div>
+            <div className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No match</div>
           ) : (
             matches.map((type, i) => (
               <button
                 key={type}
                 role="menuitem"
                 className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm ${
-                  i === active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  i === active
+                    ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
+                    : 'text-gray-700 dark:text-gray-200'
                 }`}
                 onMouseEnter={() => setHighlighted(i)}
                 onClick={() => onPick(type)}
