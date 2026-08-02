@@ -19,6 +19,7 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
 | `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
+| `src/components/TabsBody.jsx` | Inside a Tabs container: the inner tab strip and the active tab's nested grid |
 | `src/templates.js` | The three starter dashboards |
 | `src/components/FilterRail.jsx` | The collapsible left filter rail |
 | `src/io/htmlExport.js` | Read-only self-contained HTML export |
@@ -51,6 +52,44 @@ The HTML export renders every page. One page looks exactly as before; two or mor
 tab strip whose switching is driven by a small **navigation-only** inline script (the one
 script in the file), so the viewport does not jump the way a CSS `:target` anchor makes it.
 The export stays read-only — the script only toggles a visibility class, nothing editable.
+The same script also drives the inner tabs of a Tabs container, scoped to each container's
+own `.tabs-ph` so one container's tabs never switch another's. The export **compacts each
+grid vertically** (`compactVertical` in `htmlExport.js`) the way react-grid-layout does on
+screen, so a gap left in the stored `y` by a delete-after-duplicate does not show as an
+empty band in the file.
+
+## Tabs containers (nested grids)
+
+A Tabs component (`type: 'tabs'`) holds `tabs: [{ id, name, components: [] }]`. Each child
+is an ordinary component with its own layout in the tab's own 12-column grid, and it renders
+with the same full `<Card>` the page uses — title, type, duplicate, delete, description.
+`TabsBody.jsx` is the container's body: an inner tab strip over a **nested
+`react-grid-layout`** for the active tab. Inner active-tab is view state (`activeTabs`, a
+`{ containerId: tabId }` map on the reducer), not saved.
+
+Component ids are globally unique, so `updateInList` / `removeInList` / `findInList` in
+`document.js` locate a component by id whether it is on the page or one tab deep — that is
+why `rename`, `setComment` and `delete` need no container argument. `add`, `setLayout` and
+`duplicate` do take a `container: { containerId, tabId }` (add and layout write into a
+specific tab; duplicate is nested-aware and deep-clones a Tabs container's `tabs` so a copy
+never shares tab objects with its source). Tab actions: `addTab`, `selectTab` (view-only,
+not history), `renameTab` (coalesces), `deleteTab` (keeps at least one tab).
+
+**The outer/inner drag conflict** is resolved with two different cancel selectors, not
+event plumbing:
+
+- The **outer** page grid (`Canvas.jsx`) cancels on `.no-drag, [data-tabs-content]`. The
+  tab body carries `data-tabs-content`, so dragging anywhere inside a tab never drags the
+  container — the container is moved by its header, resized by its corner.
+- The **nested** grid cancels on plain `.no-drag`, which is exactly the class `Card` puts
+  on its own title, description and buttons — so those still cancel a child drag and stay
+  typeable. The tab body must therefore **not** be `.no-drag` itself, or the nested grid
+  would refuse to drag its own children (every child is inside it).
+
+A child click selects the child, not the container: `Card`'s select handler ignores
+mousedowns that land in `[data-tabs-content]`, and the child's own `<Card>` selects itself.
+The select is deliberately **not** `stopPropagation`'d, because the nested grid starts its
+drag from the same mousedown and would otherwise never see it.
 
 HTML export (`htmlExport.js`) is a pure `doc -> string` function plus a browser download
 wrapper, so it is Node-testable. The output is one self-contained file — all CSS inline,

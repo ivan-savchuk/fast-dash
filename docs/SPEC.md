@@ -184,8 +184,8 @@ round-trip. Version the schema from day one.
 
 KPI card, time series, bar, table, text — the popular five, each with a default size and
 a number-key shortcut. Then catalog-only types with no shortcut, reached through the quick
-picker's search: Pie/Donut, and a Tabs element (currently a placeholder strip, being
-upgraded to host real nested cards). A new type is one entry in `registry.jsx` plus its
+picker's search: Pie/Donut, and a Tabs element that hosts real nested cards — each tab is
+its own 12-column grid holding ordinary components with full card chrome (see `NOTES.md`). A new type is one entry in `registry.jsx` plus its
 place in `CATALOG_ORDER`; if it is one of the popular few, also in `TYPE_ORDER`.
 
 Dashboards are multi-page (`doc.pages`), switched by the tab strip; see `docs/NOTES.md`.

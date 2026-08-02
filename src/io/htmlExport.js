@@ -34,6 +34,11 @@ export function renderDashboardHtml(doc) {
   const title = doc.title || 'Untitled dashboard'
   const filters = doc.filters ?? []
   const pages = doc.pages ?? []
+  // The one script in the file, and only when something needs switching:
+  // more than one page, or any Tabs container (whose inner tabs also switch).
+  const needsScript =
+    pages.length > 1 || pages.some((p) => (p.components ?? []).some((c) => c.type === 'tabs'))
+  const script = needsScript ? `\n<script>${TAB_SCRIPT}</script>` : ''
 
   return `<!doctype html>
 <html lang="en">
@@ -48,7 +53,7 @@ export function renderDashboardHtml(doc) {
 <div class="shell">
 ${renderFilters(filters)}
 <main class="canvas-wrap">${renderPages(pages)}</main>
-</div>
+</div>${script}
 </body>
 </html>`
 }
@@ -56,8 +61,8 @@ ${renderFilters(filters)}
 // One page reads exactly as before — just its grid. Two or more become a tab
 // strip: a row of tabs plus one section per page, only the active one shown.
 // A viewer clicks a tab and the page swaps in place. The switch is a class
-// toggle driven by TAB_SCRIPT (emitted alongside), rather than a CSS `:target`
-// anchor, so the viewport does not scroll on switch.
+// toggle driven by TAB_SCRIPT (emitted once at the document level), rather than
+// a CSS `:target` anchor, so the viewport does not scroll on switch.
 function renderPages(pages) {
   if (pages.length <= 1) return renderCanvas(pages[0]?.components ?? [])
   const tabs = pages
@@ -72,21 +77,32 @@ function renderPages(pages) {
         `<section class="page${i === 0 ? ' on' : ''}" data-page="pg-${esc(p.id)}">${renderCanvas(p.components ?? [])}</section>`,
     )
     .join('\n')
-  return `<nav class="ptabs">${tabs}</nav>\n<div class="pages">${sections}</div>\n<script>${TAB_SCRIPT}</script>`
+  return `<nav class="ptabs">${tabs}</nav>\n<div class="pages">${sections}</div>`
 }
 
-// Navigation only: swap which page tab is active, on click or Enter/Space. No
-// data touched, nothing editable — the file stays read-only.
+// Navigation only, for both page tabs and the inner tabs of a Tabs container.
+// Page tabs are global; inner tabs are scoped to their own `.tabs-ph` so one
+// container's tabs never switch another's. No data is touched and nothing is
+// editable — the file stays read-only.
 const TAB_SCRIPT = `
 (function(){
-  var tabs=document.querySelectorAll('.ptab');
-  function show(id){
+  function pick(id){
     document.querySelectorAll('.ptab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-tab')===id);});
     document.querySelectorAll('.page').forEach(function(p){p.classList.toggle('on',p.getAttribute('data-page')===id);});
   }
-  tabs.forEach(function(t){
-    t.addEventListener('click',function(){show(this.getAttribute('data-tab'));});
-    t.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(this.getAttribute('data-tab'));}});
+  document.querySelectorAll('.ptab').forEach(function(t){
+    t.addEventListener('click',function(){pick(this.getAttribute('data-tab'));});
+    t.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(this.getAttribute('data-tab'));}});
+  });
+  document.querySelectorAll('.itab').forEach(function(t){
+    function inner(){
+      var root=t.closest('.tabs-ph'); if(!root)return;
+      var id=t.getAttribute('data-itab');
+      root.querySelectorAll('.itab').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-itab')===id);});
+      root.querySelectorAll('.ipane').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-ipane')===id);});
+    }
+    t.addEventListener('click',inner);
+    t.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();inner();}});
   });
 })();`
 
@@ -105,7 +121,32 @@ ${filterControl(f.type)}
 
 function renderCanvas(components) {
   if (components.length === 0) return '<p class="empty">This dashboard has no components.</p>'
-  return `<div class="canvas">${components.map(renderCard).join('\n')}</div>`
+  return `<div class="canvas">${compactVertical(components).map(renderCard).join('\n')}</div>`
+}
+
+// The canvas uses react-grid-layout's vertical compactor, which pulls every
+// card up to the first free row. The stored layout is not always compact —
+// deleting a card (after a duplicate pushed its neighbours down, say) leaves a
+// gap in the y values that the editor hides but a raw CSS grid would show as an
+// empty band. So the export compacts the same way the screen does: take cards
+// top-to-bottom and slide each as far up as it will go without colliding.
+function compactVertical(components) {
+  const sorted = [...components].sort(
+    (a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x,
+  )
+  const placed = []
+  for (const c of sorted) {
+    let l = { ...c.layout }
+    while (l.y > 0 && !placed.some((p) => overlaps(p.layout, { ...l, y: l.y - 1 }))) {
+      l = { ...l, y: l.y - 1 }
+    }
+    placed.push({ ...c, layout: l })
+  }
+  return placed
+}
+
+function overlaps(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
 }
 
 function renderCard(c) {
@@ -114,7 +155,7 @@ function renderCard(c) {
   // CSS grid lines are 1-based; the same 12-col / 40px / 12px-gap geometry as
   // the editor, so the export matches what was on the canvas.
   const style = `grid-column:${x + 1}/span ${w};grid-row:${y + 1}/span ${h}`
-  const body = (PLACEHOLDERS[c.type] ?? placeholderUnknown)()
+  const body = c.type === 'tabs' ? renderTabsCard(c) : (PLACEHOLDERS[c.type] ?? placeholderUnknown)()
   const comment = c.comment
     ? `<div class="card-note">${esc(c.comment)}</div>`
     : ''
@@ -123,6 +164,29 @@ function renderCard(c) {
 <div class="card-body">${body}</div>
 ${comment}
 </div>`
+}
+
+// A Tabs container in the export: the real tab names as a strip, and one pane
+// per tab holding that tab's cards in a nested 12-column grid (the same card
+// markup as the page). Only the active pane shows; TAB_SCRIPT switches them.
+function renderTabsCard(c) {
+  const tabs = c.tabs ?? []
+  const strip = tabs
+    .map(
+      (t, i) =>
+        `<span class="itab${i === 0 ? ' on' : ''}" role="tab" tabindex="0" data-itab="ip-${esc(t.id)}">${esc(t.name ?? '')}</span>`,
+    )
+    .join('')
+  const panes = tabs
+    .map((t, i) => {
+      const comps = t.components ?? []
+      const inner = comps.length
+        ? `<div class="canvas">${compactVertical(comps).map(renderCard).join('')}</div>`
+        : `<div class="tabs-panel"></div>`
+      return `<div class="ipane${i === 0 ? ' on' : ''}" data-ipane="ip-${esc(t.id)}">${inner}</div>`
+    })
+    .join('')
+  return `<div class="tabs-ph"><div class="tabs-strip">${strip}</div><div class="tabs-body">${panes}</div></div>`
 }
 
 // --- component placeholders (grayscale silhouettes, no data) ---
@@ -159,11 +223,6 @@ ${[34, 46, 26, 52, 40, 56, 30].map((hh, i) => `<rect x="${i * 14 + 2}" y="${58 -
 <circle cx="50" cy="30" r="18" stroke="${GRAY.mid}" stroke-dasharray="39.58 73.52" stroke-dashoffset="-50.89"/>
 <circle cx="50" cy="30" r="18" stroke="${GRAY.light}" stroke-dasharray="22.62 90.48" stroke-dashoffset="-90.48"/>
 </g></svg>`,
-  // In-page Tabs element: label strip over an empty region. Placeholder only.
-  tabs: () => `<div class="tabs-ph">
-<div class="tabs-strip"><span class="t on">Tab A</span><span class="t">Tab B</span><span class="t">Tab C</span></div>
-<div class="tabs-panel"></div>
-</div>`,
 }
 
 function placeholderUnknown() {
@@ -231,10 +290,14 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
 .tabs-ph{display:flex;flex-direction:column;height:100%}
-.tabs-strip{display:flex;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
-.tabs-strip .t{padding:2px 8px;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}
-.tabs-strip .t.on{border-color:#d1d5db;background:#f3f4f6;color:#6b7280}
-.tabs-panel{flex:1;margin-top:8px;border:1px dashed #e5e7eb;border-radius:2px;background:#f9fafb}
+.tabs-strip{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
+.itab{padding:2px 8px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}
+.itab:hover{color:#6b7280}
+.itab.on{border-color:#d1d5db;background:#f3f4f6;color:#6b7280}
+.tabs-body{flex:1;min-height:0;margin-top:8px;overflow:auto}
+.ipane{display:none}
+.ipane.on{display:block}
+.tabs-panel{height:100%;min-height:80px;border:1px dashed #e5e7eb;border-radius:2px;background:#f9fafb}
 .unknown{display:flex;align-items:center;justify-content:center;height:100%;border:1px dashed #e5e7eb;border-radius:2px;font-size:11px;color:#9ca3af}
 .box{display:flex;align-items:center;height:24px;border:1px solid #e5e7eb;border-radius:2px;background:#f9fafb;padding:0 8px;font-size:11px;color:#9ca3af}
 .box.between{justify-content:space-between}

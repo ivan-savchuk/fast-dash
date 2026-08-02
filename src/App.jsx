@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useReducer, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
 import FilterRail from './components/FilterRail.jsx'
@@ -42,11 +42,17 @@ export default function App() {
       return true
     }
   })
-  const { doc, selectedId, activePageId } = state
+  const { doc, selectedId, activePageId, activeTabs } = state
   // The page the user is looking at; the reducer keeps activePageId valid, but
   // fall back to the first page defensively for the very first render.
   const activePage = doc.pages.find((p) => p.id === activePageId) ?? doc.pages[0]
   const components = activePage.components
+
+  // Open the quick picker aimed at a tab inside a Tabs container, rather than
+  // at the page. Stable identity so it does not defeat the memo on Card.
+  const handleAddInto = useCallback((containerId, tabId, at) => {
+    setPicker({ clientX: at.clientX, clientY: at.clientY, container: { containerId, tabId } })
+  }, [])
 
   // Autosave, but a beat after you stop rather than on every keystroke:
   // localStorage writes are synchronous: stringifying the document and writing
@@ -234,8 +240,10 @@ export default function App() {
           <Canvas
             components={components}
             selectedId={selectedId}
+            activeTabs={activeTabs}
             dispatch={dispatch}
             onEmptyClick={setPicker}
+            onAddInto={handleAddInto}
           />
         </main>
       </div>
@@ -243,9 +251,16 @@ export default function App() {
       {picker && (
         <QuickPicker
           at={picker}
+          // No tabs inside tabs: only one level of nesting is supported.
+          exclude={picker.container ? ['tabs'] : undefined}
           onClose={() => setPicker(null)}
           onPick={(componentType) => {
-            dispatch({ type: 'add', componentType, at: { x: picker.x, y: picker.y } })
+            if (picker.container) {
+              // Auto-placed inside the tab — no grid cell to honour yet (4b).
+              dispatch({ type: 'add', componentType, container: picker.container })
+            } else {
+              dispatch({ type: 'add', componentType, at: { x: picker.x, y: picker.y } })
+            }
             setPicker(null)
           }}
         />

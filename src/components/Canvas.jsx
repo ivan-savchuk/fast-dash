@@ -8,7 +8,7 @@ import 'react-resizable/css/styles.css'
 import { useMemo, useRef } from 'react'
 
 import Card from './Card.jsx'
-import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
+import { GRID_COLS, GRID_ROW_HEIGHT, tabChildIds } from '../state/document.js'
 
 // These must be module constants, not inline object literals. The library
 // memoises its item rendering on the identity of these objects, so a fresh
@@ -23,7 +23,14 @@ const GRID_CONFIG = {
 // `threshold` is how far the mouse must move before a drag starts (default 3px).
 // 1px makes a card pick up the moment you move; a plain click still selects,
 // because a click that never moves never crosses the threshold.
-const DRAG_CONFIG = { enabled: true, cancel: '.no-drag', threshold: 1 }
+//
+// `[data-tabs-content]` is added to the cancel list so that dragging inside a
+// Tabs container's body never drags the container itself — the nested grid in
+// there handles its own children. The container is still dragged by its header.
+// The nested grid uses a plain `.no-drag` cancel (Card's own chrome), which is
+// why the two are different: if the tab body were marked `.no-drag`, the nested
+// grid would refuse to drag its own children too.
+const DRAG_CONFIG = { enabled: true, cancel: '.no-drag, [data-tabs-content]', threshold: 1 }
 const RESIZE_CONFIG = { enabled: true, handles: ['se'] }
 
 // react-grid-layout does the placement, snapping, collision and resizing.
@@ -31,7 +38,14 @@ const RESIZE_CONFIG = { enabled: true, handles: ['se'] }
 // positions back through onDragStop / onResizeStop, which we push into the
 // reducer so the document stays the single source of truth.
 
-export default function Canvas({ components, selectedId, dispatch, onEmptyClick }) {
+export default function Canvas({
+  components,
+  selectedId,
+  activeTabs,
+  dispatch,
+  onEmptyClick,
+  onAddInto,
+}) {
   // `mounted` is false until the container has been measured. Rendering the
   // grid before that places cards using a guessed 1280px width.
   const { width, containerRef, mounted } = useContainerWidth()
@@ -112,11 +126,27 @@ export default function Canvas({ components, selectedId, dispatch, onEmptyClick 
           onDragStop={commitLayout}
           onResizeStop={commitLayout}
         >
-          {components.map((c) => (
-            <div key={c.id}>
-              <Card component={c} selected={c.id === selectedId} dispatch={dispatch} />
-            </div>
-          ))}
+          {components.map((c) => {
+            // Only Tabs containers need the nested props; for every other card
+            // these stay null, so the memo on Card is not disturbed when the
+            // selection or a tab changes elsewhere.
+            const isTabs = c.type === 'tabs'
+            const activeTabId = isTabs ? (activeTabs[c.id] ?? c.tabs?.[0]?.id ?? null) : null
+            const selectedChildId =
+              isTabs && tabChildIds(c).includes(selectedId) ? selectedId : null
+            return (
+              <div key={c.id}>
+                <Card
+                  component={c}
+                  selected={c.id === selectedId}
+                  activeTabId={activeTabId}
+                  selectedChildId={selectedChildId}
+                  onAddInto={onAddInto}
+                  dispatch={dispatch}
+                />
+              </div>
+            )
+          })}
         </GridLayout>
       )}
       </div>

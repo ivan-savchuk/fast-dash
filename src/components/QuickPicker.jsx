@@ -11,15 +11,18 @@ const HEIGHT = 320
 // is. The five popular types keep their number keys on the toolbar; here the
 // whole catalog is reachable by typing a few letters. Type to filter, arrows
 // plus Enter to browse, Esc to close.
-export default function QuickPicker({ at, onPick, onClose }) {
+export default function QuickPicker({ at, onPick, onClose, exclude }) {
   const [query, setQuery] = useState('')
   const [highlighted, setHighlighted] = useState(0)
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return CATALOG_ORDER
-    return CATALOG_ORDER.filter((type) => COMPONENT_TYPES[type].label.toLowerCase().includes(q))
-  }, [query])
+    const pool = exclude?.length
+      ? CATALOG_ORDER.filter((type) => !exclude.includes(type))
+      : CATALOG_ORDER
+    if (!q) return pool
+    return pool.filter((type) => COMPONENT_TYPES[type].label.toLowerCase().includes(q))
+  }, [query, exclude])
 
   // Keep the highlight in range as the list narrows under a new query.
   const active = Math.min(highlighted, Math.max(matches.length - 1, 0))

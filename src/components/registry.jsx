@@ -205,7 +205,10 @@ export const COMPONENT_TYPES = {
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
-    defaultSize: { w: 6, h: 6 },
+    // Full width and tall: the nested grid inside a tab is a 12-column grid of
+    // the container's own width, so a full-width container makes a child chart
+    // the same pixel size it would be on the page. A narrow container squeezes.
+    defaultSize: { w: 12, h: 10 },
     Placeholder: TabsPlaceholder,
   },
 }

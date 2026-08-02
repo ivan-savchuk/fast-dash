@@ -1,6 +1,7 @@
 import { memo } from 'react'
 
 import { COMPONENT_TYPES } from './registry.jsx'
+import TabsBody from './TabsBody.jsx'
 
 // Superset's card pattern: flat white card, hairline border, a header strip
 // with the title on the left, the chart body, then a one-line description.
@@ -27,12 +28,20 @@ export default memo(Card)
 // `dispatch` is taken directly rather than as four callback props: a callback
 // created inline in the parent is a new value on every render, which would
 // defeat the memo above.
-function Card({ component, selected, dispatch }) {
+function Card({ component, selected, activeTabId, selectedChildId, onAddInto, dispatch }) {
   const id = component.id
+  const isTabs = component.type === 'tabs'
 
   // Text selection is suppressed one level up, in Canvas, so that the resize
   // handle is covered too.
-  const onSelect = () => dispatch({ type: 'select', id })
+  //
+  // For a Tabs container, a click inside the tab body selects the child there,
+  // not the container — so ignore mousedowns that land in `data-tabs-content`
+  // and let the child's own handler win. The header still selects the container.
+  const onSelect = (e) => {
+    if (isTabs && e.target.closest('[data-tabs-content]')) return
+    dispatch({ type: 'select', id })
+  }
   const onDelete = () => dispatch({ type: 'delete', id })
   const onDuplicate = () => dispatch({ type: 'duplicate', id })
   const onRename = (title) => dispatch({ type: 'rename', id, title })
@@ -84,7 +93,17 @@ function Card({ component, selected, dispatch }) {
       </div>
 
       <div className="min-h-0 flex-1 px-3 py-2">
-        <Placeholder />
+        {isTabs ? (
+          <TabsBody
+            component={component}
+            activeTabId={activeTabId}
+            selectedChildId={selectedChildId}
+            onAddInto={onAddInto}
+            dispatch={dispatch}
+          />
+        ) : (
+          <Placeholder />
+        )}
       </div>
 
       <textarea

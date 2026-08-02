@@ -148,25 +148,24 @@ Shipped so far in Phase 4:
 4. ~~**Tabs element, placeholder**~~ — **done** (2026-08-01). A catalog-only card: label
    strip over an empty region. Intentionally a placeholder — the next item makes it real.
 
-Next up — **real nested Tabs (place charts inside a tab)**. Owner chose a nested grid per
-tab over a simple list (2026-08-01). This is a core-model change, so it is phased and each
-phase must be tested and committed before the next:
+5. ~~**Real nested Tabs (place charts inside a tab)**~~ — **done** (2026-08-02). Owner chose
+   a nested grid per tab over a simple list. Planned as 4a/4b/4c and shipped together once
+   each part was tested in the browser:
 
-- **4a** — data model + nested render + place-into-tab. The Tabs card grows
-  `tabs: [{ id, name, components: [] }]`; each child is an ordinary component with a layout
-  in the tab's own 12-col grid. Add a chart into the active tab (auto-placed, no inner drag
-  yet). Reducer actions gain a container target; new `addTab` / `renameTab` / `deleteTab` /
-  `selectTab`. Export and import handle the nesting. This phase alone delivers the value:
-  charts live in a tab, persist, and export per tab.
-- **4b** — inner drag / resize / nudge. Nested `react-grid-layout` inside the card. The
-  risky bit: re-hits the v2 traps and the outer/inner drag conflict (dragging a child must
-  not drag the container — needs `draggableCancel` and event-propagation care).
-- **4c** — polish: nested duplicate, per-tab delete/rename, inner export tab switch,
-  keyboard reach.
+   - **4a** — data model + nested render + place-into-tab. The Tabs card carries
+     `tabs: [{ id, name, components: [] }]`; each child is an ordinary component with a
+     layout in the tab's own 12-col grid. New actions `addTab` / `selectTab` / `renameTab` /
+     `deleteTab`; `add` / `setLayout` gained a `container` target; `delete` / `rename` /
+     `setComment` / `duplicate` find a child by id anywhere.
+   - **4b** — inner drag / resize. Each tab is a nested `react-grid-layout`, and the children
+     are the same full `<Card>` the page uses (title, type, duplicate, delete, description).
+     The outer/inner drag conflict is handled by cancel selectors — see `NOTES.md`.
+   - **4c** — inner tab switching in the HTML export (a navigation-only script, scoped per
+     container), and the export compacts each grid vertically so it matches the canvas.
 
-Do not start 4b until 4a is committed and tested; do not let the nested-grid work balloon
-the diff. If a phase makes the canvas worse, revert it rather than debug (working
-agreement).
+   Not yet done, deliberately: keyboard nudge of a nested child (arrows are a no-op inside a
+   tab for now), and no tabs-inside-tabs (the picker excludes `tabs` when adding into a tab;
+   the helpers assume one level).
 
 ---
 

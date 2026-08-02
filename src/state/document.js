@@ -62,12 +62,22 @@ const BURST_EDITS = new Set([
   'nudge',
   'renameFilter',
   'renamePage',
+  'renameTab',
 ])
 
 export function initialState(doc = createDocument()) {
-  // activePageId is view state, not part of the saved document — a reload
-  // always opens on the first page. selectedId is likewise view state.
-  return { doc, selectedId: null, activePageId: doc.pages[0].id, past: [], future: [], lastEdit: null }
+  // activePageId and activeTabs are view state, not part of the saved document
+  // — a reload always opens on the first page and the first tab of each Tabs
+  // container. selectedId is likewise view state.
+  return {
+    doc,
+    selectedId: null,
+    activePageId: doc.pages[0].id,
+    activeTabs: {},
+    past: [],
+    future: [],
+    lastEdit: null,
+  }
 }
 
 // The page the user is currently looking at; every component action targets it.
@@ -110,7 +120,7 @@ function createComponent(componentType, components, at) {
   const slot = at
     ? { x: clamp(at.x, 0, GRID_COLS - w), y: Math.max(0, at.y) }
     : firstFreeSlot(components, w, h)
-  return {
+  const component = {
     id: nextId('c'),
     type: componentType,
     layout: { ...slot, w, h },
@@ -120,6 +130,74 @@ function createComponent(componentType, components, at) {
     spec: {},
     comment: '',
   }
+  // A Tabs container starts with one empty tab. Its children are ordinary
+  // components living in the tab's own list; see the nested helpers below.
+  if (componentType === 'tabs') {
+    component.tabs = [{ id: nextId('t'), name: 'Tab A', components: [] }]
+  }
+  return component
+}
+
+// --- nested-component helpers ---
+//
+// A Tabs container holds child components inside `tabs[].components`. Component
+// ids are globally unique, so title / comment edits and deletes can find a
+// component by id wherever it sits — top level or one tab deep — without the
+// caller knowing where it lives. Only one level of nesting is supported (no
+// tabs inside tabs), which these helpers assume by recursing only into `tabs`.
+
+function updateInList(components, id, fn) {
+  return components.map((c) => {
+    if (c.id === id) return fn(c)
+    if (c.type === 'tabs' && Array.isArray(c.tabs) && containsChild(c, id)) {
+      return {
+        ...c,
+        tabs: c.tabs.map((t) => ({
+          ...t,
+          components: t.components.map((cc) => (cc.id === id ? fn(cc) : cc)),
+        })),
+      }
+    }
+    return c
+  })
+}
+
+function removeInList(components, id) {
+  if (components.some((c) => c.id === id)) return components.filter((c) => c.id !== id)
+  return components.map((c) => {
+    if (c.type === 'tabs' && Array.isArray(c.tabs) && containsChild(c, id)) {
+      return {
+        ...c,
+        tabs: c.tabs.map((t) => ({ ...t, components: t.components.filter((cc) => cc.id !== id) })),
+      }
+    }
+    return c
+  })
+}
+
+function containsChild(container, id) {
+  return (container.tabs ?? []).some((t) => (t.components ?? []).some((cc) => cc.id === id))
+}
+
+// Copy a react-grid-layout position `l` onto component `c`, returning the same
+// reference when nothing moved so callers can detect a no-op drag cheaply.
+function applyLayout(c, l) {
+  if (!l) return c
+  const same = l.x === c.layout.x && l.y === c.layout.y && l.w === c.layout.w && l.h === c.layout.h
+  return same ? c : { ...c, layout: { x: l.x, y: l.y, w: l.w, h: l.h } }
+}
+
+function findInList(components, id) {
+  for (const c of components) {
+    if (c.id === id) return c
+    if (c.type === 'tabs' && Array.isArray(c.tabs)) {
+      for (const t of c.tabs) {
+        const hit = (t.components ?? []).find((cc) => cc.id === id)
+        if (hit) return hit
+      }
+    }
+  }
+  return null
 }
 
 // Undo and redo are handled here; every other action is applied by
@@ -184,7 +262,7 @@ function record(state, next, action) {
 }
 
 function componentExists(doc, id) {
-  return id != null && doc.pages.some((p) => p.components.some((c) => c.id === id))
+  return id != null && doc.pages.some((p) => findInList(p.components, id) != null)
 }
 
 // Every action returns a brand new state object — no mutation.
@@ -193,6 +271,29 @@ function applyAction(state, action) {
 
   switch (action.type) {
     case 'add': {
+      // Adding into a Tabs container's active tab rather than onto the page.
+      if (action.container) {
+        const { containerId, tabId } = action.container
+        const container = page.components.find((c) => c.id === containerId && c.type === 'tabs')
+        if (!container) return state
+        const tab = container.tabs.find((t) => t.id === tabId) ?? container.tabs[0]
+        const child = createComponent(action.componentType, tab.components, action.at)
+        const comps = page.components.map((c) =>
+          c.id !== containerId
+            ? c
+            : {
+                ...c,
+                tabs: c.tabs.map((t) =>
+                  t.id !== tab.id ? t : { ...t, components: [...t.components, child] },
+                ),
+              },
+        )
+        return {
+          ...state,
+          selectedId: child.id,
+          doc: replaceComponents(state.doc, page.id, comps),
+        }
+      }
       const component = createComponent(action.componentType, page.components, action.at)
       return {
         ...state,
@@ -202,28 +303,67 @@ function applyAction(state, action) {
     }
 
     case 'duplicate': {
-      const source = page.components.find((c) => c.id === (action.id ?? state.selectedId))
-      if (!source) return state
-      const copy = {
+      const id = action.id ?? state.selectedId
+
+      const makeCopy = (source) => ({
         ...source,
         id: nextId('c'),
         layout: { ...source.layout, y: source.layout.y + source.layout.h },
         // structuredClone so the copy does not share the spec object with its
         // source — phase 3 fills that in with nested values.
         spec: structuredClone(source.spec ?? {}),
+        // A duplicated Tabs container must not share tab objects with its
+        // source, or editing one would change the other's tabs.
+        ...(source.type === 'tabs' ? { tabs: structuredClone(source.tabs ?? []) } : {}),
+      })
+
+      const source = page.components.find((c) => c.id === id)
+      if (source) {
+        const copy = makeCopy(source)
+        return {
+          ...state,
+          selectedId: copy.id,
+          doc: replaceComponents(state.doc, page.id, [
+            ...makeRoomFor(page.components, source, copy),
+            copy,
+          ]),
+        }
       }
-      return {
-        ...state,
-        selectedId: copy.id,
-        doc: replaceComponents(state.doc, page.id, [
-          ...makeRoomFor(page.components, source, copy),
-          copy,
-        ]),
+
+      // Not on the page — look for it inside a Tabs container and duplicate it
+      // within its own tab.
+      for (const cont of page.components) {
+        if (cont.type !== 'tabs') continue
+        for (const tab of cont.tabs) {
+          const src = tab.components.find((c) => c.id === id)
+          if (!src) continue
+          const copy = makeCopy(src)
+          const comps = page.components.map((c) =>
+            c.id !== cont.id
+              ? c
+              : {
+                  ...c,
+                  tabs: c.tabs.map((t) =>
+                    t.id !== tab.id
+                      ? t
+                      : { ...t, components: [...makeRoomFor(t.components, src, copy), copy] },
+                  ),
+                },
+          )
+          return {
+            ...state,
+            selectedId: copy.id,
+            doc: replaceComponents(state.doc, page.id, comps),
+          }
+        }
       }
+      return state
     }
 
     case 'delete': {
-      const rest = page.components.filter((c) => c.id !== action.id)
+      // removeInList reaches nested children too, so deleting works whether the
+      // card is on the page or inside a tab.
+      const rest = removeInList(page.components, action.id)
       return {
         ...state,
         selectedId: state.selectedId === action.id ? null : state.selectedId,
@@ -238,13 +378,30 @@ function applyAction(state, action) {
     // drag or resize. We copy them onto our own components.
     case 'setLayout': {
       const byId = new Map(action.layout.map((l) => [l.i, l]))
-      const moved = page.components.map((c) => {
-        const l = byId.get(c.id)
-        if (!l) return c
-        const same =
-          l.x === c.layout.x && l.y === c.layout.y && l.w === c.layout.w && l.h === c.layout.h
-        return same ? c : { ...c, layout: { x: l.x, y: l.y, w: l.w, h: l.h } }
-      })
+
+      // A drag/resize inside a Tabs container's nested grid: write the moved
+      // layouts back onto that tab's children.
+      if (action.container) {
+        const { containerId, tabId } = action.container
+        let changed = false
+        const comps = page.components.map((c) => {
+          if (c.id !== containerId || c.type !== 'tabs') return c
+          return {
+            ...c,
+            tabs: c.tabs.map((t) => {
+              if (t.id !== tabId) return t
+              const moved = t.components.map((cc) => applyLayout(cc, byId.get(cc.id)))
+              if (moved.every((cc, i) => cc === t.components[i])) return t
+              changed = true
+              return { ...t, components: moved }
+            }),
+          }
+        })
+        if (!changed) return state
+        return { ...state, doc: replaceComponents(state.doc, page.id, comps) }
+      }
+
+      const moved = page.components.map((c) => applyLayout(c, byId.get(c.id)))
       // A click that starts a drag but goes nowhere must not become an undo
       // step. Unchanged components keep their identity, so this is cheap.
       if (moved.every((c, i) => c === page.components[i])) return state
@@ -267,16 +424,18 @@ function applyAction(state, action) {
     }
 
     case 'rename': {
-      const renamed = page.components.map((c) =>
-        c.id === action.id ? { ...c, title: action.title } : c,
-      )
+      const renamed = updateInList(page.components, action.id, (c) => ({
+        ...c,
+        title: action.title,
+      }))
       return { ...state, doc: replaceComponents(state.doc, page.id, renamed) }
     }
 
     case 'setComment': {
-      const commented = page.components.map((c) =>
-        c.id === action.id ? { ...c, comment: action.comment } : c,
-      )
+      const commented = updateInList(page.components, action.id, (c) => ({
+        ...c,
+        comment: action.comment,
+      }))
       return { ...state, doc: replaceComponents(state.doc, page.id, commented) }
     }
 
@@ -330,6 +489,73 @@ function applyAction(state, action) {
       return {
         ...state,
         activePageId,
+        selectedId: componentExists(nextDoc, state.selectedId) ? state.selectedId : null,
+        doc: nextDoc,
+      }
+    }
+
+    // --- tabs inside a Tabs container ---
+
+    case 'addTab': {
+      let newTabId = null
+      const comps = page.components.map((c) => {
+        if (c.id !== action.id || c.type !== 'tabs') return c
+        newTabId = nextId('t')
+        const name = `Tab ${String.fromCharCode(65 + c.tabs.length)}`
+        return { ...c, tabs: [...c.tabs, { id: newTabId, name, components: [] }] }
+      })
+      if (!newTabId) return state
+      return {
+        ...state,
+        activeTabs: { ...state.activeTabs, [action.id]: newTabId },
+        doc: replaceComponents(state.doc, page.id, comps),
+      }
+    }
+
+    // View-only, like `select` and `selectPage`: not recorded in history.
+    case 'selectTab': {
+      if (state.activeTabs[action.containerId] === action.tabId) return state
+      return {
+        ...state,
+        activeTabs: { ...state.activeTabs, [action.containerId]: action.tabId },
+      }
+    }
+
+    case 'renameTab': {
+      const comps = page.components.map((c) => {
+        if (c.id !== action.containerId || c.type !== 'tabs') return c
+        return {
+          ...c,
+          tabs: c.tabs.map((t) => (t.id === action.id ? { ...t, name: action.name } : t)),
+        }
+      })
+      return { ...state, doc: replaceComponents(state.doc, page.id, comps) }
+    }
+
+    case 'deleteTab': {
+      const container = page.components.find(
+        (c) => c.id === action.containerId && c.type === 'tabs',
+      )
+      // A Tabs container always keeps at least one tab.
+      if (!container || container.tabs.length <= 1) return state
+      const idx = container.tabs.findIndex((t) => t.id === action.tabId)
+      if (idx === -1) return state
+      const remaining = container.tabs.filter((t) => t.id !== action.tabId)
+      const comps = page.components.map((c) =>
+        c.id === action.containerId ? { ...c, tabs: remaining } : c,
+      )
+      const nextDoc = replaceComponents(state.doc, page.id, comps)
+      const wasActive =
+        (state.activeTabs[action.containerId] ?? container.tabs[0].id) === action.tabId
+      const activeTabs = wasActive
+        ? {
+            ...state.activeTabs,
+            [action.containerId]: remaining[Math.min(idx, remaining.length - 1)].id,
+          }
+        : state.activeTabs
+      return {
+        ...state,
+        activeTabs,
         selectedId: componentExists(nextDoc, state.selectedId) ? state.selectedId : null,
         doc: nextDoc,
       }
@@ -409,6 +635,14 @@ function makeRoomFor(components, source, copy) {
     if (c.id === source.id || !sitsInTheWay || !overlapsColumns(c.layout, copy.layout)) return c
     return { ...c, layout: { ...c.layout, y: c.layout.y + copy.layout.h } }
   })
+}
+
+// Every child component id inside a Tabs container, across all its tabs. The
+// view layer uses this to tell whether the current selection lives in a
+// container without needing to know which tab.
+export function tabChildIds(component) {
+  if (component.type !== 'tabs' || !Array.isArray(component.tabs)) return []
+  return component.tabs.flatMap((t) => (t.components ?? []).map((c) => c.id))
 }
 
 function replaceComponents(doc, pageId, components) {
