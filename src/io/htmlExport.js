@@ -228,6 +228,15 @@ ${[34, 46, 26, 52, 40, 56, 30].map((hh, i) => `<rect x="${i * 14 + 2}" y="${58 -
 <circle cx="50" cy="30" r="18" stroke="${GRAY.mid}" stroke-dasharray="39.58 73.52" stroke-dashoffset="-50.89"/>
 <circle cx="50" cy="30" r="18" stroke="${GRAY.light}" stroke-dasharray="22.62 90.48" stroke-dashoffset="-90.48"/>
 </g></svg>`,
+  combo: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[30, 44, 26, 50, 38, 54].map((hh, i) => `<rect x="${i * 16 + 5}" y="${58 - hh}" width="10" height="${hh}" fill="${GRAY.light}"/>`).join('')}
+<polyline points="10,38 26,28 42,42 58,18 74,26 90,10" fill="none" stroke="${GRAY.dark}" stroke-width="2" vector-effect="non-scaling-stroke"/>
+<line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+</svg>`,
+  scatter: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[[12, 45], [18, 50], [21, 38], [27, 47], [31, 53], [36, 35], [41, 44], [44, 30], [49, 48], [55, 33], [58, 41], [63, 44], [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="0.9" fill="${GRAY.dark}" opacity="0.6"/>`).join('')}
+<line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+</svg>`,
 }
 
 function placeholderUnknown() {

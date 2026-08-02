@@ -90,6 +90,50 @@ function TablePlaceholder() {
   )
 }
 
+function ComboPlaceholder() {
+  const bars = [30, 44, 26, 50, 38, 54]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {bars.map((h, i) => (
+        <rect key={i} x={i * 16 + 5} y={58 - h} width="10" height={h} fill={GRAY.light} />
+      ))}
+      <polyline
+        points="10,38 26,28 42,42 58,18 74,26 90,10"
+        fill="none"
+        stroke={GRAY.dark}
+        strokeWidth="2"
+        vectorEffect="non-scaling-stroke"
+      />
+      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
+        vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
+// An irregular cloud, drawn edge-to-edge so it fills the card rather than
+// leaving blank margins. preserveAspectRatio="none" lets it stretch like the
+// bar and time-series placeholders; the dots are kept small so the stretch
+// reads as a scatter, not as ovals.
+const SCATTER_PTS = [
+  [12, 45], [18, 50], [21, 38], [27, 47], [31, 53], [36, 35],
+  [41, 44], [44, 30], [49, 48], [55, 33], [58, 41], [63, 44],
+  [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29],
+]
+
+function ScatterPlaceholder() {
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {SCATTER_PTS.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="0.9" fill={GRAY.dark} opacity="0.6" />
+      ))}
+      {/* Same baseline as the bar and time-series placeholders (y=58, full
+          width) so the charts line up when placed next to each other. */}
+      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
+        vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
 function DonutPlaceholder() {
   // A donut ring split into three grayscale slices. Circumference of an r=18
   // circle is ~113.1; each slice is a dash of that length, offset so they sit
@@ -208,6 +252,18 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 4, h: 6 },
     Placeholder: DonutPlaceholder,
   },
+  combo: {
+    label: 'Combo (bar + line)',
+    defaultTitle: 'Two measures, dual axis',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: ComboPlaceholder,
+  },
+  scatter: {
+    label: 'Scatter',
+    defaultTitle: 'Correlation',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: ScatterPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -239,6 +295,8 @@ export const CATALOG_ORDER = [
   'table',
   'text',
   'pie',
+  'combo',
+  'scatter',
   'tabs',
   'section',
 ]
