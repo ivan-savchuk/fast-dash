@@ -16,7 +16,8 @@ export default function Toolbar({
   canRedo,
 }) {
   const fileInput = useRef(null)
-  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [optionsOpen, setOptionsOpen] = useState(false)
+  const close = () => setOptionsOpen(false)
 
   return (
     <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
@@ -43,17 +44,18 @@ export default function Toolbar({
           </Button>
           <span className="mx-1 h-5 w-px bg-gray-200" />
           <div className="relative">
-            <Button onClick={() => setTemplatesOpen((open) => !open)}>Templates ▾</Button>
-            {templatesOpen && (
+            <Button onClick={() => setOptionsOpen((open) => !open)}>Options ▾</Button>
+            {optionsOpen && (
               <>
-                <div className="fixed inset-0 z-40" onMouseDown={() => setTemplatesOpen(false)} />
-                <div className="absolute right-0 z-50 mt-1 w-64 overflow-hidden rounded-sm border border-gray-300 bg-white py-1 shadow-lg">
+                <div className="fixed inset-0 z-40" onMouseDown={close} />
+                <div className="absolute right-0 z-50 mt-1 w-60 overflow-hidden rounded-sm border border-gray-300 bg-white py-1 shadow-lg">
+                  <MenuLabel>Start from template</MenuLabel>
                   {TEMPLATE_LIST.map((template) => (
                     <button
                       key={template.id}
                       className="block w-full px-3 py-2 text-left hover:bg-gray-100"
                       onClick={() => {
-                        setTemplatesOpen(false)
+                        close()
                         onPickTemplate(template.id)
                       }}
                     >
@@ -61,14 +63,18 @@ export default function Toolbar({
                       <span className="block text-xs text-gray-400">{template.summary}</span>
                     </button>
                   ))}
+
+                  <Divider />
+                  <MenuItem onClick={() => { close(); onExport() }}>Export JSON</MenuItem>
+                  <MenuItem onClick={() => { close(); onExportHtml() }}>Export HTML</MenuItem>
+                  <MenuItem onClick={() => { close(); fileInput.current?.click() }}>Import…</MenuItem>
+
+                  <Divider />
+                  <MenuItem onClick={() => { close(); onNew() }}>New dashboard</MenuItem>
                 </div>
               </>
             )}
           </div>
-          <Button onClick={onExport}>Export JSON</Button>
-          <Button onClick={onExportHtml}>Export HTML</Button>
-          <Button onClick={() => fileInput.current?.click()}>Import</Button>
-          <Button onClick={onNew}>New</Button>
         </div>
         <input
           ref={fileInput}
@@ -109,4 +115,28 @@ function Button({ onClick, children, disabled, title }) {
       {children}
     </button>
   )
+}
+
+// One row in the Options menu.
+function MenuItem({ onClick, children }) {
+  return (
+    <button
+      className="block w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
+
+function MenuLabel({ children }) {
+  return (
+    <div className="px-3 pt-1 pb-0.5 text-[10px] font-medium tracking-wide text-gray-400 uppercase">
+      {children}
+    </div>
+  )
+}
+
+function Divider() {
+  return <div className="my-1 h-px bg-gray-100" />
 }
