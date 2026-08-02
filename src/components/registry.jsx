@@ -145,6 +145,12 @@ function TabsPlaceholder() {
   )
 }
 
+function SectionPlaceholder() {
+  // Fallback only — a Section header renders as a compact labelled band in
+  // Card.jsx, and its own markup in the HTML export, so this is rarely shown.
+  return <div className="h-full border-b-2 border-gray-300" />
+}
+
 function TextPlaceholder() {
   const widths = ['92%', '84%', '96%', '60%']
   return (
@@ -211,6 +217,14 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 12, h: 10 },
     Placeholder: TabsPlaceholder,
   },
+  section: {
+    label: 'Section header',
+    defaultTitle: 'Section',
+    // Full width and short: a labelled band you drop between cards to group a
+    // page into zones. Its title is the section label.
+    defaultSize: { w: 12, h: 2 },
+    Placeholder: SectionPlaceholder,
+  },
 }
 
 // The keyed five: toolbar buttons and number-key shortcuts, in this order.
@@ -218,7 +232,16 @@ export const TYPE_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text']
 
 // The full catalog the quick picker searches, in the order it lists them.
 // The keyed five come first; everything after is search-only.
-export const CATALOG_ORDER = ['kpi', 'timeseries', 'bar', 'table', 'text', 'pie', 'tabs']
+export const CATALOG_ORDER = [
+  'kpi',
+  'timeseries',
+  'bar',
+  'table',
+  'text',
+  'pie',
+  'tabs',
+  'section',
+]
 
 // Reverse lookup for the number-key shortcuts. Only the keyed five are here,
 // so a search-only type can never be triggered by a stray digit.

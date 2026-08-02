@@ -55,6 +55,46 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   }
   const Placeholder = def.Placeholder
 
+  // A Section header is a thin labelled band, not a chart card: its title is
+  // the section label, and it has no chart body and no description. Duplicate
+  // and delete stay, and it drags and resizes like any other card.
+  if (component.type === 'section') {
+    return (
+      <div
+        onMouseDown={onSelect}
+        className={`flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white px-3 select-none ${
+          selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200'
+        }`}
+      >
+        <input
+          className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold tracking-wide text-gray-600 uppercase outline-none select-text focus:bg-gray-50"
+          value={component.title}
+          onChange={(e) => onRename(e.target.value)}
+          aria-label="Section title"
+        />
+        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase">
+          {def.label}
+        </span>
+        <button
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          onClick={onDuplicate}
+          title="Duplicate component (⌘D)"
+          aria-label="Duplicate component"
+        >
+          ⧉
+        </button>
+        <button
+          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800"
+          onClick={onDelete}
+          title="Delete component"
+          aria-label="Delete component"
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
+
   // cursor-move advertises that the card itself is the drag handle; the
   // title, description and buttons opt out of dragging via `no-drag`.
   return (

@@ -155,6 +155,11 @@ function renderCard(c) {
   // CSS grid lines are 1-based; the same 12-col / 40px / 12px-gap geometry as
   // the editor, so the export matches what was on the canvas.
   const style = `grid-column:${x + 1}/span ${w};grid-row:${y + 1}/span ${h}`
+
+  // A Section header is a labelled band, not a chart card.
+  if (c.type === 'section') {
+    return `<div class="card section" style="${style}"><span class="section-label">${esc(c.title ?? '')}</span><span class="card-type">${esc(def?.label ?? c.type)}</span></div>`
+  }
   const body = c.type === 'tabs' ? renderTabsCard(c) : (PLACEHOLDERS[c.type] ?? placeholderUnknown)()
   const comment = c.comment
     ? `<div class="card-note">${esc(c.comment)}</div>`
@@ -272,6 +277,8 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .pages .page.on{display:block}
 .empty{color:#9ca3af;padding:24px}
 .card{display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e5e7eb;border-radius:2px;min-width:0}
+.card.section{flex-direction:row;align-items:center;gap:8px;padding:0 12px}
+.section-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#4b5563}
 .card-head{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid #f3f4f6}
 .card-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600;color:#1f2937}
 .card-type{flex:none;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#d1d5db}

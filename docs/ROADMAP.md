@@ -167,6 +167,12 @@ Shipped so far in Phase 4:
    tab for now), and no tabs-inside-tabs (the picker excludes `tabs` when adding into a tab;
    the helpers assume one level).
 
+6. ~~**Section header (Tier 3 chrome)**~~ — **done** (2026-08-02). A catalog-only type: a
+   full-width, short labelled band (its title is the label) to group a page into zones.
+   Renders as a compact band with no chart body or description — flat border like every
+   other card. First of the Tier 3 chrome; the header-bar last-refreshed line is the likely
+   next.
+
 ---
 
 ## Phase 5 — rollout
