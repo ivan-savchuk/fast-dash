@@ -237,6 +237,13 @@ ${[30, 44, 26, 50, 38, 54].map((hh, i) => `<rect x="${i * 16 + 5}" y="${58 - hh}
 ${[[12, 45], [18, 50], [21, 38], [27, 47], [31, 53], [36, 35], [41, 44], [44, 30], [49, 48], [55, 33], [58, 41], [63, 44], [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="0.9" fill="${GRAY.dark}" opacity="0.6"/>`).join('')}
 <line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
 </svg>`,
+  funnel: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[[92, GRAY.light], [74, GRAY.mid], [58, GRAY.dark], [42, GRAY.mid], [26, GRAY.light]].map((s, i) => `<rect x="${50 - s[0] / 2}" y="${4 + i * 11}" width="${s[0]}" height="8" fill="${s[1]}"/>`).join('')}
+</svg>`,
+  waterfall: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[[6, 34, 22, GRAY.dark], [22, 24, 10, GRAY.mid], [38, 24, 8, GRAY.mid], [54, 16, 8, GRAY.mid], [70, 16, 6, GRAY.mid], [86, 10, 46, GRAY.dark]].map((b) => `<rect x="${b[0]}" y="${b[1]}" width="10" height="${b[2]}" fill="${b[3]}"/>`).join('')}
+<line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+</svg>`,
 }
 
 function placeholderUnknown() {

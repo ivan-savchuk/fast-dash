@@ -134,6 +134,47 @@ function ScatterPlaceholder() {
   )
 }
 
+function FunnelPlaceholder() {
+  // Centred bars narrowing downward — reads as a funnel without the trapezoid
+  // maths, and stays grayscale.
+  const segs = [
+    { w: 92, c: GRAY.light },
+    { w: 74, c: GRAY.mid },
+    { w: 58, c: GRAY.dark },
+    { w: 42, c: GRAY.mid },
+    { w: 26, c: GRAY.light },
+  ]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {segs.map((s, i) => (
+        <rect key={i} x={50 - s.w / 2} y={4 + i * 11} width={s.w} height="8" fill={s.c} />
+      ))}
+    </svg>
+  )
+}
+
+function WaterfallPlaceholder() {
+  // Floating bars stepping up, with the start and total as full pillars. Shares
+  // the y=58 baseline with the other bar-like charts so they line up.
+  const bars = [
+    [6, 34, 22, GRAY.dark],
+    [22, 24, 10, GRAY.mid],
+    [38, 24, 8, GRAY.mid],
+    [54, 16, 8, GRAY.mid],
+    [70, 16, 6, GRAY.mid],
+    [86, 10, 46, GRAY.dark],
+  ]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {bars.map((b, i) => (
+        <rect key={i} x={b[0]} y={b[1]} width="10" height={b[2]} fill={b[3]} />
+      ))}
+      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
+        vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
 function DonutPlaceholder() {
   // A donut ring split into three grayscale slices. Circumference of an r=18
   // circle is ~113.1; each slice is a dash of that length, offset so they sit
@@ -264,6 +305,18 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 6 },
     Placeholder: ScatterPlaceholder,
   },
+  funnel: {
+    label: 'Funnel',
+    defaultTitle: 'Conversion steps',
+    defaultSize: { w: 4, h: 6 },
+    Placeholder: FunnelPlaceholder,
+  },
+  waterfall: {
+    label: 'Waterfall',
+    defaultTitle: 'Contribution to change',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: WaterfallPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -297,6 +350,8 @@ export const CATALOG_ORDER = [
   'pie',
   'combo',
   'scatter',
+  'funnel',
+  'waterfall',
   'tabs',
   'section',
 ]
