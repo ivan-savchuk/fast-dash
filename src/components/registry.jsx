@@ -301,6 +301,49 @@ function SectionPlaceholder() {
   return <div className="h-full border-b-2 border-gray-300" />
 }
 
+function PivotPlaceholder() {
+  // A crosstab: a wider row-header column with indented sub-rows (the second
+  // row dimension), right-aligned value bars, and a bold totals row. The indent
+  // and the totals row are what separate it from the plain Table placeholder.
+  const cols = 4
+  const style = { gridTemplateColumns: `1.6fr repeat(${cols}, 1fr)` }
+  const indents = [0, 1, 1, 0, 1]
+  return (
+    <div className="flex h-full flex-col overflow-hidden text-[11px]">
+      <div className="grid shrink-0 border-b border-gray-300 pb-1" style={style}>
+        <div className="pr-2" />
+        {Array.from({ length: cols }, (_, c) => (
+          <div key={c} className="flex justify-end pr-2">
+            <div className="h-1.5 w-8 rounded bg-gray-300" />
+          </div>
+        ))}
+      </div>
+      {indents.map((ind, ri) => (
+        <div key={ri} className="grid min-h-0 flex-1 items-center border-b border-gray-100" style={style}>
+          <div className="pr-2" style={{ paddingLeft: ind * 14 }}>
+            <div className="h-2 rounded bg-gray-200" style={{ width: ind ? '55%' : '75%' }} />
+          </div>
+          {Array.from({ length: cols }, (_, c) => (
+            <div key={c} className="flex justify-end pr-2">
+              <div className="h-2 rounded bg-gray-200" style={{ width: `${45 + ((ri + c) % 3) * 15}%` }} />
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="grid shrink-0 items-center border-t-2 border-gray-300 pt-1" style={style}>
+        <div className="pr-2">
+          <div className="h-2 rounded bg-gray-300" style={{ width: '50%' }} />
+        </div>
+        {Array.from({ length: cols }, (_, c) => (
+          <div key={c} className="flex justify-end pr-2">
+            <div className="h-2 rounded bg-gray-300" style={{ width: `${55 + (c % 2) * 15}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function TextPlaceholder() {
   const widths = ['92%', '84%', '96%', '60%']
   return (
@@ -400,6 +443,12 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 6 },
     Placeholder: HeatmapPlaceholder,
   },
+  pivot: {
+    label: 'Pivot / Crosstab',
+    defaultTitle: 'Cross-tabulation',
+    defaultSize: { w: 6, h: 7 },
+    Placeholder: PivotPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -438,6 +487,7 @@ export const CATALOG_ORDER = [
   'histogram',
   'boxplot',
   'heatmap',
+  'pivot',
   'tabs',
   'section',
 ]

@@ -222,6 +222,19 @@ ${[34, 46, 26, 52, 40, 56, 30].map((hh, i) => `<rect x="${i * 14 + 2}" y="${58 -
   },
   text: () =>
     `<div class="textblock">${['92%', '84%', '96%', '60%'].map((wdt) => `<i class="line" style="width:${wdt}"></i>`).join('')}</div>`,
+  pivot: () => {
+    const cols = 4
+    const colHead = Array.from({ length: cols }, () => `<div class="pcell"><i class="phbar"></i></div>`).join('')
+    const body = [0, 1, 1, 0, 1]
+      .map((ind, ri) => {
+        const rlabel = `<div class="rhead" style="padding-left:${ind * 14}px"><i class="pbar" style="width:${ind ? 55 : 75}%"></i></div>`
+        const cells = Array.from({ length: cols }, (_, c) => `<div class="pcell"><i class="pbar" style="width:${45 + ((ri + c) % 3) * 15}%"></i></div>`).join('')
+        return `<div class="prow pbody">${rlabel}${cells}</div>`
+      })
+      .join('')
+    const tot = `<div class="prow ptot"><div class="rhead"><i class="pbar strong" style="width:50%"></i></div>${Array.from({ length: cols }, (_, c) => `<div class="pcell"><i class="pbar strong" style="width:${55 + (c % 2) * 15}%"></i></div>`).join('')}</div>`
+    return `<div class="pivot"><div class="prow phead"><div class="rhead"></div>${colHead}</div>${body}${tot}</div>`
+  },
   // Donut: three grayscale slices, dash lengths mirroring registry.jsx.
   pie: () => `<svg class="fill" viewBox="0 0 100 60"><g transform="rotate(-90 50 30)" fill="none" stroke-width="11">
 <circle cx="50" cy="30" r="18" stroke="${GRAY.dark}" stroke-dasharray="50.89 62.21" stroke-dashoffset="0"/>
@@ -339,6 +352,16 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .trow .bar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.pivot{display:flex;flex-direction:column;height:100%;font-size:11px}
+.pivot .prow{display:grid;align-items:center;grid-template-columns:1.6fr repeat(4,1fr)}
+.pivot .phead{flex:none;border-bottom:1px solid #d1d5db;padding-bottom:4px}
+.pivot .pbody{flex:1;min-height:0;border-bottom:1px solid #f3f4f6}
+.pivot .ptot{flex:none;border-top:2px solid #d1d5db;padding-top:4px}
+.pivot .rhead{padding-right:8px}
+.pivot .pcell{display:flex;justify-content:flex-end;padding-right:8px}
+.pivot .pbar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.pivot .pbar.strong{background:#d1d5db}
+.pivot .phbar{display:block;height:6px;width:32px;border-radius:2px;background:#d1d5db}
 .tabs-ph{display:flex;flex-direction:column;height:100%}
 .tabs-strip{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
 .itab{padding:2px 8px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}
