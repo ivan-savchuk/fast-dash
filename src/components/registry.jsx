@@ -216,6 +216,30 @@ function BoxPlotPlaceholder() {
   )
 }
 
+const HEAT_SHADES = ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280']
+const HEAT_ROWS = [
+  [1, 2, 3, 4, 3, 2, 1, 0],
+  [2, 3, 4, 5, 4, 3, 2, 1],
+  [3, 4, 5, 5, 5, 4, 3, 2],
+  [2, 3, 4, 5, 4, 3, 2, 1],
+  [1, 2, 3, 4, 3, 2, 1, 0],
+]
+
+function HeatmapPlaceholder() {
+  // A grid of cells shaded by intensity — one grayscale ramp, blob in the
+  // middle. Colour would invite palette bikeshedding (principle #1).
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {HEAT_ROWS.map((row, r) =>
+        row.map((v, c) => (
+          <rect key={`${r}-${c}`} x={c * 12.5 + 0.5} y={r * 12 + 0.5} width="11.5" height="11"
+            fill={HEAT_SHADES[v]} />
+        )),
+      )}
+    </svg>
+  )
+}
+
 function DonutPlaceholder() {
   // A donut ring split into three grayscale slices. Circumference of an r=18
   // circle is ~113.1; each slice is a dash of that length, offset so they sit
@@ -370,6 +394,12 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 6 },
     Placeholder: BoxPlotPlaceholder,
   },
+  heatmap: {
+    label: 'Heatmap',
+    defaultTitle: 'Intensity grid',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: HeatmapPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -407,6 +437,7 @@ export const CATALOG_ORDER = [
   'waterfall',
   'histogram',
   'boxplot',
+  'heatmap',
   'tabs',
   'section',
 ]

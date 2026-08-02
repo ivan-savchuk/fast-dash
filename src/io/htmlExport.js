@@ -251,6 +251,26 @@ ${[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((hh, i) => `<rect x="${i * 
   boxplot: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
 ${[[22, 10, 20, 28, 38, 50], [50, 6, 16, 22, 34, 46], [78, 14, 24, 30, 40, 54]].map(([cx, wTop, q3, med, q1, wBot]) => `<line x1="${cx}" y1="${wTop}" x2="${cx}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wTop}" x2="${cx + 5}" y2="${wTop}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wBot}" x2="${cx + 5}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><rect x="${cx - 9}" y="${q3}" width="18" height="${q1 - q3}" fill="${GRAY.light}" stroke="${GRAY.dark}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 9}" y1="${med}" x2="${cx + 9}" y2="${med}" stroke="${GRAY.dark}" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('')}
 </svg>`,
+  heatmap: () => {
+    const shades = ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280']
+    const rows = [
+      [1, 2, 3, 4, 3, 2, 1, 0],
+      [2, 3, 4, 5, 4, 3, 2, 1],
+      [3, 4, 5, 5, 5, 4, 3, 2],
+      [2, 3, 4, 5, 4, 3, 2, 1],
+      [1, 2, 3, 4, 3, 2, 1, 0],
+    ]
+    return `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">${rows
+      .map((row, r) =>
+        row
+          .map(
+            (v, c) =>
+              `<rect x="${c * 12.5 + 0.5}" y="${r * 12 + 0.5}" width="11.5" height="11" fill="${shades[v]}"/>`,
+          )
+          .join(''),
+      )
+      .join('')}</svg>`
+  },
 }
 
 function placeholderUnknown() {
