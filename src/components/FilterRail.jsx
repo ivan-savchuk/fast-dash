@@ -5,14 +5,65 @@ import { FILTER_TYPES } from '../state/document.js'
 // control under each row is a placeholder, structurally faithful to its type —
 // but they live on the document and export as part of the spec.
 
+// The rail sits in the flex flow and PUSHES the canvas: its width animates
+// (44px collapsed ↔ 240px open) over 200ms, so the canvas narrows/widens
+// gradually rather than in one jarring step. The cards' own transition is
+// frozen for the same window (see App's railSettling / index.css .rgl-instant),
+// so react-grid-layout tracks the animating width frame-by-frame and the cards
+// slide smoothly with it instead of jerking. `overflow-hidden` plus a fixed
+// inner width keeps the content from squishing while the width animates.
 export default function FilterRail({ filters, open, onToggle, dispatch }) {
-  if (!open) {
-    // The whole strip is the button, so the target is large and obvious, with a
-    // filled chevron badge at the top rather than a faint character.
-    return (
-      <aside className="w-11 shrink-0 border-r border-gray-200 bg-white">
+  return (
+    <aside
+      className={`flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out ${
+        open ? 'w-60' : 'w-11'
+      }`}
+    >
+      {open ? (
+        <div className="flex h-full w-60 flex-col overflow-y-auto">
+          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+            <span className="text-[10px] tracking-wide text-gray-400 uppercase">Filters</span>
+            <button
+              className="flex size-6 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100"
+              onClick={onToggle}
+              title="Hide filters"
+              aria-label="Hide filters"
+            >
+              ◂
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3 px-3 py-3">
+            {filters.length === 0 && (
+              <p className="text-xs text-gray-400">
+                No filters yet. Add the dashboard-level filters people will use.
+              </p>
+            )}
+
+            {filters.map((filter, i) => (
+              <FilterRow
+                key={filter.id}
+                filter={filter}
+                dispatch={dispatch}
+                isFirst={i === 0}
+                isLast={i === filters.length - 1}
+                onUp={() => dispatch({ type: 'moveFilter', id: filter.id, toIndex: i - 1 })}
+                onDown={() => dispatch({ type: 'moveFilter', id: filter.id, toIndex: i + 1 })}
+              />
+            ))}
+
+            <button
+              className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
+              onClick={() => dispatch({ type: 'addFilter' })}
+            >
+              + add filter
+            </button>
+          </div>
+        </div>
+      ) : (
+        // The whole strip is the button, so the target is large and obvious.
         <button
-          className="group flex h-full w-full flex-col items-center gap-2 py-2 hover:bg-gray-50"
+          className="group flex h-full w-11 flex-col items-center gap-2 py-2 hover:bg-gray-50"
           onClick={onToggle}
           title="Show filters"
           aria-label="Show filters"
@@ -24,50 +75,7 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
             Filters{filters.length > 0 ? ` · ${filters.length}` : ''}
           </span>
         </button>
-      </aside>
-    )
-  }
-
-  return (
-    <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
-        <span className="text-[10px] tracking-wide text-gray-400 uppercase">Filters</span>
-        <button
-          className="flex size-6 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100"
-          onClick={onToggle}
-          title="Hide filters"
-          aria-label="Hide filters"
-        >
-          ◂
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-3 px-3 py-3">
-        {filters.length === 0 && (
-          <p className="text-xs text-gray-400">
-            No filters yet. Add the dashboard-level filters people will use.
-          </p>
-        )}
-
-        {filters.map((filter, i) => (
-          <FilterRow
-            key={filter.id}
-            filter={filter}
-            dispatch={dispatch}
-            isFirst={i === 0}
-            isLast={i === filters.length - 1}
-            onUp={() => dispatch({ type: 'moveFilter', id: filter.id, toIndex: i - 1 })}
-            onDown={() => dispatch({ type: 'moveFilter', id: filter.id, toIndex: i + 1 })}
-          />
-        ))}
-
-        <button
-          className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50"
-          onClick={() => dispatch({ type: 'addFilter' })}
-        >
-          + add filter
-        </button>
-      </div>
+      )}
     </aside>
   )
 }

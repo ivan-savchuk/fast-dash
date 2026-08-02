@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
 import FilterRail from './components/FilterRail.jsx'
@@ -42,6 +42,12 @@ export default function App() {
       return true
     }
   })
+  // True while the rail is animating its width. During that window the cards'
+  // CSS transition is switched off so react-grid-layout can track the animating
+  // canvas width frame-by-frame; otherwise the transition fights the per-frame
+  // updates and the cards jerk. Matches the rail's 200ms width animation.
+  const [railSettling, setRailSettling] = useState(false)
+  const settleTimer = useRef(null)
   const { doc, selectedId, activePageId, activeTabs } = state
   // The page the user is looking at; the reducer keeps activePageId valid, but
   // fall back to the first page defensively for the very first render.
@@ -179,6 +185,10 @@ export default function App() {
   }
 
   function toggleFilters() {
+    setRailSettling(true)
+    clearTimeout(settleTimer.current)
+    settleTimer.current = setTimeout(() => setRailSettling(false), 260)
+
     setFiltersOpen((open) => {
       const next = !open
       try {
@@ -241,6 +251,7 @@ export default function App() {
             components={components}
             selectedId={selectedId}
             activeTabs={activeTabs}
+            freezeAnim={railSettling}
             dispatch={dispatch}
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}

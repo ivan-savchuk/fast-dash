@@ -42,6 +42,7 @@ export default function Canvas({
   components,
   selectedId,
   activeTabs,
+  freezeAnim,
   dispatch,
   onEmptyClick,
   onAddInto,
@@ -89,7 +90,7 @@ export default function Canvas({
     // before the library's handlers — covers cards and handles alike.
     <div
       ref={containerRef}
-      className="min-h-full"
+      className={`min-h-full${freezeAnim ? ' rgl-instant' : ''}`}
       onMouseDownCapture={(e) => {
         if (e.target.closest('input, textarea, button')) return
         e.preventDefault()

@@ -34,6 +34,17 @@
   transition: none;
 }
 
+/* While the filter rail animates its width, the canvas width changes every
+   frame. The drag-reflow transition above would make each card ease toward a
+   target that moves every frame — they fight, and it reads as a jerk. During
+   the toggle we drop the transition so the cards track the animating width
+   exactly and slide with it. `!important` and the ancestor class beat the rule
+   above; nested tab grids are descendants too, so they are covered as well. */
+.rgl-instant .react-grid-item,
+.rgl-instant .react-grid-item.react-grid-placeholder {
+  transition: none !important;
+}
+
 /* Dragging a card otherwise sweeps a text selection across every other card,
    which flickers the whole canvas. Nothing on a card is real text worth
    selecting; the title and description fields opt back in. */
