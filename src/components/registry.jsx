@@ -175,6 +175,47 @@ function WaterfallPlaceholder() {
   )
 }
 
+function HistogramPlaceholder() {
+  // Contiguous bars in a rough bell — a distribution, not a category bar chart.
+  const bars = [8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {bars.map((h, i) => (
+        <rect key={i} x={i * 8 + 2} y={58 - h} width="7.5" height={h} fill={GRAY.mid} />
+      ))}
+      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
+        vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
+function BoxPlotPlaceholder() {
+  // Three vertical box-and-whisker plots. [cx, whiskerTop, q3, median, q1, whiskerBottom].
+  const groups = [
+    [22, 10, 20, 28, 38, 50],
+    [50, 6, 16, 22, 34, 46],
+    [78, 14, 24, 30, 40, 54],
+  ]
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {groups.map(([cx, wTop, q3, med, q1, wBot], i) => (
+        <g key={i}>
+          <line x1={cx} y1={wTop} x2={cx} y2={wBot} stroke={GRAY.mid} strokeWidth="1"
+            vectorEffect="non-scaling-stroke" />
+          <line x1={cx - 5} y1={wTop} x2={cx + 5} y2={wTop} stroke={GRAY.mid} strokeWidth="1"
+            vectorEffect="non-scaling-stroke" />
+          <line x1={cx - 5} y1={wBot} x2={cx + 5} y2={wBot} stroke={GRAY.mid} strokeWidth="1"
+            vectorEffect="non-scaling-stroke" />
+          <rect x={cx - 9} y={q3} width="18" height={q1 - q3} fill={GRAY.light}
+            stroke={GRAY.dark} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <line x1={cx - 9} y1={med} x2={cx + 9} y2={med} stroke={GRAY.dark} strokeWidth="1.2"
+            vectorEffect="non-scaling-stroke" />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 function DonutPlaceholder() {
   // A donut ring split into three grayscale slices. Circumference of an r=18
   // circle is ~113.1; each slice is a dash of that length, offset so they sit
@@ -317,6 +358,18 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 6 },
     Placeholder: WaterfallPlaceholder,
   },
+  histogram: {
+    label: 'Histogram',
+    defaultTitle: 'Distribution',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: HistogramPlaceholder,
+  },
+  boxplot: {
+    label: 'Box plot',
+    defaultTitle: 'Spread by group',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: BoxPlotPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -352,6 +405,8 @@ export const CATALOG_ORDER = [
   'scatter',
   'funnel',
   'waterfall',
+  'histogram',
+  'boxplot',
   'tabs',
   'section',
 ]

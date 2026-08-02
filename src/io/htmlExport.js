@@ -244,6 +244,13 @@ ${[[92, GRAY.light], [74, GRAY.mid], [58, GRAY.dark], [42, GRAY.mid], [26, GRAY.
 ${[[6, 34, 22, GRAY.dark], [22, 24, 10, GRAY.mid], [38, 24, 8, GRAY.mid], [54, 16, 8, GRAY.mid], [70, 16, 6, GRAY.mid], [86, 10, 46, GRAY.dark]].map((b) => `<rect x="${b[0]}" y="${b[1]}" width="10" height="${b[2]}" fill="${b[3]}"/>`).join('')}
 <line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
 </svg>`,
+  histogram: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((hh, i) => `<rect x="${i * 8 + 2}" y="${58 - hh}" width="7.5" height="${hh}" fill="${GRAY.mid}"/>`).join('')}
+<line x1="0" y1="58" x2="100" y2="58" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/>
+</svg>`,
+  boxplot: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
+${[[22, 10, 20, 28, 38, 50], [50, 6, 16, 22, 34, 46], [78, 14, 24, 30, 40, 54]].map(([cx, wTop, q3, med, q1, wBot]) => `<line x1="${cx}" y1="${wTop}" x2="${cx}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wTop}" x2="${cx + 5}" y2="${wTop}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wBot}" x2="${cx + 5}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><rect x="${cx - 9}" y="${q3}" width="18" height="${q1 - q3}" fill="${GRAY.light}" stroke="${GRAY.dark}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 9}" y1="${med}" x2="${cx + 9}" y2="${med}" stroke="${GRAY.dark}" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('')}
+</svg>`,
 }
 
 function placeholderUnknown() {
