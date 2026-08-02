@@ -264,6 +264,16 @@ ${[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((hh, i) => `<rect x="${i * 
   boxplot: () => `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">
 ${[[22, 10, 20, 28, 38, 50], [50, 6, 16, 22, 34, 46], [78, 14, 24, 30, 40, 54]].map(([cx, wTop, q3, med, q1, wBot]) => `<line x1="${cx}" y1="${wTop}" x2="${cx}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wTop}" x2="${cx + 5}" y2="${wTop}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 5}" y1="${wBot}" x2="${cx + 5}" y2="${wBot}" stroke="${GRAY.mid}" stroke-width="1" vector-effect="non-scaling-stroke"/><rect x="${cx - 9}" y="${q3}" width="18" height="${q1 - q3}" fill="${GRAY.light}" stroke="${GRAY.dark}" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="${cx - 9}" y1="${med}" x2="${cx + 9}" y2="${med}" stroke="${GRAY.dark}" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`).join('')}
 </svg>`,
+  choropleth: () => {
+    const regions = ['10,20 30,12 34,30 18,38 8,32', '30,12 52,10 50,28 34,30', '52,10 74,14 78,30 58,32 50,28', '18,38 34,30 46,40 40,52 20,50', '34,30 50,28 58,32 60,44 46,40', '58,32 78,30 88,40 74,52 60,44']
+    const shades = [GRAY.light, GRAY.mid, GRAY.dark, GRAY.mid, GRAY.light, GRAY.dark]
+    return `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">${regions.map((p, i) => `<polygon points="${p}" fill="${shades[i]}" stroke="#fff" stroke-width="0.8" vector-effect="non-scaling-stroke"/>`).join('')}</svg>`
+  },
+  pointmap: () => {
+    const regions = ['10,20 30,12 34,30 18,38 8,32', '30,12 52,10 50,28 34,30', '52,10 74,14 78,30 58,32 50,28', '18,38 34,30 46,40 40,52 20,50', '34,30 50,28 58,32 60,44 46,40', '58,32 78,30 88,40 74,52 60,44']
+    const pts = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], [65, 43]]
+    return `<svg class="fill" viewBox="0 0 100 60" preserveAspectRatio="none">${regions.map((p) => `<polygon points="${p}" fill="${GRAY.light}" stroke="${GRAY.mid}" stroke-width="0.8" vector-effect="non-scaling-stroke"/>`).join('')}${pts.map((pt) => `<circle cx="${pt[0]}" cy="${pt[1]}" r="1.6" fill="${GRAY.dark}" opacity="0.75"/>`).join('')}</svg>`
+  },
   heatmap: () => {
     const shades = ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280']
     const rows = [

@@ -184,9 +184,23 @@ round-trip. Version the schema from day one.
 
 KPI card, time series, bar, table, text — the popular five, each with a default size and
 a number-key shortcut. Then catalog-only types with no shortcut, reached through the quick
-picker's search: Pie/Donut, and a Tabs element that hosts real nested cards — each tab is
-its own 12-column grid holding ordinary components with full card chrome (see `NOTES.md`). A new type is one entry in `registry.jsx` plus its
-place in `CATALOG_ORDER`; if it is one of the popular few, also in `TYPE_ORDER`.
+picker's search:
+
+- **Structural:** Pie/Donut; a **Tabs** element that hosts real nested cards (each tab is
+  its own 12-column grid of ordinary components with full card chrome — see `NOTES.md`); a
+  **Section header** band for grouping a page into zones.
+- **Tier 2 charts:** Combo (bar + line), Scatter, Funnel, Waterfall, Histogram, Box plot,
+  Heatmap, Pivot / Crosstab, Map (choropleth), Map (point). All grayscale placeholders,
+  mirrored in the HTML export.
+
+Deliberately **not** built, after narrowing the Tier 2 list in use: Bubble, gauge /
+progress bar / bullet, calendar heatmap, treemap. Tier 3 chrome beyond the section header
+was judged mostly cosmetic and skipped, as was filters-as-canvas-components (the filter
+rail already covers filters). Each remains one registry entry plus an export mirror if
+wanted later.
+
+A new type is one entry in `registry.jsx` plus its place in `CATALOG_ORDER`; if it is one
+of the popular few, also in `TYPE_ORDER`.
 
 Dashboards are multi-page (`doc.pages`), switched by the tab strip; see `docs/NOTES.md`.
 

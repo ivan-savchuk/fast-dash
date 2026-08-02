@@ -240,6 +240,44 @@ function HeatmapPlaceholder() {
   )
 }
 
+// An abstract landmass split into regions — deliberately not real geography,
+// which would only invite "that's not where Texas is" over the layout question.
+const MAP_REGIONS = [
+  '10,20 30,12 34,30 18,38 8,32',
+  '30,12 52,10 50,28 34,30',
+  '52,10 74,14 78,30 58,32 50,28',
+  '18,38 34,30 46,40 40,52 20,50',
+  '34,30 50,28 58,32 60,44 46,40',
+  '58,32 78,30 88,40 74,52 60,44',
+]
+const MAP_SHADES = [GRAY.light, GRAY.mid, GRAY.dark, GRAY.mid, GRAY.light, GRAY.dark]
+const MAP_POINTS = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], [65, 43]]
+
+function ChoroplethPlaceholder() {
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {MAP_REGIONS.map((p, i) => (
+        <polygon key={i} points={p} fill={MAP_SHADES[i]} stroke="#fff" strokeWidth="0.8"
+          vectorEffect="non-scaling-stroke" />
+      ))}
+    </svg>
+  )
+}
+
+function PointMapPlaceholder() {
+  return (
+    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+      {MAP_REGIONS.map((p, i) => (
+        <polygon key={i} points={p} fill={GRAY.light} stroke={GRAY.mid} strokeWidth="0.8"
+          vectorEffect="non-scaling-stroke" />
+      ))}
+      {MAP_POINTS.map((pt, i) => (
+        <circle key={i} cx={pt[0]} cy={pt[1]} r="1.6" fill={GRAY.dark} opacity="0.75" />
+      ))}
+    </svg>
+  )
+}
+
 function DonutPlaceholder() {
   // A donut ring split into three grayscale slices. Circumference of an r=18
   // circle is ~113.1; each slice is a dash of that length, offset so they sit
@@ -449,6 +487,18 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 7 },
     Placeholder: PivotPlaceholder,
   },
+  choropleth: {
+    label: 'Map (choropleth)',
+    defaultTitle: 'By region',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: ChoroplethPlaceholder,
+  },
+  pointmap: {
+    label: 'Map (point)',
+    defaultTitle: 'Locations',
+    defaultSize: { w: 6, h: 6 },
+    Placeholder: PointMapPlaceholder,
+  },
   tabs: {
     label: 'Tabs',
     defaultTitle: 'Tabbed section',
@@ -488,6 +538,8 @@ export const CATALOG_ORDER = [
   'boxplot',
   'heatmap',
   'pivot',
+  'choropleth',
+  'pointmap',
   'tabs',
   'section',
 ]

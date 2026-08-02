@@ -170,8 +170,22 @@ Shipped so far in Phase 4:
 6. ~~**Section header (Tier 3 chrome)**~~ — **done** (2026-08-02). A catalog-only type: a
    full-width, short labelled band (its title is the label) to group a page into zones.
    Renders as a compact band with no chart body or description — flat border like every
-   other card. First of the Tier 3 chrome; the header-bar last-refreshed line is the likely
-   next.
+   other card.
+
+7. ~~**Tier 2 chart catalog**~~ — **done** (2026-08-02). Added as grayscale placeholders in
+   small batches, each mirrored in the HTML export: Combo (bar + line), Scatter, Funnel,
+   Waterfall, Histogram, Box plot, Heatmap, Pivot / Crosstab, Map (choropleth), Map (point).
+
+Scope was narrowed in use (owner calls, 2026-08-02): **Tier 3 chrome stops at the section
+header** — the rest (header-bar timestamp, breadcrumbs, legends/axis labels) was judged
+mostly cosmetic and against the anti-fidelity principle, so it was skipped. **Dropped from
+Tier 2**: Bubble, gauge / progress bar / bullet, calendar heatmap, treemap. **Filters as
+placeable canvas components** (the last Tier 1 remnant) was skipped — the filter rail
+already covers filters. All of these remain cheap to add later (one registry entry plus an
+export mirror) if a real user asks.
+
+Still open in Phase 4, not yet built: interaction annotations (draw.io arrows) and the
+component-count warning — see `SPEC.md`.
 
 ---
 
