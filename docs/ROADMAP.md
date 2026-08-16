@@ -218,10 +218,14 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
      before variants existed, and in all three templates, no longer show a sparkline.**
      That is the intended meaning of changing a default, not a regression; verified as the
      only difference, with everything else byte-identical.
-   - Still to come, one per session: **Time series** (line / area / stacked area),
-     **Scatter** (plain / trend line / bubble), **Pie** (donut / full pie), **Heatmap**
-     (grid / calendar). Scatter's bubble and the calendar heatmap were cut from Tier 2
-     earlier; they come back as variants rather than as new types.
+   - **Time series** — line (default), area, stacked area. **Done** (2026-08-16). Line is
+     the trend, area adds magnitude, stacked area says composition over time. The stacked
+     variant carries its own sample points: stacking the line chart's two series would put
+     the total well outside the viewBox.
+   - Still to come, one per session: **Scatter** (plain / trend line / bubble), **Pie**
+     (donut / full pie), **Heatmap** (grid / calendar). Scatter's bubble and the calendar
+     heatmap were cut from Tier 2 earlier; they come back as variants rather than as new
+     types.
 
    Switching lives in the card header, not on carousel arrows at the card edges (owner's
    first proposal). The card itself is the drag handle, so an edge button would sit exactly

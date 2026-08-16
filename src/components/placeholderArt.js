@@ -47,33 +47,68 @@ const round2 = (n) => Number(n.toFixed(2))
 
 // --- the drawings ---
 
+// The nine sample points every time-series variant is drawn from. Two series:
+// TS_UPPER is the larger one throughout (smaller y is higher on the chart), so
+// filling it first and the smaller one over the top never leaves a hole.
+const TS_X = [0, 12, 24, 36, 48, 60, 72, 84, 100]
+const TS_UPPER = [48, 40, 44, 28, 32, 20, 24, 12, 8]
+const TS_LOWER = [54, 52, 50, 46, 48, 40, 42, 36, 30]
+
+const pts = (ys) => ys.map((y, i) => `${TS_X[i]},${y}`).join(' ')
+// A series closed down to the baseline: the filled shape of an area chart.
+const areaPts = (ys) => `${pts(ys)} 100,${BASE_Y} 0,${BASE_Y}`
+// The band between two series — the upper edge left to right, then back along
+// the lower edge. This is what makes a stack read as stacked rather than
+// overlapping: each band sits on the one below instead of starting at zero.
+const bandPts = (top, bottom) =>
+  `${pts(top)} ${bottom.map((y, i) => `${TS_X[i]},${y}`).reverse().join(' ')}`
+
+const gridlines = [15, 30, 45].map((y) => [
+  'line',
+  { x1: 0, y1: y, x2: 100, y2: y, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+])
+
+const seriesLine = (ys, stroke, dashed) => [
+  'polyline',
+  {
+    points: pts(ys),
+    fill: 'none',
+    stroke,
+    strokeWidth: 2,
+    ...(dashed ? { strokeDasharray: '4 3' } : {}),
+    vectorEffect: 'non-scaling-stroke',
+  },
+]
+
 const TIMESERIES = cartesian([
-  // gridlines
-  ...[15, 30, 45].map((y) => [
-    'line',
-    { x1: 0, y1: y, x2: 100, y2: y, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
-  ]),
-  [
-    'polyline',
-    {
-      points: '0,48 12,40 24,44 36,28 48,32 60,20 72,24 84,12 100,8',
-      fill: 'none',
-      stroke: GRAY.dark,
-      strokeWidth: 2,
-      vectorEffect: 'non-scaling-stroke',
-    },
-  ],
-  [
-    'polyline',
-    {
-      points: '0,54 12,52 24,50 36,46 48,48 60,40 72,42 84,36 100,30',
-      fill: 'none',
-      stroke: GRAY.mid,
-      strokeWidth: 2,
-      strokeDasharray: '4 3',
-      vectorEffect: 'non-scaling-stroke',
-    },
-  ],
+  ...gridlines,
+  seriesLine(TS_UPPER, GRAY.dark, false),
+  seriesLine(TS_LOWER, GRAY.mid, true),
+  baseline(GRAY.mid),
+])
+
+// The same two series filled to the baseline — magnitude over time rather than
+// only the shape of the trend. The larger series goes down first so the smaller
+// one reads as sitting in front of it, not as a gap.
+const TIMESERIES_AREA = cartesian([
+  ...gridlines,
+  ['polygon', { points: areaPts(TS_UPPER), fill: GRAY.light }],
+  ['polygon', { points: areaPts(TS_LOWER), fill: GRAY.mid }],
+  seriesLine(TS_UPPER, GRAY.dark, false),
+  baseline(GRAY.mid),
+])
+
+// Stacked: the top edge is the total, and each band is one series' share of it.
+// Its own points rather than the two above, because stacking those would put
+// the total well outside the viewBox.
+const TS_STACK_LOWER = [50, 48, 46, 44, 45, 42, 40, 41, 38]
+const TS_STACK_TOTAL = [38, 32, 28, 24, 26, 20, 16, 18, 12]
+
+const TIMESERIES_STACKED = cartesian([
+  ...gridlines,
+  ['polygon', { points: areaPts(TS_STACK_LOWER), fill: GRAY.mid }],
+  ['polygon', { points: bandPts(TS_STACK_TOTAL, TS_STACK_LOWER), fill: GRAY.light }],
+  seriesLine(TS_STACK_TOTAL, GRAY.dark, false),
   baseline(GRAY.mid),
 ])
 
@@ -357,6 +392,13 @@ export const ART = {
 // each side (the export ships no Tailwind) and only *which pieces are present*
 // is shared — the same arrangement as TABLE and PIVOT below.
 export const VARIANTS = {
+  // Line is the trend; area adds magnitude; stacked area says composition over
+  // time, which is a different question rather than a different look.
+  timeseries: [
+    { id: 'line', label: 'Line', art: TIMESERIES },
+    { id: 'area', label: 'Area', art: TIMESERIES_AREA },
+    { id: 'stacked', label: 'Stacked area', art: TIMESERIES_STACKED },
+  ],
   bar: [
     { id: 'vertical', label: 'Vertical', art: BAR },
     { id: 'horizontal', label: 'Horizontal', art: BAR_HORIZONTAL },
