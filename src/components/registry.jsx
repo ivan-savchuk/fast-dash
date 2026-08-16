@@ -20,6 +20,7 @@ import {
   TABS_LABELS,
   TEXT_LINES,
   variantLabel,
+  variantParts,
 } from './placeholderArt.js'
 
 // A shape is `[tag, attrs]`, or `[tag, attrs, children]` for a group. Attribute
@@ -49,14 +50,17 @@ const chart = (type) =>
     return <SvgArt art={artFor(type, variant)} />
   }
 
-function KpiPlaceholder() {
+// The KPI is text and layout rather than a drawing, so its variants drop pieces
+// instead of swapping silhouettes. Which pieces is shared with the export.
+function KpiPlaceholder({ variant }) {
+  const parts = variantParts('kpi', variant)
   return (
     <div className="flex h-full flex-col justify-center gap-1">
       <div className="text-2xl leading-none font-semibold text-gray-400 tabular-nums">
         {KPI_TEXT.value}
       </div>
-      <div className="text-[11px] text-gray-400">{KPI_TEXT.delta}</div>
-      <SvgArt art={KPI_SPARK} className="mt-1 h-5 w-full" />
+      {parts.delta && <div className="text-[11px] text-gray-400">{KPI_TEXT.delta}</div>}
+      {parts.spark && <SvgArt art={KPI_SPARK} className="mt-1 h-5 w-full" />}
     </div>
   )
 }

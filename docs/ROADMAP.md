@@ -207,11 +207,21 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
    - **Bar** — vertical, horizontal, stacked, grouped. **Done** (2026-08-16), together with
      the machinery: `VARIANTS` in `placeholderArt.js`, `setVariant` / `cycleVariant`, the
      `TypeBadge` menu in the card header, and `[` / `]`.
-   - Still to come, one per session: **KPI** (spark / number only / delta only),
-     **Time series** (line / area / stacked area), **Scatter** (plain / trend line /
-     bubble), **Pie** (donut / full pie), **Heatmap** (grid / calendar). Scatter's bubble
-     and the calendar heatmap were cut from Tier 2 earlier; they come back as variants
-     rather than as new types.
+   - **KPI** — with delta (default), with trend, number only. **Done** (2026-08-16). The
+     first variant that is not a drawing: a KPI is text and layout, so the variant says
+     which pieces are present rather than which silhouette to draw, and `VARIANTS` entries
+     now carry either `art` or `parts`.
+
+     The default was moved from *with trend* to *with delta* (Ivan's call) — the sparkline
+     is the exception you ask for, not what every KPI starts as. Because the default is
+     also the fallback for a component with no `variant`, **KPI cards in documents written
+     before variants existed, and in all three templates, no longer show a sparkline.**
+     That is the intended meaning of changing a default, not a regression; verified as the
+     only difference, with everything else byte-identical.
+   - Still to come, one per session: **Time series** (line / area / stacked area),
+     **Scatter** (plain / trend line / bubble), **Pie** (donut / full pie), **Heatmap**
+     (grid / calendar). Scatter's bubble and the calendar heatmap were cut from Tier 2
+     earlier; they come back as variants rather than as new types.
 
    Switching lives in the card header, not on carousel arrows at the card edges (owner's
    first proposal). The card itself is the drag handle, so an edge button would sit exactly

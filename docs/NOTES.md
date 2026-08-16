@@ -126,7 +126,16 @@ is the ranking; stacked says composition. The HTML export spells it out ("Bar (h
 because there the silhouette is all a reader has.
 
 `VARIANTS` in `placeholderArt.js` lists only the types that have a choice; everything else
-keeps its single `ART` entry and gains no ceremony. Three rules make old documents safe:
+keeps its single `ART` entry and gains no ceremony. There are two kinds of variant entry:
+
+- **`art`** — a different drawing (the bar chart). Both sides render it through the shared
+  description, so nothing is duplicated.
+- **`parts`** — the same content with pieces left out (the KPI). A KPI is text and layout
+  rather than a silhouette, so its markup is written separately on each side, as the export
+  ships no Tailwind; only *which pieces are present* is shared. Same arrangement as `TABLE`
+  and `PIVOT`, and the same reason: the numbers cannot drift even when the markup must differ.
+
+Three rules make old documents safe:
 
 - the **first entry is the default, and is the same drawing the type always had**;
 - `artFor(type, variant)` falls back to that default for a missing type, a missing

@@ -351,6 +351,11 @@ export const ART = {
 // drawing* the type has always had, so a document written before variants
 // existed renders exactly as it did.
 
+// A variant carries `art` when it is a different drawing, and `parts` when it is
+// the same content with pieces left out. The KPI is the second kind: it is text
+// and layout rather than a silhouette, so its markup is written separately on
+// each side (the export ships no Tailwind) and only *which pieces are present*
+// is shared — the same arrangement as TABLE and PIVOT below.
 export const VARIANTS = {
   bar: [
     { id: 'vertical', label: 'Vertical', art: BAR },
@@ -358,28 +363,52 @@ export const VARIANTS = {
     { id: 'stacked', label: 'Stacked', art: BAR_STACKED },
     { id: 'grouped', label: 'Grouped', art: BAR_GROUPED },
   ],
+  // How much context the number gets. A bare number needs half the height of one
+  // with a sparkline under it, so this is a layout decision as much as a
+  // presentational one — which is why it belongs in the export.
+  //
+  // Number-plus-delta is the default (Ivan's call, 2026-08-16): the sparkline is
+  // the exception you ask for, not what every KPI starts as. Being first in the
+  // list also makes it what a KPI with no `variant` renders, so KPI cards in
+  // documents written before variants existed show no sparkline either.
+  kpi: [
+    { id: 'delta', label: 'With delta', parts: { delta: true, spark: false } },
+    { id: 'trend', label: 'With trend', parts: { delta: true, spark: true } },
+    { id: 'plain', label: 'Number only', parts: { delta: false, spark: false } },
+  ],
 }
 
 export function variantsFor(type) {
   return VARIANTS[type] ?? []
 }
 
-// The drawing to use. A type with no variants, an absent `variant`, or an id
-// this build does not know (an imported file from a later version) all fall
-// back to the type's default drawing rather than rendering nothing.
-export function artFor(type, variant) {
+// The variant entry to use. A type with no variants, an absent `variant`, or an
+// id this build does not know (an imported file from a later version) all fall
+// back to the type's default rather than rendering nothing.
+function entryFor(type, variant) {
   const list = VARIANTS[type]
-  if (!list) return ART[type]
-  return (list.find((v) => v.id === variant) ?? list[0]).art
+  if (!list) return null
+  return list.find((v) => v.id === variant) ?? list[0]
+}
+
+// The drawing to use.
+export function artFor(type, variant) {
+  return entryFor(type, variant)?.art ?? ART[type]
+}
+
+// Which pieces of a composed placeholder to render — see `parts` above. Null for
+// types whose variants are drawings rather than compositions.
+export function variantParts(type, variant) {
+  return entryFor(type, variant)?.parts ?? null
 }
 
 // Null when the variant is absent or is the default, so an untouched bar reads
 // as plain "Bar" everywhere rather than suddenly gaining a "(vertical)" suffix.
 export function variantLabel(type, variant) {
   const list = VARIANTS[type]
-  if (!list || variant == null) return null
-  const hit = list.find((v) => v.id === variant)
-  return !hit || hit === list[0] ? null : hit.label
+  if (!list) return null
+  const hit = entryFor(type, variant)
+  return hit === list[0] ? null : hit.label
 }
 
 // --- shared numbers for the placeholders that are boxes rather than drawings ---

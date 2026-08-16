@@ -17,7 +17,15 @@
 
 import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
 import { typeLabel } from '../components/registry.jsx'
-import { artFor, KPI_SPARK, KPI_TEXT, PIVOT, TABLE, TEXT_LINES } from '../components/placeholderArt.js'
+import {
+  artFor,
+  KPI_SPARK,
+  KPI_TEXT,
+  PIVOT,
+  TABLE,
+  TEXT_LINES,
+  variantParts,
+} from '../components/placeholderArt.js'
 
 export function downloadHtmlExport(doc) {
   const html = renderDashboardHtml(doc)
@@ -229,11 +237,15 @@ function hyphenate(name) {
 const chart = (type) => (variant) => artToHtml(artFor(type, variant))
 
 const PLACEHOLDERS = {
-  kpi: () => `<div class="kpi">
-<div class="kpi-num">${KPI_TEXT.value}</div>
-<div class="kpi-delta">${KPI_TEXT.delta}</div>
-${artToHtml(KPI_SPARK, 'kpi-spark')}
-</div>`,
+  // Built line by line rather than as one template, so a dropped piece leaves no
+  // blank line behind and the default variant is exactly what it always was.
+  kpi: (variant) => {
+    const parts = variantParts('kpi', variant)
+    const lines = [`<div class="kpi-num">${KPI_TEXT.value}</div>`]
+    if (parts.delta) lines.push(`<div class="kpi-delta">${KPI_TEXT.delta}</div>`)
+    if (parts.spark) lines.push(artToHtml(KPI_SPARK, 'kpi-spark'))
+    return `<div class="kpi">\n${lines.join('\n')}\n</div>`
+  },
   timeseries: chart('timeseries'),
   bar: chart('bar'),
   table: () => {
