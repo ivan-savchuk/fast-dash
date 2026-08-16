@@ -17,6 +17,7 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder |
 | `src/components/placeholderArt.js` | The chart drawings, described once and shared by the canvas and the HTML export |
+| `src/components/TypeBadge.jsx` | The type label in a card header, and the menu that switches a chart's variant |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
 | `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
@@ -39,8 +40,8 @@ One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is exported
 saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
-`setComment`, `setDocTitle`, `load`, `reset`, `undo`, `redo`, plus the filter and page
-actions below.
+`setComment`, `setVariant`, `cycleVariant`, `setDocTitle`, `load`, `reset`, `undo`,
+`redo`, plus the filter and page actions below.
 
 **Pages.** `doc.pages` was always an array but only `pages[0]` was ever used; it now holds
 many. `activePageId` is view state on the reducer (like `selectedId`), not part of the
@@ -117,6 +118,48 @@ and each side renders it:
 `SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
 to a string. Change a drawing in one place and both follow.
 
+## Chart variants (2026-08-16)
+
+A component carries an optional `variant` — `{ type: 'bar', variant: 'horizontal' }`. This
+is spec data, not decoration: horizontal says the categories have long names and the point
+is the ranking; stacked says composition. The HTML export spells it out ("Bar (horizontal)")
+because there the silhouette is all a reader has.
+
+`VARIANTS` in `placeholderArt.js` lists only the types that have a choice; everything else
+keeps its single `ART` entry and gains no ceremony. Three rules make old documents safe:
+
+- the **first entry is the default, and is the same drawing the type always had**;
+- `artFor(type, variant)` falls back to that default for a missing type, a missing
+  `variant`, or an id this build does not know (a file from a later version);
+- `variantLabel` returns null for the default, so an untouched bar still reads "Bar"
+  rather than gaining a "(vertical)" suffix.
+
+Verified by rendering a variant-free document before and after the change: byte-identical
+on both the canvas and the export.
+
+Switching happens in the card header (`TypeBadge.jsx`), never on the card edges — the card
+*is* the drag handle, so an edge button sits exactly where you grab to move or resize.
+`[` and `]` cycle the selected card, and the reducer resolves current-to-next itself
+because the selection may be a card nested inside a Tabs container.
+
+**Trap — the variant menu must be a portal.** `react-grid-layout` runs with
+`useCSSTransforms` (its default), so every card carries a CSS `transform`. A transformed
+ancestor becomes the containing block for `position: fixed`, so a fixed menu inside a card
+anchors to the *card* rather than the viewport — and the card is `overflow-hidden` on top
+of that. `createPortal` to `document.body` escapes both. This fails silently, by rendering
+the menu in the wrong place, not by erroring.
+
+**And the portal brings a second trap with it.** A portal escapes the DOM but *not* the
+React tree — events raised inside it still bubble to `Card` and `Canvas` as though the menu
+sat inside the card. `Canvas` decides a click means "empty canvas, open the quick picker"
+when the target is not inside a `.react-grid-item` (`Canvas.jsx:59`), and a portaled menu
+never is, so picking a variant also opened the add-component menu. The portal's contents
+therefore stop `click` and `mousedown` at their own boundary. Any future portal rendered
+from inside a card needs the same guard.
+
+A variant never changes `defaultSize`. Switching one must not resize the card, or the
+neighbours get shoved around under the user.
+
 **Still deliberately separate:** the placeholders that are boxes rather than drawings — KPI,
 table, pivot, text, tabs, section — and the filter controls. Their markup is Tailwind on the
 canvas and hand-written CSS in the export, because the exported file ships no Tailwind. Only
@@ -153,9 +196,9 @@ to remember to maintain history, so a new action cannot forget to.
 
 History rules, all of which exist because the naive version is annoying to use:
 
-- **Bursts collapse.** Consecutive `rename` / `setComment` / `setDocTitle` / `nudge` on
-  the same target within 800ms are one entry. Typing a description is one undo, not one
-  per character.
+- **Bursts collapse.** Consecutive `rename` / `setComment` / `setDocTitle` / `nudge` /
+  `cycleVariant` on the same target within 800ms are one entry. Typing a description is
+  one undo, not one per character, and cycling through four variants is one undo, not four.
 - **No-ops are not recorded.** `setLayout` where nothing moved (a click that begins a
   drag and goes nowhere) and `nudge` against the canvas edge return the previous state
   unchanged. Otherwise undo appears to do nothing.
@@ -174,9 +217,9 @@ bootstrap falls back to an empty document.
 
 ## Keyboard
 
-`1`–`5` add a component · arrows move the selected card one cell · `Delete` /
-`Backspace` removes it · `Esc` deselects. Shortcuts are ignored while a text field has
-focus.
+`1`–`5` add a component · arrows move the selected card one cell · `[` / `]` step it
+through the ways its chart can be drawn · `Delete` / `Backspace` removes it · `Esc`
+deselects. Shortcuts are ignored while a text field has focus.
 
 `⌘D` duplicates the selected card. `⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These fire even
 while a text field has focus — the title and description are controlled inputs where

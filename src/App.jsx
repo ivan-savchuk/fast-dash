@@ -167,6 +167,16 @@ export default function App() {
         return
       }
 
+      // [ and ] step the selected chart through the ways it can be drawn — the
+      // keyboard half of the type badge in the card header. Types with a single
+      // drawing ignore it; the reducer decides, since the selection may be a
+      // card nested inside a Tabs container.
+      if ((e.key === '[' || e.key === ']') && selectedId) {
+        e.preventDefault()
+        dispatch({ type: 'cycleVariant', delta: e.key === ']' ? 1 : -1 })
+        return
+      }
+
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault()
         dispatch({ type: 'delete', id: selectedId })

@@ -2,6 +2,7 @@ import { memo } from 'react'
 
 import { COMPONENT_TYPES } from './registry.jsx'
 import TabsBody from './TabsBody.jsx'
+import TypeBadge from './TypeBadge.jsx'
 
 // Superset's card pattern: flat white card, hairline border, a header strip
 // with the title on the left, the chart body, then a one-line description.
@@ -72,9 +73,13 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           onChange={(e) => onRename(e.target.value)}
           aria-label="Section title"
         />
-        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
-          {def.label}
-        </span>
+        <TypeBadge
+          id={id}
+          type={component.type}
+          variant={component.variant}
+          label={def.label}
+          dispatch={dispatch}
+        />
         <button
           className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDuplicate}
@@ -111,9 +116,13 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           onChange={(e) => onRename(e.target.value)}
           aria-label="Component title"
         />
-        <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
-          {def.label}
-        </span>
+        <TypeBadge
+          id={id}
+          type={component.type}
+          variant={component.variant}
+          label={def.label}
+          dispatch={dispatch}
+        />
         <button
           className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDuplicate}
@@ -142,7 +151,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
             dispatch={dispatch}
           />
         ) : (
-          <Placeholder />
+          <Placeholder variant={component.variant} />
         )}
       </div>
 

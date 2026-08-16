@@ -12,13 +12,14 @@
 
 import { createElement } from 'react'
 import {
-  ART,
+  artFor,
   KPI_SPARK,
   KPI_TEXT,
   PIVOT,
   TABLE,
   TABS_LABELS,
   TEXT_LINES,
+  variantLabel,
 } from './placeholderArt.js'
 
 // A shape is `[tag, attrs]`, or `[tag, attrs, children]` for a group. Attribute
@@ -40,10 +41,12 @@ function SvgArt({ art, className = 'h-full w-full' }) {
   )
 }
 
-// `chart` covers every type whose placeholder is nothing but a drawing.
+// `chart` covers every type whose placeholder is nothing but a drawing. Types
+// with more than one way to be drawn take the component's `variant`; the rest
+// ignore it and `artFor` hands back their single drawing.
 const chart = (type) =>
-  function ChartPlaceholder() {
-    return <SvgArt art={ART[type]} />
+  function ChartPlaceholder({ variant }) {
+    return <SvgArt art={artFor(type, variant)} />
   }
 
 function KpiPlaceholder() {
@@ -320,3 +323,14 @@ export const CATALOG_ORDER = [
 export const TYPE_BY_KEY = Object.fromEntries(
   TYPE_ORDER.map((type) => [COMPONENT_TYPES[type].key, type]),
 )
+
+// What to call a component: "Bar", or "Bar (horizontal)" once a non-default
+// variant is chosen. The HTML export uses this, because there the silhouette is
+// all a reader has — naming the variant turns an inference into an instruction.
+// Lives here rather than in placeholderArt.js, which knows the variants but not
+// the type labels and must not import this file back.
+export function typeLabel(type, variant) {
+  const label = COMPONENT_TYPES[type]?.label ?? type
+  const v = variantLabel(type, variant)
+  return v ? `${label} (${v.toLowerCase()})` : label
+}

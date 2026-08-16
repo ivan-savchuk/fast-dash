@@ -31,7 +31,19 @@ const baseline = (stroke) => [
   { x1: 0, y1: BASE_Y, x2: 100, y2: BASE_Y, stroke, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ]
 
+// The mirror of `baseline` for charts whose categories run down the left rather
+// than along the bottom — a horizontal bar chart's axis.
+const AXIS_X = 2
+const leftAxis = (stroke) => [
+  'line',
+  { x1: AXIS_X, y1: 0, x2: AXIS_X, y2: 60, stroke, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+]
+
 const cartesian = (shapes) => ({ viewBox: '0 0 100 60', stretch: true, shapes })
+
+// Segment heights are fractions of a bar's total, so rounding keeps float noise
+// (`15.299999999999999`) out of the markup.
+const round2 = (n) => Number(n.toFixed(2))
 
 // --- the drawings ---
 
@@ -65,11 +77,59 @@ const TIMESERIES = cartesian([
   baseline(GRAY.mid),
 ])
 
+const BAR_HEIGHTS = [34, 46, 26, 52, 40, 56, 30]
+
 const BAR = cartesian([
-  ...[34, 46, 26, 52, 40, 56, 30].map((h, i) => [
+  ...BAR_HEIGHTS.map((h, i) => [
     'rect',
     { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: GRAY.mid },
   ]),
+  baseline(GRAY.dark),
+])
+
+// Ranked left-to-right bars off a left-hand axis. Descending on purpose: a
+// horizontal bar chart is what you reach for when the categories have long
+// names and the point is the ranking.
+const BAR_HORIZONTAL = cartesian([
+  ...[88, 72, 60, 45, 33, 20].map((w, i) => [
+    'rect',
+    { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: GRAY.mid },
+  ]),
+  leftAxis(GRAY.dark),
+])
+
+// Same bars as the vertical chart, each cut into three parts stacked bottom-up:
+// one bar is a whole, and the parts are its composition.
+const STACK_PARTS = [0.45, 0.35, 0.2]
+const STACK_FILLS = [GRAY.dark, GRAY.mid, GRAY.light]
+
+const BAR_STACKED = cartesian([
+  ...BAR_HEIGHTS.flatMap((total, i) => {
+    let below = 0
+    return STACK_PARTS.map((share, s) => {
+      const height = round2(total * share)
+      const y = round2(BASE_Y - below - height)
+      below = round2(below + height)
+      return ['rect', { x: i * 14 + 2, y, width: 10, height, fill: STACK_FILLS[s] }]
+    })
+  }),
+  baseline(GRAY.dark),
+])
+
+// Two series side by side per category — the same measure split by a second
+// dimension, compared rather than summed.
+const GROUP_A = [40, 52, 30, 46, 36]
+const GROUP_B = [28, 38, 44, 25, 50]
+
+const BAR_GROUPED = cartesian([
+  ...GROUP_A.flatMap((a, i) => {
+    const x = i * 20 + 3
+    const b = GROUP_B[i]
+    return [
+      ['rect', { x, y: BASE_Y - a, width: 7, height: a, fill: GRAY.dark }],
+      ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: GRAY.mid }],
+    ]
+  }),
   baseline(GRAY.dark),
 ])
 
@@ -265,6 +325,7 @@ export const KPI_SPARK = {
 // they are built from CSS on each side because the export ships no Tailwind.
 export const ART = {
   timeseries: TIMESERIES,
+  // The bar entry is the default (first) variant; see VARIANTS below.
   bar: BAR,
   combo: COMBO,
   scatter: SCATTER,
@@ -276,6 +337,49 @@ export const ART = {
   choropleth: CHOROPLETH,
   pointmap: POINTMAP,
   pie: DONUT,
+}
+
+// --- variants ---
+//
+// A type listed here can be drawn more than one way, and which way is a real
+// requirement rather than decoration: a horizontal bar chart says the categories
+// have long names and the point is the ranking; a stacked one says composition.
+// That belongs in the export, so a component carries an optional `variant`.
+//
+// Only types with a choice appear here — the rest keep their single `ART` entry
+// and gain no ceremony. The first entry is the default, and it is the *same
+// drawing* the type has always had, so a document written before variants
+// existed renders exactly as it did.
+
+export const VARIANTS = {
+  bar: [
+    { id: 'vertical', label: 'Vertical', art: BAR },
+    { id: 'horizontal', label: 'Horizontal', art: BAR_HORIZONTAL },
+    { id: 'stacked', label: 'Stacked', art: BAR_STACKED },
+    { id: 'grouped', label: 'Grouped', art: BAR_GROUPED },
+  ],
+}
+
+export function variantsFor(type) {
+  return VARIANTS[type] ?? []
+}
+
+// The drawing to use. A type with no variants, an absent `variant`, or an id
+// this build does not know (an imported file from a later version) all fall
+// back to the type's default drawing rather than rendering nothing.
+export function artFor(type, variant) {
+  const list = VARIANTS[type]
+  if (!list) return ART[type]
+  return (list.find((v) => v.id === variant) ?? list[0]).art
+}
+
+// Null when the variant is absent or is the default, so an untouched bar reads
+// as plain "Bar" everywhere rather than suddenly gaining a "(vertical)" suffix.
+export function variantLabel(type, variant) {
+  const list = VARIANTS[type]
+  if (!list || variant == null) return null
+  const hit = list.find((v) => v.id === variant)
+  return !hit || hit === list[0] ? null : hit.label
 }
 
 // --- shared numbers for the placeholders that are boxes rather than drawings ---

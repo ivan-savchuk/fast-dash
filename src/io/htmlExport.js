@@ -16,8 +16,8 @@
 // labels are shared. The file still needs neither React nor Tailwind to open.
 
 import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
-import { COMPONENT_TYPES } from '../components/registry.jsx'
-import { ART, KPI_SPARK, KPI_TEXT, PIVOT, TABLE, TEXT_LINES } from '../components/placeholderArt.js'
+import { typeLabel } from '../components/registry.jsx'
+import { artFor, KPI_SPARK, KPI_TEXT, PIVOT, TABLE, TEXT_LINES } from '../components/placeholderArt.js'
 
 export function downloadHtmlExport(doc) {
   const html = renderDashboardHtml(doc)
@@ -152,22 +152,26 @@ function overlaps(a, b) {
 }
 
 function renderCard(c) {
-  const def = COMPONENT_TYPES[c.type]
   const { x, y, w, h } = c.layout
   // CSS grid lines are 1-based; the same 12-col / 40px / 12px-gap geometry as
   // the editor, so the export matches what was on the canvas.
   const style = `grid-column:${x + 1}/span ${w};grid-row:${y + 1}/span ${h}`
+  // Unlike the canvas, the export has no control to open — so it spells the
+  // variant out ("Bar (horizontal)"), turning what the silhouette implies into
+  // something a BI developer can build from.
+  const label = esc(typeLabel(c.type, c.variant))
 
   // A Section header is a labelled band, not a chart card.
   if (c.type === 'section') {
-    return `<div class="card section" style="${style}"><span class="section-label">${esc(c.title ?? '')}</span><span class="card-type">${esc(def?.label ?? c.type)}</span></div>`
+    return `<div class="card section" style="${style}"><span class="section-label">${esc(c.title ?? '')}</span><span class="card-type">${label}</span></div>`
   }
-  const body = c.type === 'tabs' ? renderTabsCard(c) : (PLACEHOLDERS[c.type] ?? placeholderUnknown)()
+  const body =
+    c.type === 'tabs' ? renderTabsCard(c) : (PLACEHOLDERS[c.type] ?? placeholderUnknown)(c.variant)
   const comment = c.comment
     ? `<div class="card-note">${esc(c.comment)}</div>`
     : ''
   return `<div class="card" style="${style}">
-<div class="card-head"><span class="card-title">${esc(c.title ?? '')}</span><span class="card-type">${esc(def?.label ?? c.type)}</span></div>
+<div class="card-head"><span class="card-title">${esc(c.title ?? '')}</span><span class="card-type">${label}</span></div>
 <div class="card-body">${body}</div>
 ${comment}
 </div>`
@@ -220,8 +224,9 @@ function hyphenate(name) {
 }
 
 // Every type whose placeholder is nothing but a drawing renders straight from
-// the shared description.
-const chart = (type) => () => artToHtml(ART[type])
+// the shared description. Types that can be drawn more than one way take the
+// component's `variant`; the rest ignore it.
+const chart = (type) => (variant) => artToHtml(artFor(type, variant))
 
 const PLACEHOLDERS = {
   kpi: () => `<div class="kpi">

@@ -199,11 +199,36 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
 - **Component-count warning** — **dropped**. The anti-sprawl line is held by the tool being
   opinionated about layout, not by a counter scolding you past eight panels.
 
-That empties Phase 4's build list. What remains is a refinement pass over the chart
-placeholders, which were added breadth-first and are internally inconsistent — inconsistent
-baseline strokes, gridlines on the time series only, and `preserveAspectRatio="none"` applied
-to charts whose shape it distorts. Now a one-file change each. **Dark mode is explicitly not
-part of it** — judged good as it stands (2026-08-16).
+9. **Chart variants** — *in progress* (started 2026-08-16). A chart type can be drawn more
+   than one way, and which way is a requirement rather than decoration, so a component
+   carries an optional `variant` that the JSON and HTML exports both name. Six types earn
+   variants; the rest would only get decoration.
+
+   - **Bar** — vertical, horizontal, stacked, grouped. **Done** (2026-08-16), together with
+     the machinery: `VARIANTS` in `placeholderArt.js`, `setVariant` / `cycleVariant`, the
+     `TypeBadge` menu in the card header, and `[` / `]`.
+   - Still to come, one per session: **KPI** (spark / number only / delta only),
+     **Time series** (line / area / stacked area), **Scatter** (plain / trend line /
+     bubble), **Pie** (donut / full pie), **Heatmap** (grid / calendar). Scatter's bubble
+     and the calendar heatmap were cut from Tier 2 earlier; they come back as variants
+     rather than as new types.
+
+   Switching lives in the card header, not on carousel arrows at the card edges (owner's
+   first proposal). The card itself is the drag handle, so an edge button would sit exactly
+   where you grab to move or resize; the header is where Superset keeps the viz type, is
+   already outside the drag path, and can show which variant is current instead of making
+   you cycle blind to find out.
+
+   Not done deliberately: variants are not searchable in the quick picker (adding a bar and
+   then switching is two steps; making search match variant names would cut it to one), and
+   a variant never changes `defaultSize` — resizing on switch would shove the neighbours
+   around under the user.
+
+Also still open: a refinement pass over the chart placeholders, which were added
+breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
+the time series only, and `preserveAspectRatio="none"` applied to charts whose shape it
+distorts. Now a one-file change each. **Dark mode is explicitly not part of it** — judged
+good as it stands (2026-08-16).
 
 ---
 

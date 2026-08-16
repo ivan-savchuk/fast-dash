@@ -170,6 +170,14 @@ round-trip. Version the schema from day one.
 - Every component is written with `spec: {}` and `comment: ""` present, even when
   empty. Phase 3 fills the `spec` keys; the shape does not change when it does, so an
   export made today round-trips through the final schema.
+- `variant` (added 2026-08-16) says *how* a chart is drawn — `{ "type": "bar",
+  "variant": "horizontal" }`. It is spec, not styling: horizontal means the categories
+  have long names and the point is the ranking; stacked means composition. Only types
+  with a real choice carry the key (today: bar — vertical, horizontal, stacked,
+  grouped); on a KPI or a table it would be meaningless, so it is absent rather than
+  null. A missing or unrecognised value falls back to the type's default drawing, so
+  documents written before variants existed are unaffected. The HTML export names it in
+  the card header — "Bar (horizontal)" — because there the silhouette is all a reader has.
 - `comment` is capped at **280 characters** — a tweet. It is the one-line answer to
   "what question does this card answer?". Longer reasoning belongs in the spec fields,
   not the card, and an uncapped field invites prose that layout cannot expose.

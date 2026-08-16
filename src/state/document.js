@@ -4,6 +4,7 @@
 // always exactly `state.doc`.
 
 import { COMPONENT_TYPES } from '../components/registry.jsx'
+import { variantsFor } from '../components/placeholderArt.js'
 
 export const SCHEMA_VERSION = 1
 
@@ -60,6 +61,7 @@ const BURST_EDITS = new Set([
   'setComment',
   'setDocTitle',
   'nudge',
+  'cycleVariant',
   'renameFilter',
   'renamePage',
   'renameTab',
@@ -120,9 +122,14 @@ function createComponent(componentType, components, at) {
   const slot = at
     ? { x: clamp(at.x, 0, GRID_COLS - w), y: Math.max(0, at.y) }
     : firstFreeSlot(components, w, h)
+  const variants = variantsFor(componentType)
   const component = {
     id: nextId('c'),
     type: componentType,
+    // Only types that can be drawn more than one way carry a `variant`, and
+    // they carry it from birth so the export always names the choice. On a KPI
+    // or a table the key would be meaningless, so it is absent rather than null.
+    ...(variants.length > 1 ? { variant: variants[0].id } : {}),
     layout: { ...slot, w, h },
     title: def.defaultTitle,
     // The spec layer lands in Phase 3. The keys exist now so an early
@@ -437,6 +444,39 @@ function applyAction(state, action) {
         comment: action.comment,
       }))
       return { ...state, doc: replaceComponents(state.doc, page.id, commented) }
+    }
+
+    // Which way a chart is drawn — vertical or horizontal bars, and so on.
+    // Both of these reach a card nested inside a Tabs container, because
+    // `updateInList` and `findInList` already search one level down.
+
+    // Picked explicitly from the card header's menu.
+    case 'setVariant': {
+      const current = findInList(page.components, action.id)
+      // Re-picking the entry already ticked is not an edit, so it must not
+      // become an undo step.
+      if (!current || current.variant === action.variant) return state
+      const updated = updateInList(page.components, action.id, (c) => ({
+        ...c,
+        variant: action.variant,
+      }))
+      return { ...state, doc: replaceComponents(state.doc, page.id, updated) }
+    }
+
+    // Stepped with the keyboard. The reducer resolves current-to-next itself so
+    // the view never has to find the component — the selection may be nested.
+    case 'cycleVariant': {
+      const id = action.id ?? state.selectedId
+      const current = id ? findInList(page.components, id) : null
+      if (!current) return state
+      const list = variantsFor(current.type)
+      if (list.length < 2) return state
+      // An absent or unrecognised variant is the default, which is index 0.
+      const at = list.findIndex((v) => v.id === current.variant)
+      const from = at === -1 ? 0 : at
+      const variant = list[(from + action.delta + list.length) % list.length].id
+      const updated = updateInList(page.components, id, (c) => ({ ...c, variant }))
+      return { ...state, doc: replaceComponents(state.doc, page.id, updated) }
     }
 
     case 'setDocTitle':
