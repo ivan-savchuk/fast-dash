@@ -222,10 +222,15 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
      the trend, area adds magnitude, stacked area says composition over time. The stacked
      variant carries its own sample points: stacking the line chart's two series would put
      the total well outside the viewBox.
-   - Still to come, one per session: **Scatter** (plain / trend line / bubble), **Pie**
-     (donut / full pie), **Heatmap** (grid / calendar). Scatter's bubble and the calendar
-     heatmap were cut from Tier 2 earlier; they come back as variants rather than as new
-     types.
+   - **Scatter** — plain (default), with trend line, bubble. **Done** (2026-08-16). The
+     trend line is a least-squares fit computed from the points rather than drawn by eye,
+     so it follows the cloud and keeps following it if the points change. Bubble uses a
+     thinned set of marks — eighteen sized ones overlap into a blob at card size — and
+     brings back the bubble chart that was cut from Tier 2, as a variant rather than a
+     new type.
+   - Still to come, one per session: **Pie** (donut / full pie) and **Heatmap** (grid /
+     calendar). The calendar heatmap was cut from Tier 2 earlier and comes back the same
+     way, as a variant.
 
    Switching lives in the card header, not on carousel arrows at the card edges (owner's
    first proposal). The card itself is the drag handle, so an edge button would sit exactly

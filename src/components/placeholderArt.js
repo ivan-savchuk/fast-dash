@@ -195,8 +195,53 @@ const SCATTER_PTS = [
   [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29],
 ]
 
-const SCATTER = cartesian([
-  ...SCATTER_PTS.map(([cx, cy]) => ['circle', { cx, cy, r: 0.9, fill: GRAY.dark, opacity: 0.6 }]),
+const dots = (points) =>
+  points.map(([cx, cy]) => ['circle', { cx, cy, r: 0.9, fill: GRAY.dark, opacity: 0.6 }])
+
+const SCATTER = cartesian([...dots(SCATTER_PTS), baseline(GRAY.mid)])
+
+// Least-squares fit, computed rather than drawn by eye, so the line actually
+// follows the cloud — and keeps following it if the points are ever changed.
+function fitLine(points) {
+  const n = points.length
+  const mx = points.reduce((sum, [x]) => sum + x, 0) / n
+  const my = points.reduce((sum, [, y]) => sum + y, 0) / n
+  const slope =
+    points.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) /
+    points.reduce((sum, [x]) => sum + (x - mx) ** 2, 0)
+  const at = (x) => round2(my + slope * (x - mx))
+  return { x1: 0, y1: at(0), x2: 100, y2: at(100) }
+}
+
+// The same cloud with the relationship drawn in — "is there a correlation" is a
+// different question from "what does the spread look like".
+const SCATTER_TREND = cartesian([
+  ...dots(SCATTER_PTS),
+  [
+    'line',
+    {
+      ...fitLine(SCATTER_PTS),
+      stroke: GRAY.dark,
+      strokeWidth: 1.5,
+      strokeDasharray: '5 3',
+      vectorEffect: 'non-scaling-stroke',
+    },
+  ],
+  baseline(GRAY.mid),
+])
+
+// Bubble: fewer marks, and a third measure carried by their size. Thinned out
+// because eighteen sized marks on a card this small overlap into a blob.
+const BUBBLE_PTS = [
+  [14, 46, 2.2], [24, 40, 3.4], [33, 50, 1.6], [42, 34, 4.2], [50, 44, 2.6],
+  [59, 28, 3], [68, 38, 4.8], [78, 24, 2], [88, 32, 3.6],
+]
+
+const SCATTER_BUBBLE = cartesian([
+  ...BUBBLE_PTS.map(([cx, cy, r]) => [
+    'circle',
+    { cx, cy, r, fill: GRAY.mid, stroke: GRAY.dark, strokeWidth: 0.5, vectorEffect: 'non-scaling-stroke' },
+  ]),
   baseline(GRAY.mid),
 ])
 
@@ -398,6 +443,13 @@ export const VARIANTS = {
     { id: 'line', label: 'Line', art: TIMESERIES },
     { id: 'area', label: 'Area', art: TIMESERIES_AREA },
     { id: 'stacked', label: 'Stacked area', art: TIMESERIES_STACKED },
+  ],
+  // Plain shows the spread; trend line answers "is there a correlation";
+  // bubble carries a third measure in the mark size.
+  scatter: [
+    { id: 'plain', label: 'Plain', art: SCATTER },
+    { id: 'trend', label: 'With trend line', art: SCATTER_TREND },
+    { id: 'bubble', label: 'Bubble', art: SCATTER_BUBBLE },
   ],
   bar: [
     { id: 'vertical', label: 'Vertical', art: BAR },
