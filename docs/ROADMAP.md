@@ -184,8 +184,26 @@ placeable canvas components** (the last Tier 1 remnant) was skipped — the filt
 already covers filters. All of these remain cheap to add later (one registry entry plus an
 export mirror) if a real user asks.
 
-Still open in Phase 4, not yet built: interaction annotations (draw.io arrows) and the
-component-count warning — see `SPEC.md`.
+8. ~~**De-duplicate the placeholder art**~~ — **done** (2026-08-16). Every chart drawing was
+   written twice, once as JSX and once as an HTML string, and had begun to drift. Both now
+   render from one description in `src/components/placeholderArt.js`. Behaviour-preserving:
+   verified by diffing every placeholder rendered both ways, before against after. See
+   `docs/NOTES.md`.
+
+Two items were cut here rather than built (2026-08-16, Ivan's call):
+
+- **Interaction annotations** (draw.io-style arrows for cross-filter and drill-down) —
+  **dropped**. Three or four sessions of work, and it turns the canvas from a grid of boxes
+  into a diagram, which invites exactly the fiddling the tool exists to prevent. Speed is
+  the product. Interactions can still be written in a card's description.
+- **Component-count warning** — **dropped**. The anti-sprawl line is held by the tool being
+  opinionated about layout, not by a counter scolding you past eight panels.
+
+That empties Phase 4's build list. What remains is a refinement pass over the chart
+placeholders, which were added breadth-first and are internally inconsistent — inconsistent
+baseline strokes, gridlines on the time series only, and `preserveAspectRatio="none"` applied
+to charts whose shape it distorts. Now a one-file change each. **Dark mode is explicitly not
+part of it** — judged good as it stands (2026-08-16).
 
 ---
 

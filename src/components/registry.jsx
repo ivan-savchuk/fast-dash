@@ -1,87 +1,82 @@
 // One entry per component type: what it's called, how big it starts,
 // which number key adds it, and what its grayscale placeholder looks like.
 //
-// Placeholders are hand-written on purpose. They must read as the right
-// *shape* of chart at a glance and carry no real data and no color —
-// color invites arguments about palettes instead of about layout.
+// The chart drawings themselves live in `placeholderArt.js`, described once
+// and shared with the HTML export so the two can no longer drift apart.
+// `SvgArt` below is the half that turns a description into React elements.
+//
+// The placeholders that are boxes rather than drawings — KPI, table, pivot,
+// text, tabs, section — are still written here as ordinary markup, because the
+// export ships no Tailwind and has to build them from its own CSS. Their
+// numbers and labels still come from `placeholderArt.js`.
 
-const GRAY = { dark: '#9ca3af', mid: '#c9cdd4', light: '#e5e7eb' }
+import { createElement } from 'react'
+import {
+  ART,
+  KPI_SPARK,
+  KPI_TEXT,
+  PIVOT,
+  TABLE,
+  TABS_LABELS,
+  TEXT_LINES,
+} from './placeholderArt.js'
+
+// A shape is `[tag, attrs]`, or `[tag, attrs, children]` for a group. Attribute
+// names are already in JSX spelling, so they spread straight onto the element.
+function shapeToElement(shape, i) {
+  const [tag, attrs, children] = shape
+  return createElement(tag, { key: i, ...attrs }, children?.map(shapeToElement))
+}
+
+function SvgArt({ art, className = 'h-full w-full' }) {
+  return (
+    <svg
+      className={className}
+      viewBox={art.viewBox}
+      {...(art.stretch ? { preserveAspectRatio: 'none' } : null)}
+    >
+      {art.shapes.map(shapeToElement)}
+    </svg>
+  )
+}
+
+// `chart` covers every type whose placeholder is nothing but a drawing.
+const chart = (type) =>
+  function ChartPlaceholder() {
+    return <SvgArt art={ART[type]} />
+  }
 
 function KpiPlaceholder() {
   return (
     <div className="flex h-full flex-col justify-center gap-1">
-      <div className="text-2xl leading-none font-semibold text-gray-400 tabular-nums">1,234</div>
-      <div className="text-[11px] text-gray-400">▲ 12.5% vs. prior period</div>
-      <svg className="mt-1 h-5 w-full" viewBox="0 0 100 20" preserveAspectRatio="none">
-        <polyline
-          points="0,16 14,12 28,14 42,8 56,10 70,5 84,7 100,2"
-          fill="none"
-          stroke={GRAY.dark}
-          strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      <div className="text-2xl leading-none font-semibold text-gray-400 tabular-nums">
+        {KPI_TEXT.value}
+      </div>
+      <div className="text-[11px] text-gray-400">{KPI_TEXT.delta}</div>
+      <SvgArt art={KPI_SPARK} className="mt-1 h-5 w-full" />
     </div>
   )
 }
 
-function TimeSeriesPlaceholder() {
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {/* gridlines */}
-      {[15, 30, 45].map((y) => (
-        <line key={y} x1="0" y1={y} x2="100" y2={y} stroke={GRAY.light} strokeWidth="1"
-          vectorEffect="non-scaling-stroke" />
-      ))}
-      <polyline
-        points="0,48 12,40 24,44 36,28 48,32 60,20 72,24 84,12 100,8"
-        fill="none" stroke={GRAY.dark} strokeWidth="2" vectorEffect="non-scaling-stroke"
-      />
-      <polyline
-        points="0,54 12,52 24,50 36,46 48,48 60,40 72,42 84,36 100,30"
-        fill="none" stroke={GRAY.mid} strokeWidth="2" strokeDasharray="4 3"
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* axis */}
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-function BarPlaceholder() {
-  const bars = [34, 46, 26, 52, 40, 56, 30]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 14 + 2} y={58 - h} width="10" height={h} fill={GRAY.mid} />
-      ))}
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.dark} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
 function TablePlaceholder() {
-  const rows = 5
-  const cols = 4
+  const cols = TABLE.columns.length
+  const gridTemplateColumns = `1.4fr repeat(${cols - 1}, 1fr)`
   return (
     <div className="flex h-full flex-col overflow-hidden text-[11px]">
-      <div className="grid shrink-0 border-b border-gray-300 pb-1"
-        style={{ gridTemplateColumns: `1.4fr repeat(${cols - 1}, 1fr)` }}>
-        {Array.from({ length: cols }, (_, c) => (
-          <div key={c} className="truncate pr-2 font-medium text-gray-400">
-            {c === 0 ? 'Dimension' : `Measure ${c}`}
+      <div className="grid shrink-0 border-b border-gray-300 pb-1" style={{ gridTemplateColumns }}>
+        {TABLE.columns.map((label) => (
+          <div key={label} className="truncate pr-2 font-medium text-gray-400">
+            {label}
           </div>
         ))}
       </div>
       {/* rows share the leftover height, so the grid fills a tall card */}
-      {Array.from({ length: rows }, (_, r) => (
+      {Array.from({ length: TABLE.rows }, (_, r) => (
         <div key={r} className="grid min-h-0 flex-1 items-center border-b border-gray-100"
-          style={{ gridTemplateColumns: `1.4fr repeat(${cols - 1}, 1fr)` }}>
+          style={{ gridTemplateColumns }}>
           {Array.from({ length: cols }, (_, c) => (
             <div key={c} className="pr-2">
-              <div className="h-2 rounded bg-gray-200" style={{ width: c === 0 ? '80%' : '55%' }} />
+              <div className="h-2 rounded bg-gray-200" style={{ width: `${TABLE.barWidth(c)}%` }} />
             </div>
           ))}
         </div>
@@ -90,232 +85,62 @@ function TablePlaceholder() {
   )
 }
 
-function ComboPlaceholder() {
-  const bars = [30, 44, 26, 50, 38, 54]
+function PivotPlaceholder() {
+  const { cols, indents, indentPx } = PIVOT
+  const style = { gridTemplateColumns: `1.6fr repeat(${cols}, 1fr)` }
   return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 16 + 5} y={58 - h} width="10" height={h} fill={GRAY.light} />
-      ))}
-      <polyline
-        points="10,38 26,28 42,42 58,18 74,26 90,10"
-        fill="none"
-        stroke={GRAY.dark}
-        strokeWidth="2"
-        vectorEffect="non-scaling-stroke"
-      />
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-// An irregular cloud, drawn edge-to-edge so it fills the card rather than
-// leaving blank margins. preserveAspectRatio="none" lets it stretch like the
-// bar and time-series placeholders; the dots are kept small so the stretch
-// reads as a scatter, not as ovals.
-const SCATTER_PTS = [
-  [12, 45], [18, 50], [21, 38], [27, 47], [31, 53], [36, 35],
-  [41, 44], [44, 30], [49, 48], [55, 33], [58, 41], [63, 44],
-  [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29],
-]
-
-function ScatterPlaceholder() {
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {SCATTER_PTS.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r="0.9" fill={GRAY.dark} opacity="0.6" />
-      ))}
-      {/* Same baseline as the bar and time-series placeholders (y=58, full
-          width) so the charts line up when placed next to each other. */}
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-function FunnelPlaceholder() {
-  // Centred bars narrowing downward — reads as a funnel without the trapezoid
-  // maths, and stays grayscale.
-  const segs = [
-    { w: 92, c: GRAY.light },
-    { w: 74, c: GRAY.mid },
-    { w: 58, c: GRAY.dark },
-    { w: 42, c: GRAY.mid },
-    { w: 26, c: GRAY.light },
-  ]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {segs.map((s, i) => (
-        <rect key={i} x={50 - s.w / 2} y={4 + i * 11} width={s.w} height="8" fill={s.c} />
-      ))}
-    </svg>
-  )
-}
-
-function WaterfallPlaceholder() {
-  // Floating bars stepping up, with the start and total as full pillars. Shares
-  // the y=58 baseline with the other bar-like charts so they line up.
-  const bars = [
-    [6, 34, 22, GRAY.dark],
-    [22, 24, 10, GRAY.mid],
-    [38, 24, 8, GRAY.mid],
-    [54, 16, 8, GRAY.mid],
-    [70, 16, 6, GRAY.mid],
-    [86, 10, 46, GRAY.dark],
-  ]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {bars.map((b, i) => (
-        <rect key={i} x={b[0]} y={b[1]} width="10" height={b[2]} fill={b[3]} />
-      ))}
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-function HistogramPlaceholder() {
-  // Contiguous bars in a rough bell — a distribution, not a category bar chart.
-  const bars = [8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {bars.map((h, i) => (
-        <rect key={i} x={i * 8 + 2} y={58 - h} width="7.5" height={h} fill={GRAY.mid} />
-      ))}
-      <line x1="0" y1="58" x2="100" y2="58" stroke={GRAY.mid} strokeWidth="1"
-        vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
-function BoxPlotPlaceholder() {
-  // Three vertical box-and-whisker plots. [cx, whiskerTop, q3, median, q1, whiskerBottom].
-  const groups = [
-    [22, 10, 20, 28, 38, 50],
-    [50, 6, 16, 22, 34, 46],
-    [78, 14, 24, 30, 40, 54],
-  ]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {groups.map(([cx, wTop, q3, med, q1, wBot], i) => (
-        <g key={i}>
-          <line x1={cx} y1={wTop} x2={cx} y2={wBot} stroke={GRAY.mid} strokeWidth="1"
-            vectorEffect="non-scaling-stroke" />
-          <line x1={cx - 5} y1={wTop} x2={cx + 5} y2={wTop} stroke={GRAY.mid} strokeWidth="1"
-            vectorEffect="non-scaling-stroke" />
-          <line x1={cx - 5} y1={wBot} x2={cx + 5} y2={wBot} stroke={GRAY.mid} strokeWidth="1"
-            vectorEffect="non-scaling-stroke" />
-          <rect x={cx - 9} y={q3} width="18" height={q1 - q3} fill={GRAY.light}
-            stroke={GRAY.dark} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <line x1={cx - 9} y1={med} x2={cx + 9} y2={med} stroke={GRAY.dark} strokeWidth="1.2"
-            vectorEffect="non-scaling-stroke" />
-        </g>
-      ))}
-    </svg>
-  )
-}
-
-const HEAT_SHADES = ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280']
-const HEAT_ROWS = [
-  [1, 2, 3, 4, 3, 2, 1, 0],
-  [2, 3, 4, 5, 4, 3, 2, 1],
-  [3, 4, 5, 5, 5, 4, 3, 2],
-  [2, 3, 4, 5, 4, 3, 2, 1],
-  [1, 2, 3, 4, 3, 2, 1, 0],
-]
-
-function HeatmapPlaceholder() {
-  // A grid of cells shaded by intensity — one grayscale ramp, blob in the
-  // middle. Colour would invite palette bikeshedding (principle #1).
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {HEAT_ROWS.map((row, r) =>
-        row.map((v, c) => (
-          <rect key={`${r}-${c}`} x={c * 12.5 + 0.5} y={r * 12 + 0.5} width="11.5" height="11"
-            fill={HEAT_SHADES[v]} />
-        )),
-      )}
-    </svg>
-  )
-}
-
-// An abstract landmass split into regions — deliberately not real geography,
-// which would only invite "that's not where Texas is" over the layout question.
-const MAP_REGIONS = [
-  '10,20 30,12 34,30 18,38 8,32',
-  '30,12 52,10 50,28 34,30',
-  '52,10 74,14 78,30 58,32 50,28',
-  '18,38 34,30 46,40 40,52 20,50',
-  '34,30 50,28 58,32 60,44 46,40',
-  '58,32 78,30 88,40 74,52 60,44',
-]
-const MAP_SHADES = [GRAY.light, GRAY.mid, GRAY.dark, GRAY.mid, GRAY.light, GRAY.dark]
-const MAP_POINTS = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], [65, 43]]
-
-function ChoroplethPlaceholder() {
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {MAP_REGIONS.map((p, i) => (
-        <polygon key={i} points={p} fill={MAP_SHADES[i]} stroke="#fff" strokeWidth="0.8"
-          vectorEffect="non-scaling-stroke" />
-      ))}
-    </svg>
-  )
-}
-
-function PointMapPlaceholder() {
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60" preserveAspectRatio="none">
-      {MAP_REGIONS.map((p, i) => (
-        <polygon key={i} points={p} fill={GRAY.light} stroke={GRAY.mid} strokeWidth="0.8"
-          vectorEffect="non-scaling-stroke" />
-      ))}
-      {MAP_POINTS.map((pt, i) => (
-        <circle key={i} cx={pt[0]} cy={pt[1]} r="1.6" fill={GRAY.dark} opacity="0.75" />
-      ))}
-    </svg>
-  )
-}
-
-function DonutPlaceholder() {
-  // A donut ring split into three grayscale slices. Circumference of an r=18
-  // circle is ~113.1; each slice is a dash of that length, offset so they sit
-  // end to end. Rotated -90° so the first slice starts at twelve o'clock.
-  const C = 113.097
-  const slices = [
-    { len: 50.89, off: 0, color: GRAY.dark }, // ~45%
-    { len: 39.58, off: -50.89, color: GRAY.mid }, // ~35%
-    { len: 22.62, off: -90.48, color: GRAY.light }, // ~20%
-  ]
-  return (
-    <svg className="h-full w-full" viewBox="0 0 100 60">
-      <g transform="rotate(-90 50 30)" fill="none" strokeWidth="11">
-        {slices.map((s, i) => (
-          <circle
-            key={i}
-            cx="50"
-            cy="30"
-            r="18"
-            stroke={s.color}
-            strokeDasharray={`${s.len} ${C - s.len}`}
-            strokeDashoffset={s.off}
-          />
+    <div className="flex h-full flex-col overflow-hidden text-[11px]">
+      <div className="grid shrink-0 border-b border-gray-300 pb-1" style={style}>
+        <div className="pr-2" />
+        {Array.from({ length: cols }, (_, c) => (
+          <div key={c} className="flex justify-end pr-2">
+            <div className="h-1.5 w-8 rounded bg-gray-300" />
+          </div>
         ))}
-      </g>
-    </svg>
+      </div>
+      {indents.map((ind, ri) => (
+        <div key={ri} className="grid min-h-0 flex-1 items-center border-b border-gray-100" style={style}>
+          <div className="pr-2" style={{ paddingLeft: ind * indentPx }}>
+            <div className="h-2 rounded bg-gray-200" style={{ width: `${PIVOT.headWidth(ind)}%` }} />
+          </div>
+          {Array.from({ length: cols }, (_, c) => (
+            <div key={c} className="flex justify-end pr-2">
+              <div className="h-2 rounded bg-gray-200" style={{ width: `${PIVOT.cellWidth(ri, c)}%` }} />
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="grid shrink-0 items-center border-t-2 border-gray-300 pt-1" style={style}>
+        <div className="pr-2">
+          <div className="h-2 rounded bg-gray-300" style={{ width: '50%' }} />
+        </div>
+        {Array.from({ length: cols }, (_, c) => (
+          <div key={c} className="flex justify-end pr-2">
+            <div className="h-2 rounded bg-gray-300" style={{ width: `${PIVOT.totalWidth(c)}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TextPlaceholder() {
+  return (
+    <div className="flex h-full flex-col gap-2 pt-1">
+      {TEXT_LINES.map((w, i) => (
+        <div key={i} className="h-2 rounded bg-gray-200" style={{ width: w }} />
+      ))}
+    </div>
   )
 }
 
 function TabsPlaceholder() {
   // A Superset-style in-page Tabs element: a strip of tab labels over an empty
-  // region. A placeholder only — it names the tabs and shows the shape, but it
-  // does not host real child components.
-  const tabs = ['Tab A', 'Tab B', 'Tab C']
+  // region. A placeholder only — the real container renders in TabsBody.jsx.
   return (
     <div className="flex h-full flex-col">
       <div className="flex gap-1 border-b border-gray-200 text-[11px]">
-        {tabs.map((t, i) => (
+        {TABS_LABELS.map((t, i) => (
           <span
             key={t}
             className={`rounded-t-sm border border-b-0 px-2 py-0.5 ${
@@ -339,60 +164,6 @@ function SectionPlaceholder() {
   return <div className="h-full border-b-2 border-gray-300" />
 }
 
-function PivotPlaceholder() {
-  // A crosstab: a wider row-header column with indented sub-rows (the second
-  // row dimension), right-aligned value bars, and a bold totals row. The indent
-  // and the totals row are what separate it from the plain Table placeholder.
-  const cols = 4
-  const style = { gridTemplateColumns: `1.6fr repeat(${cols}, 1fr)` }
-  const indents = [0, 1, 1, 0, 1]
-  return (
-    <div className="flex h-full flex-col overflow-hidden text-[11px]">
-      <div className="grid shrink-0 border-b border-gray-300 pb-1" style={style}>
-        <div className="pr-2" />
-        {Array.from({ length: cols }, (_, c) => (
-          <div key={c} className="flex justify-end pr-2">
-            <div className="h-1.5 w-8 rounded bg-gray-300" />
-          </div>
-        ))}
-      </div>
-      {indents.map((ind, ri) => (
-        <div key={ri} className="grid min-h-0 flex-1 items-center border-b border-gray-100" style={style}>
-          <div className="pr-2" style={{ paddingLeft: ind * 14 }}>
-            <div className="h-2 rounded bg-gray-200" style={{ width: ind ? '55%' : '75%' }} />
-          </div>
-          {Array.from({ length: cols }, (_, c) => (
-            <div key={c} className="flex justify-end pr-2">
-              <div className="h-2 rounded bg-gray-200" style={{ width: `${45 + ((ri + c) % 3) * 15}%` }} />
-            </div>
-          ))}
-        </div>
-      ))}
-      <div className="grid shrink-0 items-center border-t-2 border-gray-300 pt-1" style={style}>
-        <div className="pr-2">
-          <div className="h-2 rounded bg-gray-300" style={{ width: '50%' }} />
-        </div>
-        {Array.from({ length: cols }, (_, c) => (
-          <div key={c} className="flex justify-end pr-2">
-            <div className="h-2 rounded bg-gray-300" style={{ width: `${55 + (c % 2) * 15}%` }} />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function TextPlaceholder() {
-  const widths = ['92%', '84%', '96%', '60%']
-  return (
-    <div className="flex h-full flex-col gap-2 pt-1">
-      {widths.map((w, i) => (
-        <div key={i} className="h-2 rounded bg-gray-200" style={{ width: w }} />
-      ))}
-    </div>
-  )
-}
-
 export const COMPONENT_TYPES = {
   kpi: {
     label: 'KPI card',
@@ -407,14 +178,14 @@ export const COMPONENT_TYPES = {
     key: '2',
     defaultTitle: 'Trend over time',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: TimeSeriesPlaceholder,
+    Placeholder: chart('timeseries'),
   },
   bar: {
     label: 'Bar',
     key: '3',
     defaultTitle: 'Breakdown by category',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: BarPlaceholder,
+    Placeholder: chart('bar'),
   },
   table: {
     label: 'Table',
@@ -437,49 +208,49 @@ export const COMPONENT_TYPES = {
     label: 'Pie / Donut',
     defaultTitle: 'Share of total',
     defaultSize: { w: 4, h: 6 },
-    Placeholder: DonutPlaceholder,
+    Placeholder: chart('pie'),
   },
   combo: {
     label: 'Combo (bar + line)',
     defaultTitle: 'Two measures, dual axis',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: ComboPlaceholder,
+    Placeholder: chart('combo'),
   },
   scatter: {
     label: 'Scatter',
     defaultTitle: 'Correlation',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: ScatterPlaceholder,
+    Placeholder: chart('scatter'),
   },
   funnel: {
     label: 'Funnel',
     defaultTitle: 'Conversion steps',
     defaultSize: { w: 4, h: 6 },
-    Placeholder: FunnelPlaceholder,
+    Placeholder: chart('funnel'),
   },
   waterfall: {
     label: 'Waterfall',
     defaultTitle: 'Contribution to change',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: WaterfallPlaceholder,
+    Placeholder: chart('waterfall'),
   },
   histogram: {
     label: 'Histogram',
     defaultTitle: 'Distribution',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: HistogramPlaceholder,
+    Placeholder: chart('histogram'),
   },
   boxplot: {
     label: 'Box plot',
     defaultTitle: 'Spread by group',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: BoxPlotPlaceholder,
+    Placeholder: chart('boxplot'),
   },
   heatmap: {
     label: 'Heatmap',
     defaultTitle: 'Intensity grid',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: HeatmapPlaceholder,
+    Placeholder: chart('heatmap'),
   },
   pivot: {
     label: 'Pivot / Crosstab',
@@ -491,13 +262,13 @@ export const COMPONENT_TYPES = {
     label: 'Map (choropleth)',
     defaultTitle: 'By region',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: ChoroplethPlaceholder,
+    Placeholder: chart('choropleth'),
   },
   pointmap: {
     label: 'Map (point)',
     defaultTitle: 'Locations',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: PointMapPlaceholder,
+    Placeholder: chart('pointmap'),
   },
   tabs: {
     label: 'Tabs',

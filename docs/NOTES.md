@@ -15,7 +15,8 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | File | Job |
 |---|---|
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
-| `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder SVG |
+| `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder |
+| `src/components/placeholderArt.js` | The chart drawings, described once and shared by the canvas and the HTML export |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
 | `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
@@ -28,7 +29,9 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/io/documentFile.js` | JSON download and file read, with validation |
 | `src/App.jsx` | Reducer wiring, autosave, keyboard shortcuts |
 
-Adding a sixth component type is one entry in `registry.jsx` and nothing else.
+Adding a chart type is four short lines: the drawing in `placeholderArt.js`, `Placeholder:
+chart('x')` in `registry.jsx`, `x: chart('x')` in the export's `PLACEHOLDERS`, and the name
+in `CATALOG_ORDER`. The drawing itself is written once.
 
 ## State
 
@@ -98,10 +101,32 @@ button, input, select, textarea, contenteditable or draggable. All user text is 
 The same 12-col / 40px / 12px-gap geometry is reproduced with CSS grid so the export
 matches the canvas.
 
-**Known divergence:** the placeholder art (chart silhouettes, filter controls) is
-re-implemented in plain SVG/CSS in `htmlExport.js` rather than reused from the React
-components, so the file needs no Tailwind at runtime. If a canvas placeholder changes,
-the export must be updated by hand to match.
+## Placeholder art is shared (2026-08-16)
+
+Every chart placeholder used to be written twice — JSX in `registry.jsx`, an HTML string in
+`htmlExport.js` — and the two had already drifted (the donut's dash gaps were rounded on one
+side and not the other). `src/components/placeholderArt.js` now holds the single description
+and each side renders it:
+
+- a drawing is `{ viewBox, stretch, shapes }`; a shape is `[tag, attrs]`, or
+  `[tag, attrs, children]` for a group;
+- attribute names are written the way **JSX** needs them (`strokeWidth`), and the export
+  hyphenates them on the way out (`stroke-width`) — one mechanical rule, not two lists;
+- `stretch: true` emits `preserveAspectRatio="none"`. On for everything but the donut.
+
+`SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
+to a string. Change a drawing in one place and both follow.
+
+**Still deliberately separate:** the placeholders that are boxes rather than drawings — KPI,
+table, pivot, text, tabs, section — and the filter controls. Their markup is Tailwind on the
+canvas and hand-written CSS in the export, because the exported file ships no Tailwind. Only
+their numbers and labels are shared (`TABLE`, `PIVOT`, `TEXT_LINES`, `KPI_TEXT`), so a column
+count or a label still cannot drift; the markup itself has to be changed in both.
+
+The refactor was verified by rendering every placeholder both ways before and after and
+diffing. Two intended differences, both proven inert: the canvas's three donut dash gaps are
+now rounded (`62.206999999999994` → `62.21`, 0.003 units on a 113-unit circumference), and the
+export's box plot gained three attribute-less `<g>` wrappers that the canvas always had.
 
 Global filters live on `doc.filters` (`[{ id, label, type }]`), not on components.
 Reducer actions: `addFilter`, `renameFilter` (coalesces), `setFilterType`, `removeFilter`,

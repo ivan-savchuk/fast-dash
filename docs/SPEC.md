@@ -206,10 +206,11 @@ Dashboards are multi-page (`doc.pages`), switched by the tab strip; see `docs/NO
 
 ## Planned, not yet designed
 
-- **Interaction annotations** — draw.io-style arrows meaning "clicking this cross-filters
-  that" or "drill-down to detail"
-- **Component count warning** — a gentle nudge past ~8 panels per page. Dashboard sprawl
-  is the exact failure this tool exists to prevent.
+- ~~**Interaction annotations**~~ — dropped (2026-08-16, Ivan's call). Draw.io-style arrows
+  for cross-filter and drill-down would turn the canvas into a diagram, and diagrams invite
+  fiddling. Write the interaction in the card's description instead.
+- ~~**Component count warning**~~ — dropped (2026-08-16, Ivan's call). A counter scolding
+  you past ~8 panels is not how the anti-sprawl line gets held.
 
 ## Exports
 
