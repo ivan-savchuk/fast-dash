@@ -228,9 +228,16 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
      thinned set of marks — eighteen sized ones overlap into a blob at card size — and
      brings back the bubble chart that was cut from Tier 2, as a variant rather than a
      new type.
-   - Still to come, one per session: **Pie** (donut / full pie) and **Heatmap** (grid /
-     calendar). The calendar heatmap was cut from Tier 2 earlier and comes back the same
-     way, as a variant.
+   - **Pie** — donut (default), full circle. **Done** (2026-08-16). Same dash-offset trick
+     as the donut with the stroke made twice the radius, so the ring closes over the
+     middle. Its numbers are written out rather than derived from the donut's, so the
+     donut still renders byte-for-byte what it always did; the harness checks that both
+     agree on the 45/35/20 split.
+   - **Heatmap** — grid (default), calendar. **Done** (2026-08-16). Grid asks which pair of
+     dimensions is hot; calendar asks when it happened. Brings back the calendar heatmap
+     cut from Tier 2, as a variant rather than a new type.
+
+   **All six types now have variants — this item is complete.**
 
    Switching lives in the card header, not on carousel arrows at the card edges (owner's
    first proposal). The card itself is the drag handle, so an edge button would sit exactly

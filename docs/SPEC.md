@@ -175,8 +175,9 @@ round-trip. Version the schema from day one.
   have long names and the point is the ranking; stacked means composition. Only types
   with a real choice carry the key — today **bar** (vertical, horizontal, stacked,
   grouped), **KPI** (with delta, with trend, number only), **time series** (line, area,
-  stacked area) and **scatter** (plain, with trend line, bubble); on a table or a section
-  header it would be meaningless, so it is absent rather than null. The first listed is
+  stacked area), **scatter** (plain, with trend line, bubble), **pie** (donut, full
+  circle) and **heatmap** (grid, calendar); on a table or a section header it would be
+  meaningless, so it is absent rather than null. The first listed is
   the default, and is also what a component with no `variant` renders. A missing or unrecognised value falls back to the type's default drawing, so
   documents written before variants existed are unaffected. The HTML export names it in
   the card header — "Bar (horizontal)" — because there the silhouette is all a reader has.

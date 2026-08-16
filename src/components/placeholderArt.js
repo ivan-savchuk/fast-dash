@@ -318,6 +318,36 @@ const HEATMAP = cartesian(
   ),
 )
 
+// The calendar form: one column per week, one row per weekday, shaded by
+// intensity — the shape everyone knows from a contribution graph. A different
+// question from the grid: "when did this happen" rather than "which pair is hot".
+// Written as one digit per day so the pattern is readable and tunable in source;
+// weekends (the last two rows) run quieter, which is what makes it read as real.
+const CALENDAR_ROWS = [
+  '01223104512230114023',
+  '12334215023341225134',
+  '23445320134452330245',
+  '12335421245351241353',
+  '01224310123240132042',
+  '00112200011230021031',
+  '00011100001120010020',
+]
+
+const HEATMAP_CALENDAR = cartesian(
+  CALENDAR_ROWS.flatMap((row, r) =>
+    [...row].map((ch, c) => [
+      'rect',
+      {
+        x: c * 5 + 0.4,
+        y: r * 8.5 + 0.5,
+        width: 4.2,
+        height: 7.5,
+        fill: HEAT_SHADES[Number(ch)],
+      },
+    ]),
+  ),
+)
+
 // An abstract landmass split into regions — deliberately not real geography,
 // which would only invite "that's not where Texas is" over the layout question.
 const MAP_REGIONS = [
@@ -374,6 +404,42 @@ const DONUT = {
           r: 18,
           stroke,
           strokeDasharray: `${len} ${gap(len)}`,
+          strokeDashoffset: offset,
+        },
+      ]),
+    ],
+  ],
+}
+
+// The same three slices as a solid pie. Same trick as the donut, but with the
+// stroke made twice the radius so the "ring" closes over the middle: r=12 with
+// an 24-wide stroke fills a disc of radius 24. Circumference of r=12 is ~75.4.
+//
+// Its numbers are written out rather than derived from the donut's, so the donut
+// keeps rendering byte-for-byte what it always has. The 45/35/20 split is the
+// same, and the harness checks that the two agree on it.
+const PIE_C = 75.398
+const pieGap = (len) => Number((PIE_C - len).toFixed(2))
+
+const PIE = {
+  viewBox: '0 0 100 60',
+  stretch: false,
+  shapes: [
+    [
+      'g',
+      { transform: 'rotate(-90 50 30)', fill: 'none', strokeWidth: 24 },
+      [
+        [33.93, 0, GRAY.dark], // ~45%
+        [26.39, -33.93, GRAY.mid], // ~35%
+        [15.08, -60.32, GRAY.light], // ~20%
+      ].map(([len, offset, stroke]) => [
+        'circle',
+        {
+          cx: 50,
+          cy: 30,
+          r: 12,
+          stroke,
+          strokeDasharray: `${len} ${pieGap(len)}`,
           strokeDashoffset: offset,
         },
       ]),
@@ -443,6 +509,18 @@ export const VARIANTS = {
     { id: 'line', label: 'Line', art: TIMESERIES },
     { id: 'area', label: 'Area', art: TIMESERIES_AREA },
     { id: 'stacked', label: 'Stacked area', art: TIMESERIES_STACKED },
+  ],
+  // A donut leaves room for a total in the middle; a solid circle does not.
+  // Labelled "Full circle" rather than "Pie", so that the export does not read
+  // "Pie / Donut (pie)" — the type is already called Pie / Donut.
+  pie: [
+    { id: 'donut', label: 'Donut', art: DONUT },
+    { id: 'pie', label: 'Full circle', art: PIE },
+  ],
+  // Grid asks which pair of dimensions is hot; calendar asks when it happened.
+  heatmap: [
+    { id: 'grid', label: 'Grid', art: HEATMAP },
+    { id: 'calendar', label: 'Calendar', art: HEATMAP_CALENDAR },
   ],
   // Plain shows the spread; trend line answers "is there a correlation";
   // bubble carries a third measure in the mark size.
