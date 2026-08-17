@@ -250,6 +250,17 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
    a variant never changes `defaultSize` — resizing on switch would shove the neighbours
    around under the user.
 
+10. **Table columns** — *in progress* (started 2026-08-17). A table's columns are its
+    structure, so they are named on the card rather than described in prose:
+    `spec.columns` holds `{ name, role, format }`, edited in a popover from the card
+    header, and both exports carry it. This is the Phase 3 per-component metadata
+    returning under the two conditions its post-mortem set — see `SPEC.md`.
+
+    Values deliberately stay grey bars; a format sample carries what a fake row would
+    without the card pretending to hold data (Ivan's original suggestion was mock data,
+    changed after discussion). **Pivot next**, with its own three-axis shape — row
+    dimensions, column dimension, measures — since a flat list cannot express a crosstab.
+
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
 the time series only, and `preserveAspectRatio="none"` applied to charts whose shape it

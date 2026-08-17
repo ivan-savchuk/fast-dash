@@ -101,6 +101,14 @@ Per-component metadata is **parked**, not cancelled. If it returns it needs a mo
 admits multiple metrics and dimensions, and it must not be a permanent panel. The
 `spec: {}` key stays on every component so the door is open.
 
+**It returned through that door for tables (2026-08-17).** A table's columns are a list,
+so the model admits as many dimensions and measures as you like by construction, and the
+editor is a popover opened from the card header rather than a panel that is always there.
+Both conditions met. `spec.columns` holds `{ name, role, format }` per column; see below.
+
+Chart types are unaffected — a chart's silhouette already carries its structure, so the
+argument for filling in metadata does not apply to them.
+
 ### Global filters — the current model (2026-07-29)
 
 What shipped instead is a **collapsible filter rail** on the left (Superset's
@@ -181,6 +189,15 @@ round-trip. Version the schema from day one.
   the default, and is also what a component with no `variant` renders. A missing or unrecognised value falls back to the type's default drawing, so
   documents written before variants existed are unaffected. The HTML export names it in
   the card header — "Bar (horizontal)" — because there the silhouette is all a reader has.
+- `spec.columns` (added 2026-08-17, **table only**) names a table's columns:
+  `{ "name": "Revenue", "role": "measure", "format": "$1,234" }`. A table has no
+  silhouette — its structure *is* the column list — so leaving it as a grey grid forced
+  every real detail into the description as prose, which is the failure this tool exists
+  to fix. `role` is `dimension` or `measure` and drives width and alignment rather than a
+  label. `format` is one example of what a value looks like, not a real value: it says
+  "currency" or "percent to one decimal" without the card pretending to hold data.
+  Absent columns fall back to the generic headings, so older documents are unaffected.
+  Pivot gets its own three-axis shape in a later session.
 - `comment` is capped at **280 characters** — a tweet. It is the one-line answer to
   "what question does this card answer?". Longer reasoning belongs in the spec fields,
   not the card, and an uncapped field invites prose that layout cannot expose.

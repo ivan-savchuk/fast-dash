@@ -594,9 +594,54 @@ export const KPI_TEXT = { value: '1,234', delta: '▲ 12.5% vs. prior period' }
 export const TABLE = {
   columns: ['Dimension', 'Measure 1', 'Measure 2', 'Measure 3'],
   rows: 5,
-  // First column is the dimension, so its bar is wider than the measures'.
-  barWidth: (col) => (col === 0 ? 80 : 55),
+  // A dimension's bar is wider than a measure's — the values are names rather
+  // than numbers.
+  barWidth: (role) => (role === 'dimension' ? 80 : 55),
 }
+
+// --- a table's columns ---
+//
+// A chart's structure is its silhouette. A table has none: its structure *is*
+// the column list, which is why "Detail table" plus a grey grid tells a BI
+// developer nothing and everything ends up as prose in the description. So a
+// table's columns are real spec, held in `component.spec.columns`:
+//
+//   { name: 'Revenue', role: 'measure', format: '$1,234' }
+//
+// The values stay grey bars. A format sample says "currency", "count", "percent
+// to one decimal" in one field, without the card pretending to hold real data —
+// which would move the conversation onto numbers someone invented.
+
+export const COLUMN_ROLES = ['dimension', 'measure']
+
+// What a table shows before anyone has named anything: the headings it has
+// always had, first column a dimension and the rest measures.
+const FALLBACK_COLUMNS = TABLE.columns.map((name, i) => ({
+  name,
+  role: i === 0 ? 'dimension' : 'measure',
+  format: '',
+}))
+
+// Normalised, so neither renderer has to defend against a half-written column
+// from a hand-edited or newer file.
+export function tableColumns(spec) {
+  const cols = spec?.columns
+  if (!Array.isArray(cols) || cols.length === 0) return FALLBACK_COLUMNS
+  return cols.map((c) => ({
+    name: c?.name ?? '',
+    role: c?.role === 'dimension' ? 'dimension' : 'measure',
+    format: c?.format ?? '',
+  }))
+}
+
+// A dimension column is wider: it holds names, not numbers. For the fallback
+// this is `1.4fr 1fr 1fr 1fr`, which is what `1.4fr repeat(3, 1fr)` has always
+// resolved to.
+export const columnTemplate = (columns) =>
+  columns.map((c) => (c.role === 'dimension' ? '1.4fr' : '1fr')).join(' ')
+
+// The format row is only worth its vertical space once something is in it.
+export const hasFormats = (columns) => columns.some((c) => c.format)
 
 // A crosstab: a wider row-header column with indented sub-rows (the second row
 // dimension), right-aligned value bars, and a bold totals row. The indent and

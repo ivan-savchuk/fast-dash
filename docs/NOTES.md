@@ -18,6 +18,8 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder |
 | `src/components/placeholderArt.js` | The chart drawings, described once and shared by the canvas and the HTML export |
 | `src/components/TypeBadge.jsx` | The type label in a card header, and the menu that switches a chart's variant |
+| `src/components/Popover.jsx` | The panel that opens from a card header — portal, backdrop, Escape |
+| `src/components/ColumnEditor.jsx` | A table's column list: name, role, format, reorder, add, remove |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
 | `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
@@ -151,7 +153,45 @@ Switching happens in the card header (`TypeBadge.jsx`), never on the card edges 
 `[` and `]` cycle the selected card, and the reducer resolves current-to-next itself
 because the selection may be a card nested inside a Tabs container.
 
-**Trap — the variant menu must be a portal.** `react-grid-layout` runs with
+## Table columns (2026-08-17)
+
+The one placeholder whose content is real. A chart's structure is its silhouette; a table
+has none, so its structure *is* the column list — which is why a grey grid headed
+`Dimension / Measure 1` told a reader nothing and pushed every real detail into the
+description as prose. A table's columns now live in `component.spec.columns`:
+
+```json
+{ "name": "Revenue", "role": "measure", "format": "$1,234" }
+```
+
+This is the first thing to actually use `spec`, and it is the per-component metadata that
+Phase 3 parked. `SPEC.md` set two conditions for its return — a model admitting several
+metrics and dimensions, and no permanent panel — and a named column list in a transient
+popover meets both.
+
+- **Values stay grey bars.** A format sample says "currency", "count", "percent to one
+  decimal" in one field. Real values would make the card look finished and move the
+  conversation onto numbers someone invented, which is what principle 1 exists to prevent.
+- **Role drives layout, not a label.** Dimensions get `1.4fr` and left alignment, measures
+  `1fr` and right — the convention every real data grid follows, and what the Pivot
+  placeholder already did.
+- `tableColumns(spec)` in `placeholderArt.js` normalises and falls back, so neither
+  renderer defends against a half-written column from a hand-edited or newer file. A table
+  with no columns keeps the headings it always had.
+- **Column names are the only user text inside a placeholder**, so the export runs them
+  through `esc` like every other.
+- In the export the grid template rides on a `--cols` custom property on `.table`, so one
+  CSS rule serves any column count.
+- One reducer action, `setColumns`, replaces the whole list — add, remove, rename,
+  reorder and retype are all the same case, and it is in `BURST_EDITS` so typing a name is
+  one undo step.
+
+Verified: with the fallback columns, the only differences from before are the grid template
+(`1.4fr repeat(3, 1fr)` written out as `1.4fr 1fr 1fr 1fr` — the same thing) and the new
+role alignment. Every other placeholder, and the whole export outside the stylesheet and
+the table card, is byte-identical.
+
+**Trap — a panel opened from a card must be a portal.** `react-grid-layout` runs with
 `useCSSTransforms` (its default), so every card carries a CSS `transform`. A transformed
 ancestor becomes the containing block for `position: fixed`, so a fixed menu inside a card
 anchors to the *card* rather than the viewport — and the card is `overflow-hidden` on top
@@ -165,6 +205,12 @@ when the target is not inside a `.react-grid-item` (`Canvas.jsx:59`), and a port
 never is, so picking a variant also opened the add-component menu. The portal's contents
 therefore stop `click` and `mousedown` at their own boundary. Any future portal rendered
 from inside a card needs the same guard.
+
+Both traps now live in **`Popover.jsx`**, which owns the portal, the backdrop, the
+capture-phase Escape and the propagation guard. `TypeBadge` and `ColumnEditor` both use
+it. It was extracted rather than copied precisely because hand-writing this a second time
+is how the second one ends up subtly broken — we hit each of these failure modes once
+already.
 
 A variant never changes `defaultSize`. Switching one must not resize the card, or the
 neighbours get shoved around under the user.

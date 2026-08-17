@@ -62,6 +62,7 @@ const BURST_EDITS = new Set([
   'setDocTitle',
   'nudge',
   'cycleVariant',
+  'setColumns',
   'renameFilter',
   'renamePage',
   'renameTab',
@@ -449,6 +450,21 @@ function applyAction(state, action) {
     // Which way a chart is drawn — vertical or horizontal bars, and so on.
     // Both of these reach a card nested inside a Tabs container, because
     // `updateInList` and `findInList` already search one level down.
+
+    // A table's columns — its structure, and the first thing to actually live in
+    // `spec`. One action replaces the whole list, so adding, removing, renaming,
+    // reordering and retyping a column are all the same case and undo is free.
+    case 'setColumns': {
+      const current = findInList(page.components, action.id)
+      if (!current) return state
+      const before = current.spec?.columns
+      if (JSON.stringify(before) === JSON.stringify(action.columns)) return state
+      const updated = updateInList(page.components, action.id, (c) => ({
+        ...c,
+        spec: { ...(c.spec ?? {}), columns: action.columns },
+      }))
+      return { ...state, doc: replaceComponents(state.doc, page.id, updated) }
+    }
 
     // Picked explicitly from the card header's menu.
     case 'setVariant': {

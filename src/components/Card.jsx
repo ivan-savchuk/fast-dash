@@ -1,5 +1,6 @@
 import { memo } from 'react'
 
+import ColumnEditor from './ColumnEditor.jsx'
 import { COMPONENT_TYPES } from './registry.jsx'
 import TabsBody from './TabsBody.jsx'
 import TypeBadge from './TypeBadge.jsx'
@@ -116,13 +117,21 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           onChange={(e) => onRename(e.target.value)}
           aria-label="Component title"
         />
-        <TypeBadge
-          id={id}
-          type={component.type}
-          variant={component.variant}
-          label={def.label}
-          dispatch={dispatch}
-        />
+        {/* A table's badge is its column editor instead of the type label: the
+            columns are what a reader needs, the type is obvious from the card
+            body, and both exports still name it. Table has no variants, so
+            nothing competes for the slot. */}
+        {component.type === 'table' ? (
+          <ColumnEditor id={id} spec={component.spec} dispatch={dispatch} />
+        ) : (
+          <TypeBadge
+            id={id}
+            type={component.type}
+            variant={component.variant}
+            label={def.label}
+            dispatch={dispatch}
+          />
+        )}
         <button
           className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
           onClick={onDuplicate}
@@ -151,7 +160,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
             dispatch={dispatch}
           />
         ) : (
-          <Placeholder variant={component.variant} />
+          <Placeholder variant={component.variant} spec={component.spec} />
         )}
       </div>
 

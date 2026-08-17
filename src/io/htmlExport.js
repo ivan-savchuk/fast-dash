@@ -19,10 +19,13 @@ import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
 import { typeLabel } from '../components/registry.jsx'
 import {
   artFor,
+  columnTemplate,
+  hasFormats,
   KPI_SPARK,
   KPI_TEXT,
   PIVOT,
   TABLE,
+  tableColumns,
   TEXT_LINES,
   variantParts,
 } from '../components/placeholderArt.js'
@@ -174,7 +177,9 @@ function renderCard(c) {
     return `<div class="card section" style="${style}"><span class="section-label">${esc(c.title ?? '')}</span><span class="card-type">${label}</span></div>`
   }
   const body =
-    c.type === 'tabs' ? renderTabsCard(c) : (PLACEHOLDERS[c.type] ?? placeholderUnknown)(c.variant)
+    c.type === 'tabs'
+      ? renderTabsCard(c)
+      : (PLACEHOLDERS[c.type] ?? placeholderUnknown)(c.variant, c.spec)
   const comment = c.comment
     ? `<div class="card-note">${esc(c.comment)}</div>`
     : ''
@@ -248,10 +253,19 @@ const PLACEHOLDERS = {
   },
   timeseries: chart('timeseries'),
   bar: chart('bar'),
-  table: () => {
-    const head = `<div class="trow thead">${TABLE.columns.map((t) => `<span>${t}</span>`).join('')}</div>`
-    const row = `<div class="trow">${TABLE.columns.map((_, c) => `<span><i class="bar" style="width:${TABLE.barWidth(c)}%"></i></span>`).join('')}</div>`
-    return `<div class="table">${head}${row.repeat(TABLE.rows)}</div>`
+  // The column names are the one piece of user text inside a placeholder, so
+  // they go through `esc` like every other. The grid template rides on a custom
+  // property, so one CSS rule serves any number of columns.
+  table: (_variant, spec) => {
+    const columns = tableColumns(spec)
+    const cells = (fn) => columns.map(fn).join('')
+    const cls = (c) => (c.role === 'measure' ? ' class="m"' : '')
+    const head = `<div class="trow thead">${cells((c) => `<span${cls(c)}>${esc(c.name)}</span>`)}</div>`
+    const formats = hasFormats(columns)
+      ? `<div class="trow tformat">${cells((c) => `<span${cls(c)}>${esc(c.format)}</span>`)}</div>`
+      : ''
+    const row = `<div class="trow">${cells((c) => `<span${cls(c)}><i class="bar" style="width:${TABLE.barWidth(c.role)}%"></i></span>`)}</div>`
+    return `<div class="table" style="--cols:${columnTemplate(columns)}">${head}${formats}${row.repeat(TABLE.rows)}</div>`
   },
   text: () =>
     `<div class="textblock">${TEXT_LINES.map((wdt) => `<i class="line" style="width:${wdt}"></i>`).join('')}</div>`,
@@ -340,10 +354,13 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .kpi-delta{font-size:11px;color:#9ca3af}
 .kpi-spark{height:20px;width:100%;margin-top:4px}
 .table{display:flex;flex-direction:column;height:100%;font-size:11px}
-.trow{display:grid;grid-template-columns:1.4fr repeat(${TABLE.columns.length - 1},1fr);align-items:center;flex:1;border-bottom:1px solid #f3f4f6}
+.trow{display:grid;grid-template-columns:var(--cols);align-items:center;flex:1;border-bottom:1px solid #f3f4f6}
 .trow.thead{flex:none;color:#9ca3af;font-weight:500;border-bottom:1px solid #d1d5db;padding-bottom:4px}
-.trow span{padding-right:8px;overflow:hidden}
+.trow.tformat{flex:none;border-bottom:none;color:#d1d5db;font-size:10px;padding:2px 0 4px}
+.trow span{padding-right:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow span.m{text-align:right}
 .trow .bar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.trow .m .bar{margin-left:auto}
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
 .pivot{display:flex;flex-direction:column;height:100%;font-size:11px}

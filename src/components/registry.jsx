@@ -13,10 +13,13 @@
 import { createElement } from 'react'
 import {
   artFor,
+  columnTemplate,
+  hasFormats,
   KPI_SPARK,
   KPI_TEXT,
   PIVOT,
   TABLE,
+  tableColumns,
   TABS_LABELS,
   TEXT_LINES,
   variantLabel,
@@ -65,25 +68,45 @@ function KpiPlaceholder({ variant }) {
   )
 }
 
-function TablePlaceholder() {
-  const cols = TABLE.columns.length
-  const gridTemplateColumns = `1.4fr repeat(${cols - 1}, 1fr)`
+// The one placeholder whose content is real: a table's columns are its
+// structure, so they are named rather than drawn. Values stay grey bars.
+// Alignment carries the role — measures right, like every real data grid, and
+// like the Pivot placeholder below.
+function TablePlaceholder({ spec }) {
+  const columns = tableColumns(spec)
+  const gridTemplateColumns = columnTemplate(columns)
+  // Joined rather than interpolated: an empty alignment must not leave a
+  // trailing space in the class attribute.
+  const cls = (...parts) => parts.filter(Boolean).join(' ')
+  const align = (role) => (role === 'measure' ? 'text-right' : '')
   return (
     <div className="flex h-full flex-col overflow-hidden text-[11px]">
       <div className="grid shrink-0 border-b border-gray-300 pb-1" style={{ gridTemplateColumns }}>
-        {TABLE.columns.map((label) => (
-          <div key={label} className="truncate pr-2 font-medium text-gray-400">
-            {label}
+        {columns.map((c, i) => (
+          <div key={i} className={cls('truncate pr-2 font-medium text-gray-400', align(c.role))}>
+            {c.name}
           </div>
         ))}
       </div>
+      {hasFormats(columns) && (
+        <div className="grid shrink-0 pt-0.5 pb-1" style={{ gridTemplateColumns }}>
+          {columns.map((c, i) => (
+            <div
+              key={i}
+              className={cls('truncate pr-2 text-[10px] text-gray-300 dark:text-gray-500', align(c.role))}
+            >
+              {c.format}
+            </div>
+          ))}
+        </div>
+      )}
       {/* rows share the leftover height, so the grid fills a tall card */}
       {Array.from({ length: TABLE.rows }, (_, r) => (
         <div key={r} className="grid min-h-0 flex-1 items-center border-b border-gray-100"
           style={{ gridTemplateColumns }}>
-          {Array.from({ length: cols }, (_, c) => (
-            <div key={c} className="pr-2">
-              <div className="h-2 rounded bg-gray-200" style={{ width: `${TABLE.barWidth(c)}%` }} />
+          {columns.map((c, i) => (
+            <div key={i} className={c.role === 'measure' ? 'flex justify-end pr-2' : 'pr-2'}>
+              <div className="h-2 rounded bg-gray-200" style={{ width: `${TABLE.barWidth(c.role)}%` }} />
             </div>
           ))}
         </div>
