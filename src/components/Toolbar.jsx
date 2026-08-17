@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { COMPONENT_TYPES, TYPE_ORDER } from './registry.jsx'
+import { DEFAULT_THEME, THEMES } from '../state/document.js'
 import { TEMPLATE_LIST } from '../templates.js'
 
 export default function Toolbar({
@@ -52,6 +53,30 @@ export default function Toolbar({
                 <div className="fixed inset-0 z-40" onMouseDown={close} />
                 <div className="absolute right-0 z-50 mt-1 w-60 overflow-hidden rounded-sm border border-gray-300 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                   <MenuItem onClick={onToggleTheme}>{dark ? '☀  Light mode' : '☾  Dark mode'}</MenuItem>
+
+                  <Divider />
+                  <MenuLabel>Colour scheme</MenuLabel>
+                  {THEMES.map((theme) => {
+                    const current = (doc.theme ?? DEFAULT_THEME) === theme.id
+                    return (
+                      <button
+                        key={theme.id}
+                        className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => dispatch({ type: 'setTheme', theme: theme.id })}
+                      >
+                        {/* The swatch is the only honest way to name a colour in
+                            a menu — the words are a reference, not a hue. */}
+                        <span
+                          className="size-3 shrink-0 rounded-full border border-black/10 dark:border-white/20"
+                          style={{ background: theme.accent }}
+                        />
+                        <span className="flex-1 text-sm text-gray-800 dark:text-gray-100">
+                          {theme.name}
+                        </span>
+                        {current && <span className="text-xs text-gray-400">✓</span>}
+                      </button>
+                    )
+                  })}
 
                   <Divider />
                   <MenuLabel>Start from template</MenuLabel>

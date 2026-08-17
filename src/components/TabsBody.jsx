@@ -87,7 +87,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
               key={t.id}
               className={`flex shrink-0 items-center rounded-sm border text-xs ${
                 on
-                  ? 'border-gray-300 bg-gray-100 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                  ? 'border-[var(--fd-accent)] bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
                   : 'border-transparent text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
               }`}
             >

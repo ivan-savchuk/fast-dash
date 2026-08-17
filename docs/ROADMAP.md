@@ -287,6 +287,23 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
     holding a pivot renders as a labelled "unknown component type" box — it imports and
     exports fine, it just has no drawing.
 
+12. **Colour schemes** — **done** (2026-08-17). Four global schemes on the document
+    (`doc.theme`): neutral, **Blue Rei**, **Green Matrix**, **Red Rose**. Picked from the
+    Options menu, carried by the JSON, rendered by the HTML export.
+
+    **This is the one deliberate exception to design principle #1**, and it was argued
+    before it was built rather than slipped in. The principle exists to stop people arguing
+    about colour chart by chart; a single global accent with no per-card control cannot
+    produce that argument. What keeps it honest is restraint, which is enforced by tests:
+    the accent lands on the **primary mark only**, charts with no single primary series
+    stay entirely grey, and axes, gridlines, second series and every value bar never take
+    it. Chrome gets it in three places — the card selection ring and the two kinds of
+    active tab.
+
+    Accents were validated for contrast rather than eyeballed, which is why Matrix green is
+    the dark phosphor and not `#00ff41`. See `NOTES.md` for the mechanism and for the
+    three-token fallback trap.
+
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
 the time series only, and `preserveAspectRatio="none"` applied to charts whose shape it

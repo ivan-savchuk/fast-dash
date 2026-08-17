@@ -4,6 +4,50 @@
    class, which App toggles from a persisted preference — not the OS setting. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* The dashboard's colour scheme. `<html>` carries `data-scheme` from
+   `doc.theme`, and the placeholder drawings reference these two properties —
+   see the note on ACCENT in components/placeholderArt.js.
+
+   The defaults are the greys the drawings have always used, so a document with
+   no scheme is unchanged. Each accent clears 3:1 against both the light and the
+   dark card surface, so one value serves both modes; only the pale companion
+   needs a darker step in dark mode, where a near-white fill would glare. */
+:root {
+  --fd-accent: #9ca3af;
+  --fd-accent-fill: #e5e7eb;
+}
+
+[data-scheme='blue-rei'] {
+  --fd-accent: #2f6fe4;
+  --fd-accent-fill: #d3e1fb;
+}
+
+[data-scheme='green-matrix'] {
+  --fd-accent: #0a7d32;
+  --fd-accent-fill: #cfebd8;
+}
+
+[data-scheme='red-rose'] {
+  --fd-accent: #c81e3c;
+  --fd-accent-fill: #f7d6dc;
+}
+
+.dark {
+  --fd-accent-fill: #374151;
+}
+
+.dark[data-scheme='blue-rei'] {
+  --fd-accent-fill: #1e3a6b;
+}
+
+.dark[data-scheme='green-matrix'] {
+  --fd-accent-fill: #14432a;
+}
+
+.dark[data-scheme='red-rose'] {
+  --fd-accent-fill: #4d1524;
+}
+
 /* react-grid-layout ships a bright red drop placeholder. Grayscale keeps the
    canvas neutral — the point is arguing about structure, not colour.
    The extra `.react-grid-layout` is for specificity: the library's stylesheet

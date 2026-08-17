@@ -23,6 +23,34 @@
 
 export const GRAY = { dark: '#9ca3af', mid: '#c9cdd4', light: '#e5e7eb' }
 
+// The one colour on the canvas. A dashboard picks a global scheme and this
+// resolves to its accent; with no scheme it resolves to the same grey the
+// drawings have always used, so an untouched document is unchanged.
+//
+// It is a CSS custom property rather than a value threaded through the
+// renderers, so switching scheme repaints without rebuilding any drawing, and
+// neither renderer has to know that schemes exist. The export ships the same
+// property (it already does this for a table's `--cols`).
+//
+// **Use it for the primary mark only.** `GRAY.dark` is not a reliable stand-in
+// for "the data": it is the series in the time series, scatter and donut, but
+// the *axis* in the bar charts, whose bars are `GRAY.mid`. Swapping every
+// `GRAY.dark` would colour bar baselines and leave the bars grey. Charts with no
+// single primary series — funnel, waterfall, heatmap, maps, box plot — stay
+// entirely grey on purpose. Restraint is the point: one accent, one mark.
+// There are three of these, and the reason is the fallback. Under a scheme they
+// all resolve to that scheme's accent; with no scheme each falls back to the
+// exact grey its own marks always used — `GRAY.dark` for strokes and dots,
+// `GRAY.mid` for bar fills, `GRAY.light` for areas. One shared token would have
+// to pick one fallback and would quietly restyle everything else: the first
+// attempt gave every bar chart `GRAY.dark` bars in neutral mode, a visible
+// change to documents nobody had themed.
+export const ACCENT = `var(--fd-accent, ${GRAY.dark})`
+export const ACCENT_MID = `var(--fd-accent, ${GRAY.mid})`
+
+// The pale companion, for a primary mark that is a filled area rather than a line.
+export const ACCENT_FILL = `var(--fd-accent-fill, ${GRAY.light})`
+
 // Charts that sit on an axis share this baseline: same y, same full width, so
 // two of them placed side by side line up.
 const BASE_Y = 58
@@ -82,7 +110,7 @@ const seriesLine = (ys, stroke, dashed) => [
 
 const TIMESERIES = cartesian([
   ...gridlines,
-  seriesLine(TS_UPPER, GRAY.dark, false),
+  seriesLine(TS_UPPER, ACCENT, false),
   seriesLine(TS_LOWER, GRAY.mid, true),
   baseline(GRAY.mid),
 ])
@@ -92,9 +120,9 @@ const TIMESERIES = cartesian([
 // one reads as sitting in front of it, not as a gap.
 const TIMESERIES_AREA = cartesian([
   ...gridlines,
-  ['polygon', { points: areaPts(TS_UPPER), fill: GRAY.light }],
+  ['polygon', { points: areaPts(TS_UPPER), fill: ACCENT_FILL }],
   ['polygon', { points: areaPts(TS_LOWER), fill: GRAY.mid }],
-  seriesLine(TS_UPPER, GRAY.dark, false),
+  seriesLine(TS_UPPER, ACCENT, false),
   baseline(GRAY.mid),
 ])
 
@@ -107,8 +135,8 @@ const TS_STACK_TOTAL = [38, 32, 28, 24, 26, 20, 16, 18, 12]
 const TIMESERIES_STACKED = cartesian([
   ...gridlines,
   ['polygon', { points: areaPts(TS_STACK_LOWER), fill: GRAY.mid }],
-  ['polygon', { points: bandPts(TS_STACK_TOTAL, TS_STACK_LOWER), fill: GRAY.light }],
-  seriesLine(TS_STACK_TOTAL, GRAY.dark, false),
+  ['polygon', { points: bandPts(TS_STACK_TOTAL, TS_STACK_LOWER), fill: ACCENT_FILL }],
+  seriesLine(TS_STACK_TOTAL, ACCENT, false),
   baseline(GRAY.mid),
 ])
 
@@ -117,7 +145,7 @@ const BAR_HEIGHTS = [34, 46, 26, 52, 40, 56, 30]
 const BAR = cartesian([
   ...BAR_HEIGHTS.map((h, i) => [
     'rect',
-    { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: GRAY.mid },
+    { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_MID },
   ]),
   baseline(GRAY.dark),
 ])
@@ -128,7 +156,7 @@ const BAR = cartesian([
 const BAR_HORIZONTAL = cartesian([
   ...[88, 72, 60, 45, 33, 20].map((w, i) => [
     'rect',
-    { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: GRAY.mid },
+    { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: ACCENT_MID },
   ]),
   leftAxis(GRAY.dark),
 ])
@@ -136,7 +164,7 @@ const BAR_HORIZONTAL = cartesian([
 // Same bars as the vertical chart, each cut into three parts stacked bottom-up:
 // one bar is a whole, and the parts are its composition.
 const STACK_PARTS = [0.45, 0.35, 0.2]
-const STACK_FILLS = [GRAY.dark, GRAY.mid, GRAY.light]
+const STACK_FILLS = [ACCENT, GRAY.mid, GRAY.light]
 
 const BAR_STACKED = cartesian([
   ...BAR_HEIGHTS.flatMap((total, i) => {
@@ -161,7 +189,7 @@ const BAR_GROUPED = cartesian([
     const x = i * 20 + 3
     const b = GROUP_B[i]
     return [
-      ['rect', { x, y: BASE_Y - a, width: 7, height: a, fill: GRAY.dark }],
+      ['rect', { x, y: BASE_Y - a, width: 7, height: a, fill: ACCENT }],
       ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: GRAY.mid }],
     ]
   }),
@@ -178,7 +206,7 @@ const COMBO = cartesian([
     {
       points: '10,38 26,28 42,42 58,18 74,26 90,10',
       fill: 'none',
-      stroke: GRAY.dark,
+      stroke: ACCENT,
       strokeWidth: 2,
       vectorEffect: 'non-scaling-stroke',
     },
@@ -196,7 +224,7 @@ const SCATTER_PTS = [
 ]
 
 const dots = (points) =>
-  points.map(([cx, cy]) => ['circle', { cx, cy, r: 0.9, fill: GRAY.dark, opacity: 0.6 }])
+  points.map(([cx, cy]) => ['circle', { cx, cy, r: 0.9, fill: ACCENT, opacity: 0.6 }])
 
 const SCATTER = cartesian([...dots(SCATTER_PTS), baseline(GRAY.mid)])
 
@@ -240,7 +268,7 @@ const BUBBLE_PTS = [
 const SCATTER_BUBBLE = cartesian([
   ...BUBBLE_PTS.map(([cx, cy, r]) => [
     'circle',
-    { cx, cy, r, fill: GRAY.mid, stroke: GRAY.dark, strokeWidth: 0.5, vectorEffect: 'non-scaling-stroke' },
+    { cx, cy, r, fill: ACCENT_MID, stroke: ACCENT, strokeWidth: 0.5, vectorEffect: 'non-scaling-stroke' },
   ]),
   baseline(GRAY.mid),
 ])
@@ -274,7 +302,7 @@ const WATERFALL = cartesian([
 const HISTOGRAM = cartesian([
   ...[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((h, i) => [
     'rect',
-    { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: GRAY.mid },
+    { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: ACCENT_MID },
   ]),
   baseline(GRAY.mid),
 ])
@@ -393,7 +421,7 @@ const DONUT = {
       'g',
       { transform: 'rotate(-90 50 30)', fill: 'none', strokeWidth: 11 },
       [
-        [50.89, 0, GRAY.dark], // ~45%
+        [50.89, 0, ACCENT], // ~45%
         [39.58, -50.89, GRAY.mid], // ~35%
         [22.62, -90.48, GRAY.light], // ~20%
       ].map(([len, offset, stroke]) => [
@@ -429,7 +457,7 @@ const PIE = {
       'g',
       { transform: 'rotate(-90 50 30)', fill: 'none', strokeWidth: 24 },
       [
-        [33.93, 0, GRAY.dark], // ~45%
+        [33.93, 0, ACCENT], // ~45%
         [26.39, -33.93, GRAY.mid], // ~35%
         [15.08, -60.32, GRAY.light], // ~20%
       ].map(([len, offset, stroke]) => [
@@ -458,7 +486,7 @@ export const KPI_SPARK = {
       {
         points: '0,16 14,12 28,14 42,8 56,10 70,5 84,7 100,2',
         fill: 'none',
-        stroke: GRAY.dark,
+        stroke: ACCENT,
         strokeWidth: 1.5,
         vectorEffect: 'non-scaling-stroke',
       },

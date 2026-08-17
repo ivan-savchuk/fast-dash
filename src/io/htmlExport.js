@@ -15,7 +15,7 @@
 // file ships no Tailwind and has to use its own CSS; only their numbers and
 // labels are shared. The file still needs neither React nor Tailwind to open.
 
-import { GRID_COLS, GRID_ROW_HEIGHT } from '../state/document.js'
+import { GRID_COLS, GRID_ROW_HEIGHT, themeById } from '../state/document.js'
 import { typeLabel } from '../components/registry.jsx'
 import {
   artFor,
@@ -58,7 +58,7 @@ export function renderDashboardHtml(doc) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<style>${STYLES}</style>
+<style>${themeVars(doc.theme)}${STYLES}</style>
 </head>
 <body>
 <header class="head"><h1>${esc(title)}</h1></header>
@@ -307,6 +307,16 @@ function filterControl(type) {
 
 const ROW = GRID_ROW_HEIGHT
 
+// The document's colour scheme, resolved to plain values in the file itself so
+// the export needs nothing from the app. The drawings reference these two
+// properties; see the note on ACCENT in components/placeholderArt.js. An absent
+// or unknown theme resolves to the neutral greys, so an older document exports
+// exactly as it always did.
+function themeVars(theme) {
+  const { accent, fill } = themeById(theme)
+  return `:root{--fd-accent:${accent};--fd-accent-fill:${fill}}\n`
+}
+
 const STYLES = `
 *{box-sizing:border-box;margin:0;padding:0}
 body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#111827;background:#f9fafb}
@@ -337,7 +347,7 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .fill{width:100%;height:100%}
 .kpi{display:flex;flex-direction:column;justify-content:center;gap:4px;height:100%}
 .kpi-num{font-size:24px;line-height:1;font-weight:600;color:#9ca3af;font-variant-numeric:tabular-nums}
-.kpi-delta{font-size:11px;color:#9ca3af}
+.kpi-delta{font-size:11px;color:var(--fd-accent)}
 .kpi-spark{height:20px;width:100%;margin-top:4px}
 .table{display:flex;flex-direction:column;height:100%;font-size:11px}
 .trow{display:grid;grid-template-columns:var(--cols);align-items:center;flex:1;border-bottom:1px solid #f3f4f6}

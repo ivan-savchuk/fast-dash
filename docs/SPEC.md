@@ -189,6 +189,15 @@ round-trip. Version the schema from day one.
   the default, and is also what a component with no `variant` renders. A missing or unrecognised value falls back to the type's default drawing, so
   documents written before variants existed are unaffected. The HTML export names it in
   the card header — "Bar (horizontal)" — because there the silhouette is all a reader has.
+- `theme` (added 2026-08-17) is the dashboard's colour scheme — `neutral` (the default),
+  `blue-rei`, `green-matrix` or `red-rose`. Document-level rather than a personal setting,
+  so the JSON fully determines the HTML export and a colleague opening the file sees what
+  you showed them. Absent or unrecognised means neutral, so older documents are unaffected.
+  It buys **one accent on the primary mark of each chart that has one**, plus the card
+  selection ring and the active tabs; axes, gridlines, second series and every value bar
+  stay grey. That restraint is what keeps it compatible with the grayscale principle — the
+  thing principle #1 guards against is arguing about colour chart by chart, and there is no
+  per-card control to argue with.
 - `spec.columns` (added 2026-08-17, **table only**) names a table's columns:
   `{ "name": "Revenue", "role": "measure", "format": "$1,234" }`. A table has no
   silhouette — its structure *is* the column list — so leaving it as a grey grid forced

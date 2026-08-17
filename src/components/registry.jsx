@@ -61,7 +61,13 @@ function KpiPlaceholder({ variant }) {
       <div className="text-2xl leading-none font-semibold text-gray-400 tabular-nums">
         {KPI_TEXT.value}
       </div>
-      {parts.delta && <div className="text-[11px] text-gray-400">{KPI_TEXT.delta}</div>}
+      {/* The delta is the KPI's primary mark when there is no sparkline, and
+          reads as one either way — a real KPI card colours its change. */}
+      {parts.delta && (
+        <div className="text-[11px]" style={{ color: 'var(--fd-accent)' }}>
+          {KPI_TEXT.delta}
+        </div>
+      )}
       {parts.spark && <SvgArt art={KPI_SPARK} className="mt-1 h-5 w-full" />}
     </div>
   )

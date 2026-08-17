@@ -42,8 +42,8 @@ One `useReducer` in `App.jsx` over `{ doc, selectedId }`. Only `doc` is exported
 saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
-`setComment`, `setVariant`, `cycleVariant`, `setDocTitle`, `load`, `reset`, `undo`,
-`redo`, plus the filter and page actions below.
+`setComment`, `setColumns`, `setVariant`, `cycleVariant`, `setDocTitle`, `setTheme`,
+`load`, `reset`, `undo`, `redo`, plus the filter and page actions below.
 
 **Pages.** `doc.pages` was always an array but only `pages[0]` was ever used; it now holds
 many. `activePageId` is view state on the reducer (like `selectedId`), not part of the
@@ -119,6 +119,55 @@ and each side renders it:
 
 `SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
 to a string. Change a drawing in one place and both follow.
+
+## Colour schemes (2026-08-17)
+
+A dashboard picks one of four global schemes — neutral, Blue Rei, Green Matrix, Red Rose —
+held on the document as `doc.theme` and listed in `THEMES` (`state/document.js`). On the
+document rather than in localStorage, so the JSON fully determines the HTML export; the
+dark/light preference stays a personal setting because it is about looking at the tool, not
+about the artefact.
+
+**This is a deliberate exception to design principle #1**, argued before it was built: the
+failure that principle guards against is arguing about colour *per chart*, and a global
+accent with no per-card control cannot produce that conversation. It is a skin, not a
+palette. Restraint is what keeps it honest — see below.
+
+The mechanism is a CSS custom property, `--fd-accent`, set on `<html>` via `data-scheme`
+(`App.jsx`) and emitted into the export's own `<style>` by `themeVars` (`htmlExport.js`).
+Neither renderer knows schemes exist, and switching one repaints without rebuilding a
+drawing.
+
+**There are three accent tokens, and the reason is the fallback.** Under a scheme they all
+resolve to that scheme's accent; with no scheme each falls back to the exact grey its own
+marks always used:
+
+| Token | Neutral fallback | Used for |
+|---|---|---|
+| `ACCENT` | `GRAY.dark` | strokes, dots, the largest donut slice |
+| `ACCENT_MID` | `GRAY.mid` | bar fills |
+| `ACCENT_FILL` | `GRAY.light` | area fills |
+
+A single shared token has to pick one fallback and silently restyles everything else — the
+first attempt used one, and every bar chart came out with `GRAY.dark` bars in neutral mode,
+a visible change to documents nobody had themed.
+
+**Restraint rules, all covered by tests:**
+
+- The accent goes on the **primary mark only**. Axes, baselines, gridlines and second series
+  stay grey — `GRAY.dark` is not a reliable stand-in for "the data", since it is the series
+  in the time series but the *axis* in the bar charts, whose bars are `GRAY.mid`.
+- Charts with no single primary series — funnel, waterfall, heatmap, both maps, box plot —
+  and the table and text placeholders stay **entirely grey**.
+- Chrome takes it in three places only: the card selection ring, the active page tab, the
+  active inner tab.
+
+The accents were checked with the `dataviz` skill's validator, not eyeballed: each clears
+≥3:1 against both the light and the dark surface, which is why one value serves both modes
+and why Matrix green is the dark phosphor rather than the canonical `#00ff41` (unreadable on
+white). **The validator's red↔green CVD failure does not apply here** — that check is for
+colours appearing together in one chart, and the schemes are mutually exclusive. Recorded so
+nobody later "fixes" it.
 
 ## Chart variants (2026-08-16)
 

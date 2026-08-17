@@ -65,7 +65,9 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
       <div
         onMouseDown={onSelect}
         className={`flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white dark:bg-gray-800 px-3 select-none ${
-          selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200 dark:border-gray-700'
+          selected
+            ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
+            : 'border-gray-200 dark:border-gray-700'
         }`}
       >
         <input

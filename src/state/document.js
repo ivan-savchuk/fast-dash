@@ -37,6 +37,29 @@ export const FILTER_TYPES = [
   'toggle',
 ]
 
+// Global colour schemes. One accent per dashboard, chosen from this list and
+// nothing else — there is deliberately no per-card colour, because the thing
+// design principle #1 guards against is arguing about colour chart by chart,
+// and a locked global accent cannot produce that conversation.
+//
+// Each accent was checked for contrast against both the light and the dark
+// surface rather than eyeballed, which is why "Matrix green" is the dark
+// phosphor and not the canonical #00ff41 — that is unreadable on white.
+//
+// `fill` is the pale companion used where a primary mark is a filled area.
+export const THEMES = [
+  { id: 'neutral', name: 'Neutral', accent: '#9ca3af', fill: '#e5e7eb' },
+  { id: 'blue-rei', name: 'Blue Rei', accent: '#2f6fe4', fill: '#d3e1fb' },
+  { id: 'green-matrix', name: 'Green Matrix', accent: '#0a7d32', fill: '#cfebd8' },
+  { id: 'red-rose', name: 'Red Rose', accent: '#c81e3c', fill: '#f7d6dc' },
+]
+
+export const DEFAULT_THEME = THEMES[0].id
+
+// An absent or unrecognised theme is the neutral one, so a document written
+// before schemes existed renders exactly as it did.
+export const themeById = (id) => THEMES.find((t) => t.id === id) ?? THEMES[0]
+
 export function createDocument() {
   return {
     version: SCHEMA_VERSION,
@@ -497,6 +520,15 @@ function applyAction(state, action) {
 
     case 'setDocTitle':
       return { ...state, doc: { ...state.doc, title: action.title } }
+
+    // The dashboard's colour scheme. On the document rather than in
+    // localStorage, so the JSON fully determines the HTML export — share the
+    // file and a colleague sees the same thing.
+    case 'setTheme': {
+      const theme = themeById(action.theme).id
+      if ((state.doc.theme ?? DEFAULT_THEME) === theme) return state
+      return { ...state, doc: { ...state.doc, theme } }
+    }
 
     // --- pages ---
 

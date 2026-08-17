@@ -8,7 +8,7 @@ import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
 import { downloadHtmlExport } from './io/htmlExport.js'
-import { initialState, reducer } from './state/document.js'
+import { DEFAULT_THEME, initialState, reducer } from './state/document.js'
 import { buildTemplate } from './templates.js'
 
 const STORAGE_KEY = 'fastdash:document:v1'
@@ -60,6 +60,13 @@ export default function App() {
       // remembering the theme is a nicety, not worth failing over
     }
   }, [dark])
+
+  // The colour scheme, unlike the dark/light preference, belongs to the
+  // document — so it is mirrored onto <html> from `doc.theme` rather than from
+  // localStorage, and changes whenever you open a different dashboard.
+  useEffect(() => {
+    document.documentElement.dataset.scheme = state.doc.theme ?? DEFAULT_THEME
+  }, [state.doc.theme])
 
   // True while the rail is animating its width. During that window the cards'
   // CSS transition is switched off so react-grid-layout can track the animating
