@@ -174,7 +174,8 @@ Shipped so far in Phase 4:
 
 7. ~~**Tier 2 chart catalog**~~ — **done** (2026-08-02). Added as grayscale placeholders in
    small batches, each mirrored in the HTML export: Combo (bar + line), Scatter, Funnel,
-   Waterfall, Histogram, Box plot, Heatmap, Pivot / Crosstab, Map (choropleth), Map (point).
+   Waterfall, Histogram, Box plot, Heatmap, Map (choropleth), Map (point). (Pivot shipped
+   here too, and was removed again in item 11.)
 
 Scope was narrowed in use (owner calls, 2026-08-02): **Tier 3 chrome stops at the section
 header** — the rest (header-bar timestamp, breadcrumbs, legends/axis labels) was judged
@@ -258,8 +259,33 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
 
     Values deliberately stay grey bars; a format sample carries what a fake row would
     without the card pretending to hold data (Ivan's original suggestion was mock data,
-    changed after discussion). **Pivot next**, with its own three-axis shape — row
-    dimensions, column dimension, measures — since a flat list cannot express a crosstab.
+    changed after discussion).
+
+11. **Pivot — removed** (2026-08-17, Ivan's call: *"we just can't do this"*). The type is
+    gone from the catalog entirely: registry entry, `CATALOG_ORDER`, the export placeholder
+    and its CSS, the `PIVOT` constants.
+
+    It got four goes at a layout and none landed. The pattern in the failures is the part
+    worth keeping, because it is a warning about this whole class of card:
+
+    - repeated the measure names under every column — "clumsy… hard to say what value this
+      mock brings";
+    - named each axis once instead — "even more confusing";
+    - copied Superset's renderer, but crushed the column dimensions into one
+      `a › b › c` label and hardcoded the column count so adding a dimension changed
+      nothing;
+    - one band per dimension, then a bordered matrix with an axis-name gutter — still not
+      it.
+
+    The honest read: a pivot is the one BI object whose **whole meaning is its data
+    shape**, and a grayscale mock has no data. Every version either invented data (fake
+    value columns) or dropped so much that the card said nothing a Table could not. The
+    other twenty types work because a silhouette or a column list carries their structure;
+    a pivot's does not.
+
+    Mock a crosstab as a **Table** card until there is a better idea. Any saved dashboard
+    holding a pivot renders as a labelled "unknown component type" box — it imports and
+    exports fine, it just has no drawing.
 
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on

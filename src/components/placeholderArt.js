@@ -467,7 +467,7 @@ export const KPI_SPARK = {
 }
 
 // Keyed by component type. Only the types whose placeholder is pure drawing —
-// the rest (KPI, table, pivot, text, tabs, section) are text and boxes, and
+// the rest (KPI, table, text, tabs, section) are text and boxes, and
 // they are built from CSS on each side because the export ships no Tailwind.
 export const ART = {
   timeseries: TIMESERIES,
@@ -501,7 +501,7 @@ export const ART = {
 // the same content with pieces left out. The KPI is the second kind: it is text
 // and layout rather than a silhouette, so its markup is written separately on
 // each side (the export ships no Tailwind) and only *which pieces are present*
-// is shared — the same arrangement as TABLE and PIVOT below.
+// is shared — the same arrangement as TABLE below.
 export const VARIANTS = {
   // Line is the trend; area adds magnitude; stacked area says composition over
   // time, which is a different question rather than a different look.
@@ -642,18 +642,6 @@ export const columnTemplate = (columns) =>
 
 // The format row is only worth its vertical space once something is in it.
 export const hasFormats = (columns) => columns.some((c) => c.format)
-
-// A crosstab: a wider row-header column with indented sub-rows (the second row
-// dimension), right-aligned value bars, and a bold totals row. The indent and
-// the totals row are what separate it from the plain Table placeholder.
-export const PIVOT = {
-  cols: 4,
-  indents: [0, 1, 1, 0, 1],
-  indentPx: 14,
-  headWidth: (indent) => (indent ? 55 : 75),
-  cellWidth: (row, col) => 45 + ((row + col) % 3) * 15,
-  totalWidth: (col) => 55 + (col % 2) * 15,
-}
 
 export const TEXT_LINES = ['92%', '84%', '96%', '60%']
 

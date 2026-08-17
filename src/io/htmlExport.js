@@ -11,7 +11,7 @@
 // The chart drawings come from `components/placeholderArt.js`, the same
 // description the canvas draws from, turned into a plain string here by
 // `artToHtml`. The placeholders that are boxes rather than drawings — KPI,
-// table, pivot, text — are still built from markup below, because the exported
+// table, text — are still built from markup below, because the exported
 // file ships no Tailwind and has to use its own CSS; only their numbers and
 // labels are shared. The file still needs neither React nor Tailwind to open.
 
@@ -23,7 +23,6 @@ import {
   hasFormats,
   KPI_SPARK,
   KPI_TEXT,
-  PIVOT,
   TABLE,
   tableColumns,
   TEXT_LINES,
@@ -269,19 +268,6 @@ const PLACEHOLDERS = {
   },
   text: () =>
     `<div class="textblock">${TEXT_LINES.map((wdt) => `<i class="line" style="width:${wdt}"></i>`).join('')}</div>`,
-  pivot: () => {
-    const { cols, indents, indentPx } = PIVOT
-    const colHead = Array.from({ length: cols }, () => `<div class="pcell"><i class="phbar"></i></div>`).join('')
-    const body = indents
-      .map((ind, ri) => {
-        const rlabel = `<div class="rhead" style="padding-left:${ind * indentPx}px"><i class="pbar" style="width:${PIVOT.headWidth(ind)}%"></i></div>`
-        const cells = Array.from({ length: cols }, (_, c) => `<div class="pcell"><i class="pbar" style="width:${PIVOT.cellWidth(ri, c)}%"></i></div>`).join('')
-        return `<div class="prow pbody">${rlabel}${cells}</div>`
-      })
-      .join('')
-    const tot = `<div class="prow ptot"><div class="rhead"><i class="pbar strong" style="width:50%"></i></div>${Array.from({ length: cols }, (_, c) => `<div class="pcell"><i class="pbar strong" style="width:${PIVOT.totalWidth(c)}%"></i></div>`).join('')}</div>`
-    return `<div class="pivot"><div class="prow phead"><div class="rhead"></div>${colHead}</div>${body}${tot}</div>`
-  },
   pie: chart('pie'),
   combo: chart('combo'),
   scatter: chart('scatter'),
@@ -363,16 +349,6 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .trow .m .bar{margin-left:auto}
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
 .textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
-.pivot{display:flex;flex-direction:column;height:100%;font-size:11px}
-.pivot .prow{display:grid;align-items:center;grid-template-columns:1.6fr repeat(${PIVOT.cols},1fr)}
-.pivot .phead{flex:none;border-bottom:1px solid #d1d5db;padding-bottom:4px}
-.pivot .pbody{flex:1;min-height:0;border-bottom:1px solid #f3f4f6}
-.pivot .ptot{flex:none;border-top:2px solid #d1d5db;padding-top:4px}
-.pivot .rhead{padding-right:8px}
-.pivot .pcell{display:flex;justify-content:flex-end;padding-right:8px}
-.pivot .pbar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
-.pivot .pbar.strong{background:#d1d5db}
-.pivot .phbar{display:block;height:6px;width:32px;border-radius:2px;background:#d1d5db}
 .tabs-ph{display:flex;flex-direction:column;height:100%}
 .tabs-strip{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
 .itab{padding:2px 8px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}

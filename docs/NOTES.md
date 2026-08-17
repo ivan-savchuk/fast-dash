@@ -173,8 +173,7 @@ popover meets both.
   decimal" in one field. Real values would make the card look finished and move the
   conversation onto numbers someone invented, which is what principle 1 exists to prevent.
 - **Role drives layout, not a label.** Dimensions get `1.4fr` and left alignment, measures
-  `1fr` and right — the convention every real data grid follows, and what the Pivot
-  placeholder already did.
+  `1fr` and right — the convention every real data grid follows.
 - `tableColumns(spec)` in `placeholderArt.js` normalises and falls back, so neither
   renderer defends against a half-written column from a hand-edited or newer file. A table
   with no columns keeps the headings it always had.
@@ -216,9 +215,9 @@ A variant never changes `defaultSize`. Switching one must not resize the card, o
 neighbours get shoved around under the user.
 
 **Still deliberately separate:** the placeholders that are boxes rather than drawings — KPI,
-table, pivot, text, tabs, section — and the filter controls. Their markup is Tailwind on the
+table, text, tabs, section — and the filter controls. Their markup is Tailwind on the
 canvas and hand-written CSS in the export, because the exported file ships no Tailwind. Only
-their numbers and labels are shared (`TABLE`, `PIVOT`, `TEXT_LINES`, `KPI_TEXT`), so a column
+their numbers and labels are shared (`TABLE`, `TEXT_LINES`, `KPI_TEXT`), so a column
 count or a label still cannot drift; the markup itself has to be changed in both.
 
 The refactor was verified by rendering every placeholder both ways before and after and

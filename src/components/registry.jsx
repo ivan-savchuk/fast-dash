@@ -5,7 +5,7 @@
 // and shared with the HTML export so the two can no longer drift apart.
 // `SvgArt` below is the half that turns a description into React elements.
 //
-// The placeholders that are boxes rather than drawings — KPI, table, pivot,
+// The placeholders that are boxes rather than drawings — KPI, table,
 // text, tabs, section — are still written here as ordinary markup, because the
 // export ships no Tailwind and has to build them from its own CSS. Their
 // numbers and labels still come from `placeholderArt.js`.
@@ -17,7 +17,6 @@ import {
   hasFormats,
   KPI_SPARK,
   KPI_TEXT,
-  PIVOT,
   TABLE,
   tableColumns,
   TABS_LABELS,
@@ -71,7 +70,7 @@ function KpiPlaceholder({ variant }) {
 // The one placeholder whose content is real: a table's columns are its
 // structure, so they are named rather than drawn. Values stay grey bars.
 // Alignment carries the role — measures right, like every real data grid, and
-// like the Pivot placeholder below.
+// like every real data grid.
 function TablePlaceholder({ spec }) {
   const columns = tableColumns(spec)
   const gridTemplateColumns = columnTemplate(columns)
@@ -111,45 +110,6 @@ function TablePlaceholder({ spec }) {
           ))}
         </div>
       ))}
-    </div>
-  )
-}
-
-function PivotPlaceholder() {
-  const { cols, indents, indentPx } = PIVOT
-  const style = { gridTemplateColumns: `1.6fr repeat(${cols}, 1fr)` }
-  return (
-    <div className="flex h-full flex-col overflow-hidden text-[11px]">
-      <div className="grid shrink-0 border-b border-gray-300 pb-1" style={style}>
-        <div className="pr-2" />
-        {Array.from({ length: cols }, (_, c) => (
-          <div key={c} className="flex justify-end pr-2">
-            <div className="h-1.5 w-8 rounded bg-gray-300" />
-          </div>
-        ))}
-      </div>
-      {indents.map((ind, ri) => (
-        <div key={ri} className="grid min-h-0 flex-1 items-center border-b border-gray-100" style={style}>
-          <div className="pr-2" style={{ paddingLeft: ind * indentPx }}>
-            <div className="h-2 rounded bg-gray-200" style={{ width: `${PIVOT.headWidth(ind)}%` }} />
-          </div>
-          {Array.from({ length: cols }, (_, c) => (
-            <div key={c} className="flex justify-end pr-2">
-              <div className="h-2 rounded bg-gray-200" style={{ width: `${PIVOT.cellWidth(ri, c)}%` }} />
-            </div>
-          ))}
-        </div>
-      ))}
-      <div className="grid shrink-0 items-center border-t-2 border-gray-300 pt-1" style={style}>
-        <div className="pr-2">
-          <div className="h-2 rounded bg-gray-300" style={{ width: '50%' }} />
-        </div>
-        {Array.from({ length: cols }, (_, c) => (
-          <div key={c} className="flex justify-end pr-2">
-            <div className="h-2 rounded bg-gray-300" style={{ width: `${PIVOT.totalWidth(c)}%` }} />
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -282,12 +242,6 @@ export const COMPONENT_TYPES = {
     defaultSize: { w: 6, h: 6 },
     Placeholder: chart('heatmap'),
   },
-  pivot: {
-    label: 'Pivot / Crosstab',
-    defaultTitle: 'Cross-tabulation',
-    defaultSize: { w: 6, h: 7 },
-    Placeholder: PivotPlaceholder,
-  },
   choropleth: {
     label: 'Map (choropleth)',
     defaultTitle: 'By region',
@@ -338,7 +292,6 @@ export const CATALOG_ORDER = [
   'histogram',
   'boxplot',
   'heatmap',
-  'pivot',
   'choropleth',
   'pointmap',
   'tabs',

@@ -197,7 +197,8 @@ round-trip. Version the schema from day one.
   label. `format` is one example of what a value looks like, not a real value: it says
   "currency" or "percent to one decimal" without the card pretending to hold data.
   Absent columns fall back to the generic headings, so older documents are unaffected.
-  Pivot gets its own three-axis shape in a later session.
+  A crosstab is mocked as a Table — the pivot type was removed (2026-08-17), see
+  `ROADMAP.md` item 11 for why.
 - `comment` is capped at **280 characters** — a tweet. It is the one-line answer to
   "what question does this card answer?". Longer reasoning belongs in the spec fields,
   not the card, and an uncapped field invites prose that layout cannot expose.
@@ -218,7 +219,7 @@ picker's search:
   its own 12-column grid of ordinary components with full card chrome — see `NOTES.md`); a
   **Section header** band for grouping a page into zones.
 - **Tier 2 charts:** Combo (bar + line), Scatter, Funnel, Waterfall, Histogram, Box plot,
-  Heatmap, Pivot / Crosstab, Map (choropleth), Map (point). All grayscale placeholders,
+  Heatmap, Map (choropleth), Map (point). All grayscale placeholders,
   mirrored in the HTML export.
 
 Deliberately **not** built, after narrowing the Tier 2 list in use: Bubble, gauge /
