@@ -159,6 +159,14 @@ the single-accent version that shipped first was unchanged when the ramp arrived
 the ramp on the *grey* ramp's lightness instead was tried and abandoned — it washed the
 accent out to a pale tint.
 
+**A chart with no parts wears the accent, not a ramp step** (`ACCENT_SOLID`). The ramp
+exists to tell parts apart — stacked segments, two series, a heatmap's intensities. A plain
+bar chart has no parts: every bar means the same thing, so putting it on a middle step just
+makes it a washed-out tint of the colour it should be wearing. That is exactly what happened
+when the ramp first landed, and bar, horizontal bar and histogram were pulled back onto the
+accent. `ACCENT_SOLID` falls back to `GRAY.mid` rather than `GRAY.dark`, because that is what
+a bar fill has always been unthemed.
+
 **The split is by role, not by shade** (covered by tests):
 
 - Every mark that stands for a value takes a ramp step, in every chart. The heatmap uses all

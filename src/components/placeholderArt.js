@@ -66,6 +66,20 @@ export const ACCENT = RAMP[4]
 export const ACCENT_MID = RAMP[2]
 export const ACCENT_FILL = RAMP[1]
 
+// **A chart with no parts wears the accent, not a ramp step.**
+//
+// The ramp exists to tell parts apart — stacked segments, two series, a
+// heatmap's intensities. A plain bar chart has no parts: every bar means the
+// same thing. Putting it on a middle step just makes it a washed-out tint of
+// the colour it should be wearing, which is what happened when the ramp first
+// landed and is the reason this token exists.
+//
+// It points at `--fd-accent` rather than `--fd-a5` only for readability — the
+// two are the same colour by construction. The fallback is `GRAY.mid`, because
+// that is what a bar fill has always been with no scheme set; `ACCENT` falls
+// back to `GRAY.dark` and would quietly darken every neutral bar chart.
+export const ACCENT_SOLID = `var(--fd-accent, ${GRAY.mid})`
+
 // Charts that sit on an axis share this baseline: same y, same full width, so
 // two of them placed side by side line up.
 const BASE_Y = 58
@@ -160,7 +174,7 @@ const BAR_HEIGHTS = [34, 46, 26, 52, 40, 56, 30]
 const BAR = cartesian([
   ...BAR_HEIGHTS.map((h, i) => [
     'rect',
-    { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_MID },
+    { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_SOLID },
   ]),
   baseline(GRAY.dark),
 ])
@@ -171,7 +185,7 @@ const BAR = cartesian([
 const BAR_HORIZONTAL = cartesian([
   ...[88, 72, 60, 45, 33, 20].map((w, i) => [
     'rect',
-    { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: ACCENT_MID },
+    { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: ACCENT_SOLID },
   ]),
   leftAxis(GRAY.dark),
 ])
@@ -344,7 +358,7 @@ const WATERFALL = cartesian([
 const HISTOGRAM = cartesian([
   ...[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((h, i) => [
     'rect',
-    { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: ACCENT_MID },
+    { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: ACCENT_SOLID },
   ]),
   baseline(GRAY.mid),
 ])
