@@ -294,15 +294,20 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
     **This is the one deliberate exception to design principle #1**, and it was argued
     before it was built rather than slipped in. The principle exists to stop people arguing
     about colour chart by chart; a single global accent with no per-card control cannot
-    produce that argument. What keeps it honest is restraint, which is enforced by tests:
-    the accent lands on the **primary mark only**, charts with no single primary series
-    stay entirely grey, and axes, gridlines, second series and every value bar never take
-    it. Chrome gets it in three places — the card selection ring and the two kinds of
-    active tab.
+    produce that argument. What keeps it honest is that the split is **by role**, and it is
+    enforced by tests: every mark standing for a value takes a step of a six-step ramp, in
+    every chart, while axes, baselines and gridlines stay grey. The heatmap uses the whole
+    ramp as a gradient, which is what a magnitude scale is supposed to be. Table and text
+    stay grey — they are not charts. Chrome gets the accent in three places: the card
+    selection ring and the two kinds of active tab.
 
-    Accents were validated for contrast rather than eyeballed, which is why Matrix green is
-    the dark phosphor and not `#00ff41`. See `NOTES.md` for the mechanism and for the
-    three-token fallback trap.
+    Shipped first as a single accent on each chart's primary mark, then widened to the full
+    ramp across every chart at Ivan's request. Step 5 of each ramp is pinned to the original
+    accent, so widening it changed nothing that was already coloured.
+
+    Accents and ramps were computed rather than eyeballed — contrast-checked against both
+    surfaces, monotonic in lightness — which is why Matrix green is the dark phosphor and
+    not `#00ff41`. See `NOTES.md` for the mechanism and the fallback trap.
 
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on

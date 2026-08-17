@@ -46,12 +46,36 @@ export const FILTER_TYPES = [
 // surface rather than eyeballed, which is why "Matrix green" is the dark
 // phosphor and not the canonical #00ff41 — that is unreadable on white.
 //
-// `fill` is the pale companion used where a primary mark is a filled area.
+// `ramp` is six steps light to dark, used by the drawings; `accent` is the one
+// colour the chrome uses and is always the ramp's fifth step. Both are computed
+// rather than picked by hand — one hue, monotonically decreasing lightness —
+// so a heatmap is a proper magnitude scale and a themed chart keeps the same
+// visual weight as the grey one. The neutral ramp is the greys as they were.
 export const THEMES = [
-  { id: 'neutral', name: 'Neutral', accent: '#9ca3af', fill: '#e5e7eb' },
-  { id: 'blue-rei', name: 'Blue Rei', accent: '#2f6fe4', fill: '#d3e1fb' },
-  { id: 'green-matrix', name: 'Green Matrix', accent: '#0a7d32', fill: '#cfebd8' },
-  { id: 'red-rose', name: 'Red Rose', accent: '#c81e3c', fill: '#f7d6dc' },
+  {
+    id: 'neutral',
+    name: 'Neutral',
+    accent: '#9ca3af',
+    ramp: ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280'],
+  },
+  {
+    id: 'blue-rei',
+    name: 'Blue Rei',
+    accent: '#2f6fe4',
+    ramp: ['#e7f3ff', '#c1d5f8', '#95b8f4', '#6a9aef', '#2f6fe4', '#0e48b0'],
+  },
+  {
+    id: 'green-matrix',
+    name: 'Green Matrix',
+    accent: '#0a7d32',
+    ramp: ['#e8f6e9', '#bfd8c2', '#91bd96', '#61a26b', '#0a7d32', '#005510'],
+  },
+  {
+    id: 'red-rose',
+    name: 'Red Rose',
+    accent: '#c81e3c',
+    ramp: ['#ffeae9', '#f5c4c3', '#ec9999', '#df6c71', '#c81e3c', '#94001d'],
+  },
 ]
 
 export const DEFAULT_THEME = THEMES[0].id

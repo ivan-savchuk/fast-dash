@@ -193,10 +193,12 @@ round-trip. Version the schema from day one.
   `blue-rei`, `green-matrix` or `red-rose`. Document-level rather than a personal setting,
   so the JSON fully determines the HTML export and a colleague opening the file sees what
   you showed them. Absent or unrecognised means neutral, so older documents are unaffected.
-  It buys **one accent on the primary mark of each chart that has one**, plus the card
-  selection ring and the active tabs; axes, gridlines, second series and every value bar
-  stay grey. That restraint is what keeps it compatible with the grayscale principle — the
-  thing principle #1 guards against is arguing about colour chart by chart, and there is no
+  It buys a **six-step ramp of one hue**: every mark that stands for a value takes a step,
+  in every chart, and the heatmap uses the whole ramp as a gradient. Axes, baselines and
+  gridlines stay grey, as do the table and text placeholders — they are not charts. Chrome
+  takes the accent in three places: the card selection ring and the two kinds of active tab.
+  That restraint is what keeps it compatible with the grayscale principle — the thing
+  principle #1 guards against is arguing about colour chart by chart, and there is no
   per-card control to argue with.
 - `spec.columns` (added 2026-08-17, **table only**) names a table's columns:
   `{ "name": "Revenue", "role": "measure", "format": "$1,234" }`. A table has no

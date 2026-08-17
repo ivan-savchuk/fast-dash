@@ -313,8 +313,9 @@ const ROW = GRID_ROW_HEIGHT
 // or unknown theme resolves to the neutral greys, so an older document exports
 // exactly as it always did.
 function themeVars(theme) {
-  const { accent, fill } = themeById(theme)
-  return `:root{--fd-accent:${accent};--fd-accent-fill:${fill}}\n`
+  const { accent, ramp } = themeById(theme)
+  const steps = ramp.map((hex, i) => `--fd-a${i + 1}:${hex}`).join(';')
+  return `:root{--fd-accent:${accent};${steps}}\n`
 }
 
 const STYLES = `

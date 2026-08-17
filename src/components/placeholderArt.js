@@ -23,33 +23,48 @@
 
 export const GRAY = { dark: '#9ca3af', mid: '#c9cdd4', light: '#e5e7eb' }
 
-// The one colour on the canvas. A dashboard picks a global scheme and this
-// resolves to its accent; with no scheme it resolves to the same grey the
-// drawings have always used, so an untouched document is unchanged.
+// The colour on the canvas. A dashboard picks a global scheme and these resolve
+// to its ramp; with no scheme they resolve to the greys the drawings have always
+// used, so an untouched document is unchanged.
 //
-// It is a CSS custom property rather than a value threaded through the
-// renderers, so switching scheme repaints without rebuilding any drawing, and
+// They are CSS custom properties rather than values threaded through the
+// renderers, so switching scheme repaints without rebuilding any drawing and
 // neither renderer has to know that schemes exist. The export ships the same
-// property (it already does this for a table's `--cols`).
+// properties (it already does this for a table's `--cols`).
 //
-// **Use it for the primary mark only.** `GRAY.dark` is not a reliable stand-in
-// for "the data": it is the series in the time series, scatter and donut, but
-// the *axis* in the bar charts, whose bars are `GRAY.mid`. Swapping every
-// `GRAY.dark` would colour bar baselines and leave the bars grey. Charts with no
-// single primary series — funnel, waterfall, heatmap, maps, box plot — stay
-// entirely grey on purpose. Restraint is the point: one accent, one mark.
-// There are three of these, and the reason is the fallback. Under a scheme they
-// all resolve to that scheme's accent; with no scheme each falls back to the
-// exact grey its own marks always used — `GRAY.dark` for strokes and dots,
-// `GRAY.mid` for bar fills, `GRAY.light` for areas. One shared token would have
-// to pick one fallback and would quietly restyle everything else: the first
-// attempt gave every bar chart `GRAY.dark` bars in neutral mode, a visible
-// change to documents nobody had themed.
-export const ACCENT = `var(--fd-accent, ${GRAY.dark})`
-export const ACCENT_MID = `var(--fd-accent, ${GRAY.mid})`
+// **Data marks take the ramp; axes do not.** `GRAY.dark` is not a stand-in for
+// "the data" — it is the series in the time series, but the *baseline* in the
+// bar charts, whose bars are `GRAY.mid`. So the split is by role, not by shade:
+// every mark that stands for a value uses a ramp step, while `baseline`,
+// `leftAxis` and the gridlines stay grey. Colouring those would read as a
+// mistake, and it is the only thing keeping a themed card from looking like a
+// poster.
+//
+// Six steps, light to dark. Under a scheme each resolves to that scheme's ramp;
+// with no scheme each falls back to the exact grey its own marks always used, so
+// an unthemed document is unchanged. **Every step carries its own fallback** —
+// one shared token would have to pick a single grey and would quietly restyle
+// everything else. An earlier version did exactly that and gave every bar chart
+// darker bars in neutral mode.
+//
+// Each scheme's ramp is computed rather than eyeballed: same hue, monotonically
+// decreasing lightness, and **step 5 is the accent itself, verbatim**, so the
+// single-accent look that shipped first is untouched by the ramp arriving.
+const step = (n, fallback) => `var(--fd-a${n}, ${fallback})`
 
-// The pale companion, for a primary mark that is a filled area rather than a line.
-export const ACCENT_FILL = `var(--fd-accent-fill, ${GRAY.light})`
+export const RAMP = [
+  step(1, '#f0f1f3'),
+  step(2, GRAY.light),
+  step(3, GRAY.mid),
+  step(4, '#b6bcc6'),
+  step(5, GRAY.dark),
+  step(6, '#6b7280'),
+]
+
+// Named steps, because most drawings want "the mark" rather than "step five".
+export const ACCENT = RAMP[4]
+export const ACCENT_MID = RAMP[2]
+export const ACCENT_FILL = RAMP[1]
 
 // Charts that sit on an axis share this baseline: same y, same full width, so
 // two of them placed side by side line up.
@@ -111,7 +126,7 @@ const seriesLine = (ys, stroke, dashed) => [
 const TIMESERIES = cartesian([
   ...gridlines,
   seriesLine(TS_UPPER, ACCENT, false),
-  seriesLine(TS_LOWER, GRAY.mid, true),
+  seriesLine(TS_LOWER, ACCENT_MID, true),
   baseline(GRAY.mid),
 ])
 
@@ -121,7 +136,7 @@ const TIMESERIES = cartesian([
 const TIMESERIES_AREA = cartesian([
   ...gridlines,
   ['polygon', { points: areaPts(TS_UPPER), fill: ACCENT_FILL }],
-  ['polygon', { points: areaPts(TS_LOWER), fill: GRAY.mid }],
+  ['polygon', { points: areaPts(TS_LOWER), fill: ACCENT_MID }],
   seriesLine(TS_UPPER, ACCENT, false),
   baseline(GRAY.mid),
 ])
@@ -134,7 +149,7 @@ const TS_STACK_TOTAL = [38, 32, 28, 24, 26, 20, 16, 18, 12]
 
 const TIMESERIES_STACKED = cartesian([
   ...gridlines,
-  ['polygon', { points: areaPts(TS_STACK_LOWER), fill: GRAY.mid }],
+  ['polygon', { points: areaPts(TS_STACK_LOWER), fill: ACCENT_MID }],
   ['polygon', { points: bandPts(TS_STACK_TOTAL, TS_STACK_LOWER), fill: ACCENT_FILL }],
   seriesLine(TS_STACK_TOTAL, ACCENT, false),
   baseline(GRAY.mid),
@@ -164,7 +179,7 @@ const BAR_HORIZONTAL = cartesian([
 // Same bars as the vertical chart, each cut into three parts stacked bottom-up:
 // one bar is a whole, and the parts are its composition.
 const STACK_PARTS = [0.45, 0.35, 0.2]
-const STACK_FILLS = [ACCENT, GRAY.mid, GRAY.light]
+const STACK_FILLS = [ACCENT, ACCENT_MID, ACCENT_FILL]
 
 const BAR_STACKED = cartesian([
   ...BAR_HEIGHTS.flatMap((total, i) => {
@@ -190,7 +205,7 @@ const BAR_GROUPED = cartesian([
     const b = GROUP_B[i]
     return [
       ['rect', { x, y: BASE_Y - a, width: 7, height: a, fill: ACCENT }],
-      ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: GRAY.mid }],
+      ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: ACCENT_MID }],
     ]
   }),
   baseline(GRAY.dark),
@@ -199,7 +214,7 @@ const BAR_GROUPED = cartesian([
 const COMBO = cartesian([
   ...[30, 44, 26, 50, 38, 54].map((h, i) => [
     'rect',
-    { x: i * 16 + 5, y: BASE_Y - h, width: 10, height: h, fill: GRAY.light },
+    { x: i * 16 + 5, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_FILL },
   ]),
   [
     'polyline',
@@ -249,7 +264,7 @@ const SCATTER_TREND = cartesian([
     'line',
     {
       ...fitLine(SCATTER_PTS),
-      stroke: GRAY.dark,
+      stroke: ACCENT,
       strokeWidth: 1.5,
       strokeDasharray: '5 3',
       vectorEffect: 'non-scaling-stroke',
@@ -277,23 +292,23 @@ const SCATTER_BUBBLE = cartesian([
 // maths, and stays grayscale.
 const FUNNEL = cartesian(
   [
-    [92, GRAY.light],
-    [74, GRAY.mid],
-    [58, GRAY.dark],
-    [42, GRAY.mid],
-    [26, GRAY.light],
+    [92, ACCENT_FILL],
+    [74, ACCENT_MID],
+    [58, ACCENT],
+    [42, ACCENT_MID],
+    [26, ACCENT_FILL],
   ].map(([w, fill], i) => ['rect', { x: 50 - w / 2, y: 4 + i * 11, width: w, height: 8, fill }]),
 )
 
 // Floating bars stepping up, with the start and total as full pillars.
 const WATERFALL = cartesian([
   ...[
-    [6, 34, 22, GRAY.dark],
-    [22, 24, 10, GRAY.mid],
-    [38, 24, 8, GRAY.mid],
-    [54, 16, 8, GRAY.mid],
-    [70, 16, 6, GRAY.mid],
-    [86, 10, 46, GRAY.dark],
+    [6, 34, 22, ACCENT],
+    [22, 24, 10, ACCENT_MID],
+    [38, 24, 8, ACCENT_MID],
+    [54, 16, 8, ACCENT_MID],
+    [70, 16, 6, ACCENT_MID],
+    [86, 10, 46, ACCENT],
   ].map(([x, y, height, fill]) => ['rect', { x, y, width: 10, height, fill }]),
   baseline(GRAY.mid),
 ])
@@ -318,17 +333,19 @@ const BOXPLOT = cartesian(
     'g',
     {},
     [
-      ['line', { x1: cx, y1: wTop, x2: cx, y2: wBot, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
-      ['line', { x1: cx - 5, y1: wTop, x2: cx + 5, y2: wTop, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
-      ['line', { x1: cx - 5, y1: wBot, x2: cx + 5, y2: wBot, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
-      ['rect', { x: cx - 9, y: q3, width: 18, height: q1 - q3, fill: GRAY.light, stroke: GRAY.dark, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
-      ['line', { x1: cx - 9, y1: med, x2: cx + 9, y2: med, stroke: GRAY.dark, strokeWidth: 1.2, vectorEffect: 'non-scaling-stroke' }],
+      ['line', { x1: cx, y1: wTop, x2: cx, y2: wBot, stroke: ACCENT_MID, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+      ['line', { x1: cx - 5, y1: wTop, x2: cx + 5, y2: wTop, stroke: ACCENT_MID, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+      ['line', { x1: cx - 5, y1: wBot, x2: cx + 5, y2: wBot, stroke: ACCENT_MID, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+      ['rect', { x: cx - 9, y: q3, width: 18, height: q1 - q3, fill: ACCENT_FILL, stroke: ACCENT, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+      ['line', { x1: cx - 9, y1: med, x2: cx + 9, y2: med, stroke: ACCENT, strokeWidth: 1.2, vectorEffect: 'non-scaling-stroke' }],
     ],
   ]),
 )
 
 // A grid of cells shaded by intensity — one grayscale ramp, blob in the middle.
-const HEAT_SHADES = ['#f0f1f3', '#e5e7eb', '#c9cdd4', '#b6bcc6', '#9ca3af', '#6b7280']
+// The heatmap ramp is the accent ramp: one hue, light to dark, which is what
+// a magnitude scale is supposed to be.
+const HEAT_SHADES = RAMP
 const HEAT_ROWS = [
   [1, 2, 3, 4, 3, 2, 1, 0],
   [2, 3, 4, 5, 4, 3, 2, 1],
@@ -386,7 +403,7 @@ const MAP_REGIONS = [
   '34,30 50,28 58,32 60,44 46,40',
   '58,32 78,30 88,40 74,52 60,44',
 ]
-const MAP_SHADES = [GRAY.light, GRAY.mid, GRAY.dark, GRAY.mid, GRAY.light, GRAY.dark]
+const MAP_SHADES = [ACCENT_FILL, ACCENT_MID, ACCENT, ACCENT_MID, ACCENT_FILL, ACCENT]
 const MAP_POINTS = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], [65, 43]]
 
 const CHOROPLETH = cartesian(
@@ -399,9 +416,9 @@ const CHOROPLETH = cartesian(
 const POINTMAP = cartesian([
   ...MAP_REGIONS.map((points) => [
     'polygon',
-    { points, fill: GRAY.light, stroke: GRAY.mid, strokeWidth: 0.8, vectorEffect: 'non-scaling-stroke' },
+    { points, fill: ACCENT_FILL, stroke: ACCENT_MID, strokeWidth: 0.8, vectorEffect: 'non-scaling-stroke' },
   ]),
-  ...MAP_POINTS.map(([cx, cy]) => ['circle', { cx, cy, r: 1.6, fill: GRAY.dark, opacity: 0.75 }]),
+  ...MAP_POINTS.map(([cx, cy]) => ['circle', { cx, cy, r: 1.6, fill: ACCENT, opacity: 0.75 }]),
 ])
 
 // A donut ring split into three grayscale slices. Circumference of an r=18
@@ -422,8 +439,8 @@ const DONUT = {
       { transform: 'rotate(-90 50 30)', fill: 'none', strokeWidth: 11 },
       [
         [50.89, 0, ACCENT], // ~45%
-        [39.58, -50.89, GRAY.mid], // ~35%
-        [22.62, -90.48, GRAY.light], // ~20%
+        [39.58, -50.89, ACCENT_MID], // ~35%
+        [22.62, -90.48, ACCENT_FILL], // ~20%
       ].map(([len, offset, stroke]) => [
         'circle',
         {
@@ -458,8 +475,8 @@ const PIE = {
       { transform: 'rotate(-90 50 30)', fill: 'none', strokeWidth: 24 },
       [
         [33.93, 0, ACCENT], // ~45%
-        [26.39, -33.93, GRAY.mid], // ~35%
-        [15.08, -60.32, GRAY.light], // ~20%
+        [26.39, -33.93, ACCENT_MID], // ~35%
+        [15.08, -60.32, ACCENT_FILL], // ~20%
       ].map(([len, offset, stroke]) => [
         'circle',
         {

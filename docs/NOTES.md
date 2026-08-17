@@ -138,29 +138,40 @@ The mechanism is a CSS custom property, `--fd-accent`, set on `<html>` via `data
 Neither renderer knows schemes exist, and switching one repaints without rebuilding a
 drawing.
 
-**There are three accent tokens, and the reason is the fallback.** Under a scheme they all
-resolve to that scheme's accent; with no scheme each falls back to the exact grey its own
-marks always used:
+**`RAMP` is six steps, light to dark, and every step carries its own fallback.** Under a
+scheme each resolves to that scheme's ramp; with no scheme each falls back to the exact grey
+its own marks always used. Three of them are aliased because most drawings want "the mark"
+rather than "step five":
 
-| Token | Neutral fallback | Used for |
-|---|---|---|
-| `ACCENT` | `GRAY.dark` | strokes, dots, the largest donut slice |
-| `ACCENT_MID` | `GRAY.mid` | bar fills |
-| `ACCENT_FILL` | `GRAY.light` | area fills |
+| Token | Step | Neutral fallback | Used for |
+|---|---|---|---|
+| `ACCENT_FILL` | `--fd-a2` | `GRAY.light` | area and region fills |
+| `ACCENT_MID` | `--fd-a3` | `GRAY.mid` | bar fills, second series |
+| `ACCENT` | `--fd-a5` | `GRAY.dark` | strokes, dots, primary marks |
 
 A single shared token has to pick one fallback and silently restyles everything else — the
 first attempt used one, and every bar chart came out with `GRAY.dark` bars in neutral mode,
-a visible change to documents nobody had themed.
+a visible change to documents nobody had themed. Caught by the regression check, not by eye.
 
-**Restraint rules, all covered by tests:**
+**Ramps are computed, not picked** (the script lives in the session, the values in `THEMES`):
+one hue, monotonically decreasing lightness, and **step 5 pinned to the accent verbatim**, so
+the single-accent version that shipped first was unchanged when the ramp arrived. Anchoring
+the ramp on the *grey* ramp's lightness instead was tried and abandoned — it washed the
+accent out to a pale tint.
 
-- The accent goes on the **primary mark only**. Axes, baselines, gridlines and second series
-  stay grey — `GRAY.dark` is not a reliable stand-in for "the data", since it is the series
-  in the time series but the *axis* in the bar charts, whose bars are `GRAY.mid`.
-- Charts with no single primary series — funnel, waterfall, heatmap, both maps, box plot —
-  and the table and text placeholders stay **entirely grey**.
-- Chrome takes it in three places only: the card selection ring, the active page tab, the
-  active inner tab.
+**The split is by role, not by shade** (covered by tests):
+
+- Every mark that stands for a value takes a ramp step, in every chart. The heatmap uses all
+  six as a gradient, which is what a magnitude scale is supposed to be — one hue, light to
+  dark.
+- `baseline`, `leftAxis` and the gridlines stay grey. Colouring those reads as a mistake, and
+  it is the only thing keeping a themed card from looking like a poster. Note `GRAY.dark` is
+  not a stand-in for "the data": it is the series in the time series but the *baseline* in
+  the bar charts, whose bars are `GRAY.mid`.
+- The table and text placeholders are not charts and stay grey.
+- Chrome takes the accent in three places only: the card selection ring, the active page tab,
+  the active inner tab — plus a KPI's delta, which is why the KPI is themed even in the
+  variant with no sparkline.
 
 The accents were checked with the `dataviz` skill's validator, not eyeballed: each clears
 ≥3:1 against both the light and the dark surface, which is why one value serves both modes
