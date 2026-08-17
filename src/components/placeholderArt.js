@@ -257,10 +257,34 @@ const SCATTER_PTS = [
   [67, 31], [77, 20], [79, 15], [85, 18], [85, 26], [86, 25],
 ]
 
+// A dot is a **zero-length line with a round cap**, not a `<circle>`.
+//
+// These drawings stretch to whatever shape the card is (`preserveAspectRatio`
+// is `none`), which turns a circle into an ellipse — measured at 4.17 wide to
+// tall on a twelve-column card, and 0.28 on a narrow tall one. A zero-length
+// subpath with `stroke-linecap: round` is drawn as a disc of the stroke's
+// width, and `vector-effect: non-scaling-stroke` takes that width out of the
+// stretched coordinate system, so the dot is round at every card shape and
+// stays the same size on screen — which is how a real scatter behaves anyway.
+// Verified by rasterising at four card shapes: constant, against a circle that
+// tracked the stretch exactly.
+//
+// `size` is therefore in screen pixels, not viewBox units.
+const dot = (cx, cy, size, color, opacity) => [
+  'line',
+  {
+    x1: cx, y1: cy, x2: cx, y2: cy,
+    stroke: color,
+    strokeWidth: size,
+    strokeLinecap: 'round',
+    vectorEffect: 'non-scaling-stroke',
+    ...(opacity == null ? {} : { opacity }),
+  },
+]
+
 // Semi-transparent so overlaps darken, which is what makes a dense cloud read
 // as density rather than as a smear.
-const dots = (points) =>
-  points.map(([cx, cy]) => ['circle', { cx, cy, r: 1.3, fill: ACCENT, opacity: 0.5 }])
+const dots = (points) => points.map(([cx, cy]) => dot(cx, cy, 5, ACCENT, 0.5))
 
 const SCATTER = cartesian([...dots(SCATTER_PTS), baseline(GRAY.mid)])
 
@@ -321,11 +345,15 @@ const BUBBLE_PTS = [
   [59, 28, 3], [68, 38, 4.8], [78, 24, 2], [88, 32, 3.6],
 ]
 
+// Bubbles suffer the stretch worst, being the biggest marks, so they are round
+// caps too. Each is two of them: the outer disc is the outline colour and the
+// inner one sits 2px inside it, which leaves a 1px ring — the separation that
+// stops overlapping bubbles merging into one blob. Sizes are screen pixels.
 const SCATTER_BUBBLE = cartesian([
-  ...BUBBLE_PTS.map(([cx, cy, r]) => [
-    'circle',
-    { cx, cy, r, fill: ACCENT_MID, stroke: ACCENT, strokeWidth: 0.5, vectorEffect: 'non-scaling-stroke' },
-  ]),
+  ...BUBBLE_PTS.flatMap(([cx, cy, r]) => {
+    const size = round2(r * 3.4)
+    return [dot(cx, cy, size, ACCENT), dot(cx, cy, size - 2, ACCENT_MID)]
+  }),
   baseline(GRAY.mid),
 ])
 

@@ -117,6 +117,23 @@ and each side renders it:
   hyphenates them on the way out (`stroke-width`) — one mechanical rule, not two lists;
 - `stretch: true` emits `preserveAspectRatio="none"`. On for everything but the donut.
 
+**Round dots under a stretched viewBox.** Because the drawings stretch to whatever shape a
+card is, a `<circle>` comes out an ellipse — measured at 4.17 wide-to-tall on a twelve-column
+card and 0.28 on a narrow tall one. So a scatter dot is a **zero-length line with
+`stroke-linecap: round`** plus `vector-effect: non-scaling-stroke`: a zero-length subpath with
+a round cap is drawn as a disc of the stroke's width, and the non-scaling stroke takes that
+width out of the stretched coordinate system. The mark is therefore round at every card shape
+and a constant size on screen, which is how a real scatter behaves anyway. `dot()` in
+`placeholderArt.js`; its `size` is in **screen pixels, not viewBox units**.
+
+Verified by rasterising the real markup with `rsvg-convert` at three card shapes and
+measuring every blob: mean width-to-height 0.92–1.03 for the cloud and 1.00 for the bubbles,
+against a `<circle>` that tracked the stretch exactly. A bubble is two of these, the inner one
+2px smaller, which leaves a ring so overlapping bubbles do not merge.
+
+This fixes scatter only. The point map's markers have the same defect and the same fix
+available.
+
 `SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
 to a string. Change a drawing in one place and both follow.
 
