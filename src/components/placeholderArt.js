@@ -229,36 +229,64 @@ const COMBO = cartesian([
   baseline(GRAY.mid),
 ])
 
-// An irregular cloud, drawn edge-to-edge so it fills the card rather than
-// leaving blank margins. The dots are kept small so the stretch reads as a
-// scatter, not as ovals.
+// A dense cloud drawn edge to edge, the way a real scatter looks: enough marks
+// that they overlap, so the shape of the distribution is what you read rather
+// than the individual dots. Generated from a seeded draw against a downward
+// slope (SVG y is inverted, so this is a positive correlation) and then written
+// out, so it never moves again.
 const SCATTER_PTS = [
-  [12, 45], [18, 50], [21, 38], [27, 47], [31, 53], [36, 35],
-  [41, 44], [44, 30], [49, 48], [55, 33], [58, 41], [63, 44],
-  [67, 26], [72, 36], [76, 23], [81, 31], [86, 20], [92, 29],
+  [6, 48], [11, 51], [11, 50], [16, 48], [17, 50], [18, 49], [18, 45], [19, 34],
+  [21, 44], [23, 41], [24, 38], [27, 43], [29, 39], [31, 38], [34, 36], [34, 35],
+  [35, 42], [38, 37], [39, 41], [42, 34], [44, 35], [45, 37], [47, 32], [49, 33],
+  [53, 35], [53, 30], [56, 33], [60, 33], [60, 31], [60, 23], [62, 34], [62, 30],
+  [62, 30], [63, 34], [64, 23], [64, 26], [65, 33], [65, 26], [66, 28], [66, 37],
+  [67, 31], [77, 20], [79, 15], [85, 18], [85, 26], [86, 25],
 ]
 
+// Semi-transparent so overlaps darken, which is what makes a dense cloud read
+// as density rather than as a smear.
 const dots = (points) =>
-  points.map(([cx, cy]) => ['circle', { cx, cy, r: 0.9, fill: ACCENT, opacity: 0.6 }])
+  points.map(([cx, cy]) => ['circle', { cx, cy, r: 1.3, fill: ACCENT, opacity: 0.5 }])
 
 const SCATTER = cartesian([...dots(SCATTER_PTS), baseline(GRAY.mid)])
 
 // Least-squares fit, computed rather than drawn by eye, so the line actually
 // follows the cloud — and keeps following it if the points are ever changed.
-function fitLine(points) {
+function regression(points) {
   const n = points.length
   const mx = points.reduce((sum, [x]) => sum + x, 0) / n
   const my = points.reduce((sum, [, y]) => sum + y, 0) / n
-  const slope =
-    points.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) /
-    points.reduce((sum, [x]) => sum + (x - mx) ** 2, 0)
-  const at = (x) => round2(my + slope * (x - mx))
-  return { x1: 0, y1: at(0), x2: 100, y2: at(100) }
+  const Sxx = points.reduce((sum, [x]) => sum + (x - mx) ** 2, 0)
+  const slope = points.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) / Sxx
+  const at = (x) => my + slope * (x - mx)
+  // Residual spread, and from it the standard error of the fitted mean — which
+  // is smallest at the mean of x and grows toward the extremes. That is what
+  // gives the band its hourglass waist; a plain wedge would be a lie about the
+  // shape, and the waist is the part people recognise.
+  const resid = Math.sqrt(points.reduce((s, [x, y]) => s + (y - at(x)) ** 2, 0) / (n - 2))
+  const half = (x) => 1.96 * resid * Math.sqrt(1 / n + (x - mx) ** 2 / Sxx)
+  return { at, half }
+}
+
+function fitLine(points) {
+  const { at } = regression(points)
+  return { x1: 0, y1: round2(at(0)), x2: 100, y2: round2(at(100)) }
+}
+
+// The confidence band, sampled along the fit and closed back along its lower
+// edge.
+function fitBand(points, steps = 10) {
+  const { at, half } = regression(points)
+  const xs = Array.from({ length: steps + 1 }, (_, i) => (100 * i) / steps)
+  const edge = (sign) => xs.map((x) => `${round2(x)},${round2(at(x) + sign * half(x))}`)
+  return [...edge(-1), ...edge(1).reverse()].join(' ')
 }
 
 // The same cloud with the relationship drawn in — "is there a correlation" is a
-// different question from "what does the spread look like".
+// different question from "what does the spread look like". Band first so the
+// dots sit on top of it and the fit line on top of both.
 const SCATTER_TREND = cartesian([
+  ['polygon', { points: fitBand(SCATTER_PTS), fill: ACCENT, opacity: 0.16 }],
   ...dots(SCATTER_PTS),
   [
     'line',
@@ -266,7 +294,6 @@ const SCATTER_TREND = cartesian([
       ...fitLine(SCATTER_PTS),
       stroke: ACCENT,
       strokeWidth: 1.5,
-      strokeDasharray: '5 3',
       vectorEffect: 'non-scaling-stroke',
     },
   ],

@@ -309,6 +309,23 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
     surfaces, monotonic in lightness — which is why Matrix green is the dark phosphor and
     not `#00ff41`. See `NOTES.md` for the mechanism and the fallback trap.
 
+13. **Scatter redesign** — **done** (2026-08-17), from a seaborn `lmplot` Ivan supplied as
+    reference. Three changes, in order of how much they matter:
+
+    - **A confidence band** around the fit on the trend variant. This is the signature of
+      the reference and the thing that says "regression" rather than "a line through some
+      dots". Its shape is computed from the residual spread, so it has the real hourglass
+      waist at the mean of x and flares at the extremes — a plain wedge would be a lie
+      about the shape, and the waist is the part people recognise.
+    - **A denser cloud**: 18 points to 46, generated from a seeded draw against a slope and
+      then written out so it never moves again.
+    - **Bigger, semi-transparent dots** (r 0.9 → 1.3, opacity 0.6 → 0.5) so overlaps darken
+      and the cloud reads as density rather than as scattered specks.
+
+    The fit line is solid now rather than dashed, matching the reference — the band already
+    says it is a fit. Existing dashboards with a scatter card will look different; that was
+    the point of the request.
+
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
 the time series only, and `preserveAspectRatio="none"` applied to charts whose shape it
