@@ -98,6 +98,18 @@ const leftAxis = (stroke) => [
 
 const cartesian = (shapes) => ({ viewBox: '0 0 100 60', stretch: true, shapes })
 
+// Maps scale uniformly and crop, rather than stretching to the card's shape.
+// Two reasons: a stretched map reads as wrong in a way a stretched bar chart
+// does not, and — the practical one — under a uniform scale a `<circle>` is
+// still a circle, so the markers need no tricks. `slice` fills the card and
+// lets the land bleed off the edges, which is what a real map does.
+const mapView = (shapes) => ({
+  viewBox: '0 0 100 60',
+  stretch: true,
+  fit: 'xMidYMid slice',
+  shapes,
+})
+
 // Segment heights are fractions of a bar's total, so rounding keeps float noise
 // (`15.299999999999999`) out of the markup.
 const round2 = (n) => Number(n.toFixed(2))
@@ -462,16 +474,37 @@ const HEATMAP_CALENDAR = cartesian(
   ),
 )
 
-// Both map types now sit on a real basemap tile (see `basemap.js`), which the
-// renderers put behind the SVG as a `background-image` with `background-size:
-// cover` rather than as an SVG `<image>`. That matters: these drawings stretch
-// to the card's shape, and a stretched raster is a visibly distorted map,
-// whereas `cover` crops without distorting at any card shape.
+// The basemap is drawn, not photographed.
 //
-// So the drawings below are the *overlay* only — the data on top of the map.
-// The regions are still deliberately not real geography, and are translucent so
-// the coastline reads through them; they mark "areas are shaded here" rather
-// than claiming to be any particular country.
+// A real tile was tried and dropped: a 256px raster blown up to a full-width
+// card is blurry, its country labels end up enormous, and shipping someone
+// else's tiles carries an attribution obligation on every card and in every
+// export. Drawn, it is sharp at any size, costs no bytes, needs no credit, and
+// nobody argues about which country is which.
+//
+// The land shapes double as the choropleth's regions, which is what makes the
+// shading land on land — an earlier version had abstract regions floating over
+// real coastlines and straddling the sea.
+//
+// The sea, land and graticule are fixed dark neutrals rather than theme colours:
+// one dark basemap works under both the light and the dark theme, and the accent
+// is reserved for the data on top of it.
+const MAP_SEA = '#0f1620'
+const MAP_LAND = '#1f2a37'
+const MAP_GRID = '#2c3a4b'
+
+const graticule = [
+  ['rect', { x: -20, y: -20, width: 140, height: 100, fill: MAP_SEA }],
+  ...[10, 30, 50, 70, 90].map((x) => [
+    'line',
+    { x1: x, y1: -20, x2: x, y2: 80, stroke: MAP_GRID, strokeWidth: 0.6, vectorEffect: 'non-scaling-stroke' },
+  ]),
+  ...[8, 22, 38, 52].map((y) => [
+    'line',
+    { x1: -20, y1: y, x2: 120, y2: y, stroke: MAP_GRID, strokeWidth: 0.6, vectorEffect: 'non-scaling-stroke' },
+  ]),
+]
+
 const MAP_REGIONS = [
   '10,20 30,12 34,30 18,38 8,32',
   '30,12 52,10 50,28 34,30',
@@ -481,27 +514,40 @@ const MAP_REGIONS = [
   '58,32 78,30 88,40 74,52 60,44',
 ]
 const MAP_SHADES = [ACCENT_FILL, ACCENT_MID, ACCENT, ACCENT_MID, ACCENT_FILL, ACCENT]
-const MAP_POINTS = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], [65, 43]]
+// Kept toward the middle band on purpose: `slice` crops, so a marker parked near
+// an edge disappears on a very wide or very tall card.
+const MAP_POINTS = [[26, 26], [41, 22], [60, 23], [70, 34], [46, 37], [30, 40], [64, 36]]
 
-const CHOROPLETH = cartesian(
-  MAP_REGIONS.map((points, i) => [
+// The land *is* the shaded regions here, so every shade lands on land.
+const CHOROPLETH = mapView([
+  ...graticule,
+  ...MAP_REGIONS.map((points, i) => [
     'polygon',
     {
       points,
       fill: MAP_SHADES[i],
-      opacity: 0.62,
-      // A hairline in the fill's own colour, not white: white separators read
-      // as borders drawn on the sea once there is a real coastline underneath.
-      stroke: MAP_SHADES[i],
-      strokeWidth: 0.8,
+      // A hairline of sea between neighbours, so adjacent shades stay apart
+      // without a white border drawn across the water.
+      stroke: MAP_SEA,
+      strokeWidth: 0.7,
       vectorEffect: 'non-scaling-stroke',
     },
   ]),
-)
+])
 
-// The basemap replaces the fake landmass entirely here — a point map is dots on
-// a map, and dots sit plausibly anywhere.
-const POINTMAP = cartesian(MAP_POINTS.map(([cx, cy]) => dot(cx, cy, 7, ACCENT, 0.9)))
+// Land stays neutral here — the dots are the data, so they get the accent.
+// Plain circles: `mapView` scales uniformly, so a circle stays a circle.
+const POINTMAP = mapView([
+  ...graticule,
+  ...MAP_REGIONS.map((points) => [
+    'polygon',
+    { points, fill: MAP_LAND, stroke: MAP_SEA, strokeWidth: 0.7, vectorEffect: 'non-scaling-stroke' },
+  ]),
+  ...MAP_POINTS.map(([cx, cy]) => [
+    'circle',
+    { cx, cy, r: 1.7, fill: ACCENT, stroke: MAP_SEA, strokeWidth: 0.6, vectorEffect: 'non-scaling-stroke' },
+  ]),
+])
 
 // A donut ring split into three grayscale slices. Circumference of an r=18
 // circle is ~113.1; each slice is a dash of that length, offset so they sit end

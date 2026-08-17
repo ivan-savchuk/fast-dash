@@ -17,7 +17,6 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder |
 | `src/components/placeholderArt.js` | The chart drawings, described once and shared by the canvas and the HTML export |
-| `src/components/basemap.js` | The embedded CARTO basemap tile the map cards sit on, and its required attribution |
 | `src/components/TypeBadge.jsx` | The type label in a card header, and the menu that switches a chart's variant |
 | `src/components/Popover.jsx` | The panel that opens from a card header — portal, backdrop, Escape |
 | `src/components/ColumnEditor.jsx` | A table's column list: name, role, format, reorder, add, remove |
@@ -134,131 +133,41 @@ against a `<circle>` that tracked the stretch exactly. A bubble is two of these,
 
 The point map's markers use it too.
 
-## Map cards sit on a real basemap (2026-08-17)
+## Map cards have a drawn basemap (2026-08-17)
 
-Both map types are drawn over one embedded CARTO "Dark Matter" tile
-(`src/components/basemap.js`). Three things about it are load-bearing:
+Both map types sit on a basemap that is **drawn, not photographed**.
 
-- **It is a `background-image` with `background-size: cover`, not an SVG `<image>`.** These
-  drawings stretch to the card's shape, and a stretched raster is a visibly distorted map;
-  `cover` crops without distorting at any shape. So a map placeholder is a positioned `div`
-  with the overlay SVG on top, in both renderers — the only placeholders that are not a bare
-  SVG.
-- **Attribution is required and is rendered on every map card.** The data is © OpenStreetMap
-  contributors (ODbL) and the style is © CARTO (CC BY). Real map vizzes carry the same line
-  in the corner, so it costs nothing in fidelity — but it is a licence obligation, not
-  decoration, and must not be removed.
-- **The export only ships the tile when the document holds a map**, nested children included
-  — the same idea as `needsScript`. An export with a map is ~19KB larger; one without is
-  unchanged.
+A real CARTO tile was tried first and dropped. Three reasons, in the order they mattered:
+a 256px raster blown up to a full-width card is blurry and its country labels end up
+enormous; shipping someone else's tiles carries an attribution obligation on every card and
+in every export, which the owner did not want on screen; and the raster cost ~19KB in the
+bundle and again in every export holding a map. Drawn, it is sharp at any size, costs
+nothing, needs no credit, and nobody argues about which country is which.
 
-The tile is embedded rather than fetched because the export must stay self-contained: no
-external URLs, no network at view time. Verified by extracting the base64 back out of a
-generated export and confirming it is byte-identical to the tile as fetched, and that every
-`url()` in the file is a data URI.
+**The land shapes double as the choropleth's regions.** That is what makes every shade land
+on land — the tile version had abstract regions floating over real coastlines and visibly
+straddling the sea.
 
-It is dark on purpose — one image works under both the light and the dark theme, which is
-why one static tile is enough. The tile (z4/x8/y5) was chosen by measuring land-to-water
-balance across candidates, so it reads as a map rather than as a black square.
+Sea, land and graticule are fixed dark neutrals rather than theme colours: one dark basemap
+works under both the light and the dark theme, and the accent is reserved for the data on
+top of it.
 
-Consequences for the overlays: the **point map dropped its fake landmass** and is dots only,
-since the basemap is the land now. The **choropleth kept its regions but made them
-translucent**, with hairlines in their own colour rather than white — a white separator reads
-as a border drawn on the sea once there is a real coastline underneath. Those regions still
-do not follow the coastline; that was accepted knowingly when choosing to put the basemap
-behind both types.
+**Maps use `fit: 'xMidYMid slice'`, not the usual stretch** (`mapView` in
+`placeholderArt.js`; both renderers honour `art.fit`). A stretched map reads as wrong in a
+way a stretched bar chart does not — and the practical payoff is that a uniform scale keeps
+a `<circle>` circular, so the markers need no tricks at all. `slice` fills the card and lets
+the land bleed off the edges, which is what a real map does. The cost is cropping: markers
+are kept toward the middle band so a very wide or very tall card still shows most of them.
 
-`SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
-to a string. Change a drawing in one place and both follow.
+Measured by rasterising the real export markup at four card shapes, stretches 0.34x to
+3.80x: marker width-to-height 1.00-1.01, and 6 or 7 of the 7 markers visible except on the
+narrowest tall card.
 
-## Colour schemes (2026-08-17)
-
-A dashboard picks one of four global schemes — neutral, Blue Rei, Green Matrix, Red Rose —
-held on the document as `doc.theme` and listed in `THEMES` (`state/document.js`). On the
-document rather than in localStorage, so the JSON fully determines the HTML export; the
-dark/light preference stays a personal setting because it is about looking at the tool, not
-about the artefact.
-
-**This is a deliberate exception to design principle #1**, argued before it was built: the
-failure that principle guards against is arguing about colour *per chart*, and a global
-accent with no per-card control cannot produce that conversation. It is a skin, not a
-palette. Restraint is what keeps it honest — see below.
-
-The mechanism is a CSS custom property, `--fd-accent`, set on `<html>` via `data-scheme`
-(`App.jsx`) and emitted into the export's own `<style>` by `themeVars` (`htmlExport.js`).
-Neither renderer knows schemes exist, and switching one repaints without rebuilding a
-drawing.
-
-**`RAMP` is six steps, light to dark, and every step carries its own fallback.** Under a
-scheme each resolves to that scheme's ramp; with no scheme each falls back to the exact grey
-its own marks always used. Three of them are aliased because most drawings want "the mark"
-rather than "step five":
-
-| Token | Step | Neutral fallback | Used for |
-|---|---|---|---|
-| `ACCENT_FILL` | `--fd-a2` | `GRAY.light` | area and region fills |
-| `ACCENT_MID` | `--fd-a3` | `GRAY.mid` | bar fills, second series |
-| `ACCENT` | `--fd-a5` | `GRAY.dark` | strokes, dots, primary marks |
-
-A single shared token has to pick one fallback and silently restyles everything else — the
-first attempt used one, and every bar chart came out with `GRAY.dark` bars in neutral mode,
-a visible change to documents nobody had themed. Caught by the regression check, not by eye.
-
-**Ramps are computed, not picked** (the script lives in the session, the values in `THEMES`):
-one hue, monotonically decreasing lightness, and **step 5 pinned to the accent verbatim**, so
-the single-accent version that shipped first was unchanged when the ramp arrived. Anchoring
-the ramp on the *grey* ramp's lightness instead was tried and abandoned — it washed the
-accent out to a pale tint.
-
-**A chart with no parts wears the accent, not a ramp step** (`ACCENT_SOLID`). The ramp
-exists to tell parts apart — stacked segments, two series, a heatmap's intensities. A plain
-bar chart has no parts: every bar means the same thing, so putting it on a middle step just
-makes it a washed-out tint of the colour it should be wearing. That is exactly what happened
-when the ramp first landed, and bar, horizontal bar and histogram were pulled back onto the
-accent. `ACCENT_SOLID` falls back to `GRAY.mid` rather than `GRAY.dark`, because that is what
-a bar fill has always been unthemed.
-
-**The split is by role, not by shade** (covered by tests):
-
-- Every mark that stands for a value takes a ramp step, in every chart. The heatmap uses all
-  six as a gradient, which is what a magnitude scale is supposed to be — one hue, light to
-  dark.
-- `baseline`, `leftAxis` and the gridlines stay grey. Colouring those reads as a mistake, and
-  it is the only thing keeping a themed card from looking like a poster. Note `GRAY.dark` is
-  not a stand-in for "the data": it is the series in the time series but the *baseline* in
-  the bar charts, whose bars are `GRAY.mid`.
-- The table and text placeholders are not charts and stay grey.
-- Chrome takes the accent in three places only: the card selection ring, the active page tab,
-  the active inner tab — plus a KPI's delta, which is why the KPI is themed even in the
-  variant with no sparkline.
-
-**Dark mode has its own ramp per scheme** (`index.css`), and this was learned the hard way.
-The light ramp's pale end is designed against white; on a dark card those near-white tints
-glare. Under Red Rose it read as chalky pink, because warm and light against a cool dark
-surface is the worst pairing there is. So on dark the ramp runs the other way — least ink
-closest to the surface, most ink brightest. The *meaning* is unchanged (least ink = low
-value); only the direction flips, which is also the right direction for a dark-mode heatmap.
-
-Measuring it turned up a second fault that eyeballing had missed. Against the dark card:
-
-| | fill (step 2) | accent (step 5) |
-|---|---|---|
-| before | 9.5–9.9:1 — shouting off the card | 2.6–3.2:1 — **Red Rose was below the 3:1 floor** |
-| after | 1.9–2.0:1 — a subtle tint | 4.8–5.6:1 |
-
-So the fill was too loud *and* the stroke too weak, in the same charts. A subtle fill under a
-bright stroke is the readable pairing on a dark surface.
-
-`--fd-accent` follows the dark step 5, so the chrome and the drawings never disagree.
-**Neutral keeps its light greys in dark mode** — that is the look already in use and
-deliberately left alone. The HTML export always ships the *light* ramps, because the exported
-file is light whatever the editor is set to.
-
-The accents were checked with the `dataviz` skill's validator, not eyeballed: each clears
-≥3:1 against the light surface, which is why Matrix green is the dark phosphor rather than
-the canonical `#00ff41` (unreadable on white). **The validator's red↔green CVD failure does not apply here** — that check is for
-colours appearing together in one chart, and the schemes are mutually exclusive. Recorded so
-nobody later "fixes" it.
+**A caution about verifying SVG.** The tile version used a zero-length round-cap stroke with
+`vector-effect: non-scaling-stroke` for its markers, checked with `rsvg-convert` and found
+round. In the browser they came out as large ovals. librsvg is not a browser — geometry
+checks against it are sound, but anything resting on a specific SVG feature needs checking
+where it actually ships.
 
 ## Chart variants (2026-08-16)
 

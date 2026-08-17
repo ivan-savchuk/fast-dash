@@ -326,22 +326,22 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
     says it is a fit. Existing dashboards with a scatter card will look different; that was
     the point of the request.
 
-14. **Map cards on a real basemap** — **done** (2026-08-17). Both map types now sit on one
-    embedded CARTO "Dark Matter" tile instead of an abstract landmass, and the point map's
-    markers picked up the round-dot fix from item 13.
+14. **Map cards get a drawn basemap** — **done** (2026-08-17). Both map types sit on a
+    basemap drawn as SVG, and the point map's markers are round at any card shape.
 
-    **The tile carries a licence obligation**: OpenStreetMap data under ODbL, CARTO style
-    under CC BY, so every map card renders "© OpenStreetMap © CARTO" in its corner. That
-    line is not decoration and must not be removed. Real map vizzes show the same thing, so
-    it costs nothing in fidelity.
+    A real CARTO tile was built first and then removed. It was blurry (a 256px raster blown
+    up to a full-width card, with enormous country labels), it carried an attribution
+    obligation on every card that Ivan did not want on screen, and it cost ~19KB in the
+    bundle and again in every export holding a map. **The credit line could not simply be
+    deleted while still shipping their tiles** — that is the licence, not a preference — so
+    the tile went instead.
 
-    It is embedded rather than fetched, because the export must stay self-contained — and
-    the export only ships it when the document actually holds a map, so a mapless dashboard
-    is unaffected. Dark on purpose: one image serves both themes.
+    Drawing it turned out better on every axis: sharp at any size, no bytes, no credit owed,
+    and the land shapes double as the choropleth's regions, which finally makes every shade
+    land on land instead of straddling a coastline.
 
-    Accepted knowingly: the choropleth's regions do not follow the real coastline underneath.
-    Putting the basemap behind both map types was the owner's call over the alternative of
-    a basemap on the point map only.
+    Maps also stopped stretching. They scale uniformly and crop (`xMidYMid slice`), which
+    both reads right and means a `<circle>` stays a circle, so the markers need no tricks.
 
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
