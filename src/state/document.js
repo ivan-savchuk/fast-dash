@@ -51,6 +51,12 @@ export const FILTER_TYPES = [
 // rather than picked by hand — one hue, monotonically decreasing lightness —
 // so a heatmap is a proper magnitude scale and a themed chart keeps the same
 // visual weight as the grey one. The neutral ramp is the greys as they were.
+//
+// These are the **light** ramps, and they are the ones the HTML export ships,
+// because the exported file is always light whatever the editor is set to.
+// Dark mode has its own ramps per scheme, in `index.css`: on a dark card the
+// light ramp's pale end glares, so there the ramp runs from the surface upward
+// instead. See the note there.
 export const THEMES = [
   {
     id: 'neutral',

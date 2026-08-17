@@ -9,9 +9,20 @@
    see the note on ACCENT in components/placeholderArt.js.
 
    The defaults are the greys the drawings have always used, so a document with
-   no scheme is unchanged. Each accent clears 3:1 against both the light and the
-   dark card surface, so one value serves both modes; only the pale companion
-   needs a darker step in dark mode, where a near-white fill would glare. */
+   no scheme is unchanged.
+
+   Dark mode gets its own ramp per scheme rather than reusing the light one.
+   The light ramp's pale end is designed against white; on a dark card those
+   near-white tints glare, which read as chalky pink under Red Rose in
+   particular — warm and light against a cool dark surface is the worst pairing.
+   So on dark the ramp runs the other way: least ink sits closest to the
+   surface, most ink is brightest. The meaning is the same as in light mode
+   (least ink = low value), only the direction flips. Each dark step 5 clears
+   about 5:1 against the card, and `--fd-accent` follows it so the chrome and
+   the drawings never disagree.
+
+   Neutral keeps its light greys in dark mode — that is the look already in use
+   and deliberately left alone. */
 /* `--fd-accent` is the single colour the chrome uses — the selection ring, the
    active tabs, a KPI's delta. `--fd-a1`..`--fd-a6` are the ramp the drawings
    use, light to dark; step 5 is the accent itself, so the two agree.
@@ -58,6 +69,36 @@
   --fd-a4: #df6c71;
   --fd-a5: #c81e3c;
   --fd-a6: #94001d;
+}
+
+.dark[data-scheme='blue-rei'] {
+  --fd-accent: #5496ff;
+  --fd-a1: #2e4266;
+  --fd-a2: #33548f;
+  --fd-a3: #3a68bd;
+  --fd-a4: #457fe8;
+  --fd-a5: #5496ff;
+  --fd-a6: #7eb9ff;
+}
+
+.dark[data-scheme='green-matrix'] {
+  --fd-accent: #52b366;
+  --fd-a1: #2f4a33;
+  --fd-a2: #33613b;
+  --fd-a3: #397d46;
+  --fd-a4: #439854;
+  --fd-a5: #52b366;
+  --fd-a6: #81d08d;
+}
+
+.dark[data-scheme='red-rose'] {
+  --fd-accent: #ff5968;
+  --fd-a1: #623233;
+  --fd-a2: #88373c;
+  --fd-a3: #b23e48;
+  --fd-a4: #da4956;
+  --fd-a5: #ff5968;
+  --fd-a6: #ff888e;
 }
 
 /* react-grid-layout ships a bright red drop placeholder. Grayscale keeps the

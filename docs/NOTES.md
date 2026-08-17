@@ -181,10 +181,31 @@ a bar fill has always been unthemed.
   the active inner tab — plus a KPI's delta, which is why the KPI is themed even in the
   variant with no sparkline.
 
+**Dark mode has its own ramp per scheme** (`index.css`), and this was learned the hard way.
+The light ramp's pale end is designed against white; on a dark card those near-white tints
+glare. Under Red Rose it read as chalky pink, because warm and light against a cool dark
+surface is the worst pairing there is. So on dark the ramp runs the other way — least ink
+closest to the surface, most ink brightest. The *meaning* is unchanged (least ink = low
+value); only the direction flips, which is also the right direction for a dark-mode heatmap.
+
+Measuring it turned up a second fault that eyeballing had missed. Against the dark card:
+
+| | fill (step 2) | accent (step 5) |
+|---|---|---|
+| before | 9.5–9.9:1 — shouting off the card | 2.6–3.2:1 — **Red Rose was below the 3:1 floor** |
+| after | 1.9–2.0:1 — a subtle tint | 4.8–5.6:1 |
+
+So the fill was too loud *and* the stroke too weak, in the same charts. A subtle fill under a
+bright stroke is the readable pairing on a dark surface.
+
+`--fd-accent` follows the dark step 5, so the chrome and the drawings never disagree.
+**Neutral keeps its light greys in dark mode** — that is the look already in use and
+deliberately left alone. The HTML export always ships the *light* ramps, because the exported
+file is light whatever the editor is set to.
+
 The accents were checked with the `dataviz` skill's validator, not eyeballed: each clears
-≥3:1 against both the light and the dark surface, which is why one value serves both modes
-and why Matrix green is the dark phosphor rather than the canonical `#00ff41` (unreadable on
-white). **The validator's red↔green CVD failure does not apply here** — that check is for
+≥3:1 against the light surface, which is why Matrix green is the dark phosphor rather than
+the canonical `#00ff41` (unreadable on white). **The validator's red↔green CVD failure does not apply here** — that check is for
 colours appearing together in one chart, and the schemes are mutually exclusive. Recorded so
 nobody later "fixes" it.
 
