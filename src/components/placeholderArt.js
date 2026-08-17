@@ -462,8 +462,16 @@ const HEATMAP_CALENDAR = cartesian(
   ),
 )
 
-// An abstract landmass split into regions — deliberately not real geography,
-// which would only invite "that's not where Texas is" over the layout question.
+// Both map types now sit on a real basemap tile (see `basemap.js`), which the
+// renderers put behind the SVG as a `background-image` with `background-size:
+// cover` rather than as an SVG `<image>`. That matters: these drawings stretch
+// to the card's shape, and a stretched raster is a visibly distorted map,
+// whereas `cover` crops without distorting at any card shape.
+//
+// So the drawings below are the *overlay* only — the data on top of the map.
+// The regions are still deliberately not real geography, and are translucent so
+// the coastline reads through them; they mark "areas are shaded here" rather
+// than claiming to be any particular country.
 const MAP_REGIONS = [
   '10,20 30,12 34,30 18,38 8,32',
   '30,12 52,10 50,28 34,30',
@@ -478,17 +486,22 @@ const MAP_POINTS = [[24, 24], [41, 19], [60, 20], [71, 34], [46, 37], [29, 45], 
 const CHOROPLETH = cartesian(
   MAP_REGIONS.map((points, i) => [
     'polygon',
-    { points, fill: MAP_SHADES[i], stroke: '#fff', strokeWidth: 0.8, vectorEffect: 'non-scaling-stroke' },
+    {
+      points,
+      fill: MAP_SHADES[i],
+      opacity: 0.62,
+      // A hairline in the fill's own colour, not white: white separators read
+      // as borders drawn on the sea once there is a real coastline underneath.
+      stroke: MAP_SHADES[i],
+      strokeWidth: 0.8,
+      vectorEffect: 'non-scaling-stroke',
+    },
   ]),
 )
 
-const POINTMAP = cartesian([
-  ...MAP_REGIONS.map((points) => [
-    'polygon',
-    { points, fill: ACCENT_FILL, stroke: ACCENT_MID, strokeWidth: 0.8, vectorEffect: 'non-scaling-stroke' },
-  ]),
-  ...MAP_POINTS.map(([cx, cy]) => ['circle', { cx, cy, r: 1.6, fill: ACCENT, opacity: 0.75 }]),
-])
+// The basemap replaces the fake landmass entirely here — a point map is dots on
+// a map, and dots sit plausibly anywhere.
+const POINTMAP = cartesian(MAP_POINTS.map(([cx, cy]) => dot(cx, cy, 7, ACCENT, 0.9)))
 
 // A donut ring split into three grayscale slices. Circumference of an r=18
 // circle is ~113.1; each slice is a dash of that length, offset so they sit end

@@ -326,6 +326,23 @@ Two items were cut here rather than built (2026-08-16, Ivan's call):
     says it is a fit. Existing dashboards with a scatter card will look different; that was
     the point of the request.
 
+14. **Map cards on a real basemap** — **done** (2026-08-17). Both map types now sit on one
+    embedded CARTO "Dark Matter" tile instead of an abstract landmass, and the point map's
+    markers picked up the round-dot fix from item 13.
+
+    **The tile carries a licence obligation**: OpenStreetMap data under ODbL, CARTO style
+    under CC BY, so every map card renders "© OpenStreetMap © CARTO" in its corner. That
+    line is not decoration and must not be removed. Real map vizzes show the same thing, so
+    it costs nothing in fidelity.
+
+    It is embedded rather than fetched, because the export must stay self-contained — and
+    the export only ships it when the document actually holds a map, so a mapless dashboard
+    is unaffected. Dark on purpose: one image serves both themes.
+
+    Accepted knowingly: the choropleth's regions do not follow the real coastline underneath.
+    Putting the basemap behind both map types was the owner's call over the alternative of
+    a basemap on the point map only.
+
 Also still open: a refinement pass over the chart placeholders, which were added
 breadth-first and are internally inconsistent — inconsistent baseline strokes, gridlines on
 the time series only, and `preserveAspectRatio="none"` applied to charts whose shape it

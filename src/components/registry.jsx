@@ -11,6 +11,7 @@
 // numbers and labels still come from `placeholderArt.js`.
 
 import { createElement } from 'react'
+import { BASEMAP_ATTRIBUTION, BASEMAP_TILE } from './basemap.js'
 import {
   artFor,
   columnTemplate,
@@ -43,6 +44,35 @@ function SvgArt({ art, className = 'h-full w-full' }) {
     </svg>
   )
 }
+
+// A map is its overlay drawn over a real basemap tile.
+//
+// The tile is a `background-image` with `background-size: cover`, not an SVG
+// `<image>`: these drawings stretch to the card's shape, and a stretched raster
+// is a visibly distorted map, whereas `cover` crops without distorting at any
+// shape. The overlay SVG sits on top and stretches as it always did.
+//
+// The attribution line is not decoration — the tile is OpenStreetMap data under
+// ODbL with a CARTO style under CC BY, and both require credit. Real map cards
+// carry the same line in the corner.
+const map = (type) =>
+  function MapPlaceholder({ variant }) {
+    return (
+      <div
+        className="relative h-full w-full overflow-hidden rounded-sm bg-gray-900"
+        style={{
+          backgroundImage: `url(${BASEMAP_TILE})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <SvgArt art={artFor(type, variant)} className="absolute inset-0 h-full w-full" />
+        <span className="absolute right-0.5 bottom-0 text-[7px] leading-tight text-white/45">
+          {BASEMAP_ATTRIBUTION}
+        </span>
+      </div>
+    )
+  }
 
 // `chart` covers every type whose placeholder is nothing but a drawing. Types
 // with more than one way to be drawn take the component's `variant`; the rest
@@ -252,13 +282,13 @@ export const COMPONENT_TYPES = {
     label: 'Map (choropleth)',
     defaultTitle: 'By region',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: chart('choropleth'),
+    Placeholder: map('choropleth'),
   },
   pointmap: {
     label: 'Map (point)',
     defaultTitle: 'Locations',
     defaultSize: { w: 6, h: 6 },
-    Placeholder: chart('pointmap'),
+    Placeholder: map('pointmap'),
   },
   tabs: {
     label: 'Tabs',

@@ -17,6 +17,7 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/state/document.js` | The document object, the reducer, grid geometry constants |
 | `src/components/registry.jsx` | One entry per component type: label, default size, shortcut key, placeholder |
 | `src/components/placeholderArt.js` | The chart drawings, described once and shared by the canvas and the HTML export |
+| `src/components/basemap.js` | The embedded CARTO basemap tile the map cards sit on, and its required attribution |
 | `src/components/TypeBadge.jsx` | The type label in a card header, and the menu that switches a chart's variant |
 | `src/components/Popover.jsx` | The panel that opens from a card header — portal, backdrop, Escape |
 | `src/components/ColumnEditor.jsx` | A table's column list: name, role, format, reorder, add, remove |
@@ -131,8 +132,41 @@ measuring every blob: mean width-to-height 0.92–1.03 for the cloud and 1.00 fo
 against a `<circle>` that tracked the stretch exactly. A bubble is two of these, the inner one
 2px smaller, which leaves a ring so overlapping bubbles do not merge.
 
-This fixes scatter only. The point map's markers have the same defect and the same fix
-available.
+The point map's markers use it too.
+
+## Map cards sit on a real basemap (2026-08-17)
+
+Both map types are drawn over one embedded CARTO "Dark Matter" tile
+(`src/components/basemap.js`). Three things about it are load-bearing:
+
+- **It is a `background-image` with `background-size: cover`, not an SVG `<image>`.** These
+  drawings stretch to the card's shape, and a stretched raster is a visibly distorted map;
+  `cover` crops without distorting at any shape. So a map placeholder is a positioned `div`
+  with the overlay SVG on top, in both renderers — the only placeholders that are not a bare
+  SVG.
+- **Attribution is required and is rendered on every map card.** The data is © OpenStreetMap
+  contributors (ODbL) and the style is © CARTO (CC BY). Real map vizzes carry the same line
+  in the corner, so it costs nothing in fidelity — but it is a licence obligation, not
+  decoration, and must not be removed.
+- **The export only ships the tile when the document holds a map**, nested children included
+  — the same idea as `needsScript`. An export with a map is ~19KB larger; one without is
+  unchanged.
+
+The tile is embedded rather than fetched because the export must stay self-contained: no
+external URLs, no network at view time. Verified by extracting the base64 back out of a
+generated export and confirming it is byte-identical to the tile as fetched, and that every
+`url()` in the file is a data URI.
+
+It is dark on purpose — one image works under both the light and the dark theme, which is
+why one static tile is enough. The tile (z4/x8/y5) was chosen by measuring land-to-water
+balance across candidates, so it reads as a map rather than as a black square.
+
+Consequences for the overlays: the **point map dropped its fake landmass** and is dots only,
+since the basemap is the land now. The **choropleth kept its regions but made them
+translucent**, with hairlines in their own colour rather than white — a white separator reads
+as a border drawn on the sea once there is a real coastline underneath. Those regions still
+do not follow the coastline; that was accepted knowingly when choosing to put the basemap
+behind both types.
 
 `SvgArt` in `registry.jsx` renders to React elements; `artToHtml` in `htmlExport.js` renders
 to a string. Change a drawing in one place and both follow.

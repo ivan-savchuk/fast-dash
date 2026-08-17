@@ -17,6 +17,7 @@
 
 import { GRID_COLS, GRID_ROW_HEIGHT, themeById } from '../state/document.js'
 import { typeLabel } from '../components/registry.jsx'
+import { BASEMAP_ATTRIBUTION, BASEMAP_TILE } from '../components/basemap.js'
 import {
   artFor,
   columnTemplate,
@@ -51,6 +52,17 @@ export function renderDashboardHtml(doc) {
   const needsScript =
     pages.length > 1 || pages.some((p) => (p.components ?? []).some((c) => c.type === 'tabs'))
   const script = needsScript ? `\n<script>${TAB_SCRIPT}</script>` : ''
+  // The basemap tile is ~19KB as a data URI, so it only rides along when the
+  // document actually holds a map — same idea as the script above. Nested
+  // children count, so this looks inside Tabs containers too.
+  const usesMap = pages.some((p) =>
+    (p.components ?? []).some(
+      (c) =>
+        MAP_TYPES.has(c.type) ||
+        (c.tabs ?? []).some((t) => (t.components ?? []).some((cc) => MAP_TYPES.has(cc.type))),
+    ),
+  )
+  const basemap = usesMap ? basemapStyle() : ''
 
   return `<!doctype html>
 <html lang="en">
@@ -58,7 +70,7 @@ export function renderDashboardHtml(doc) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<style>${themeVars(doc.theme)}${STYLES}</style>
+<style>${themeVars(doc.theme)}${STYLES}${basemap}</style>
 </head>
 <body>
 <header class="head"><h1>${esc(title)}</h1></header>
@@ -240,6 +252,25 @@ function hyphenate(name) {
 // component's `variant`; the rest ignore it.
 const chart = (type) => (variant) => artToHtml(artFor(type, variant))
 
+const MAP_TYPES = new Set(['choropleth', 'pointmap'])
+
+// A map is its overlay over a real basemap tile. The tile is a background image
+// with `cover` rather than an SVG `<image>`, because these drawings stretch to
+// the card's shape and a stretched raster is a visibly distorted map, whereas
+// `cover` crops without distorting. The attribution line is required: the data
+// is OpenStreetMap under ODbL and the style is CARTO under CC BY.
+const map = (type) => (variant) =>
+  `<div class="basemap">${artToHtml(artFor(type, variant), 'fill mapoverlay')}` +
+  `<span class="mapcredit">${esc(BASEMAP_ATTRIBUTION)}</span></div>`
+
+// Emitted only when the document holds a map, so the ~19KB tile never rides
+// along in an export that has no use for it.
+const basemapStyle = () => `
+.basemap{position:relative;height:100%;width:100%;overflow:hidden;border-radius:2px;background:#111;background-image:url(${BASEMAP_TILE});background-size:cover;background-position:center}
+.basemap .mapoverlay{position:absolute;inset:0}
+.basemap .mapcredit{position:absolute;right:2px;bottom:0;font-size:7px;line-height:1.2;color:rgba(255,255,255,.45)}
+`
+
 const PLACEHOLDERS = {
   // Built line by line rather than as one template, so a dropped piece leaves no
   // blank line behind and the default variant is exactly what it always was.
@@ -275,8 +306,8 @@ const PLACEHOLDERS = {
   waterfall: chart('waterfall'),
   histogram: chart('histogram'),
   boxplot: chart('boxplot'),
-  choropleth: chart('choropleth'),
-  pointmap: chart('pointmap'),
+  choropleth: map('choropleth'),
+  pointmap: map('pointmap'),
   heatmap: chart('heatmap'),
 }
 
