@@ -15,16 +15,17 @@ import TypeBadge from './TypeBadge.jsx'
 // tweet's length on purpose: long prose belongs in the spec, not the card.
 export const COMMENT_MAX = 280
 
-// Duplicate and delete are occasional, so they stay out of the way until you
-// reach for them: invisible by default, revealed when the card is hovered
-// (`group` on the card root), when it is selected, or when the button itself
-// takes keyboard focus. They keep their box at all times, so nothing in the
-// header moves when they appear.
+// Duplicate and delete stay visible on every card while you are building.
 //
-// The type badge deliberately does NOT hide — it is information, not a control,
-// and on a table it carries the column count, which is real spec.
+// They were tried hidden-until-hover (2026-08-18) and reverted the same day,
+// Ivan's call: on an editing canvas the affordance is worth more than the quiet,
+// and a control you have to go hunting for is a control people forget exists.
+// The place for a card with no controls on it is Present mode, not the canvas.
+//
+// The type badge is visible for a different reason — it is information rather
+// than a control, and on a table it carries the column count, which is real spec.
 const actionClass = (size) =>
-  `no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm ${size} leading-none text-gray-400 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100`
+  `no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm ${size} leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100`
 
 function UnknownPlaceholder() {
   return (
@@ -59,10 +60,6 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   const onDuplicate = () => dispatch({ type: 'duplicate', id })
   const onRename = (title) => dispatch({ type: 'rename', id, title })
   const onComment = (comment) => dispatch({ type: 'setComment', id, comment })
-
-  // A selected card shows its chrome unconditionally; an unselected one waits
-  // for the pointer. `opacity-0` still leaves the button clickable and focusable.
-  const actionState = selected ? 'opacity-100' : 'opacity-0'
 
   // An imported file may contain a type this build doesn't know about.
   // Show it as a labelled empty box rather than crashing the canvas.
@@ -99,7 +96,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           dispatch={dispatch}
         />
         <button
-          className={`${actionClass('text-sm')} ${actionState}`}
+          className={actionClass('text-sm')}
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -107,7 +104,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className={`${actionClass('text-base')} ${actionState}`}
+          className={actionClass('text-base')}
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
@@ -162,7 +159,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           />
         )}
         <button
-          className={`${actionClass('text-sm')} ${actionState}`}
+          className={actionClass('text-sm')}
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -170,7 +167,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className={`${actionClass('text-base')} ${actionState}`}
+          className={actionClass('text-base')}
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
