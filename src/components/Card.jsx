@@ -15,6 +15,17 @@ import TypeBadge from './TypeBadge.jsx'
 // tweet's length on purpose: long prose belongs in the spec, not the card.
 export const COMMENT_MAX = 280
 
+// Duplicate and delete are occasional, so they stay out of the way until you
+// reach for them: invisible by default, revealed when the card is hovered
+// (`group` on the card root), when it is selected, or when the button itself
+// takes keyboard focus. They keep their box at all times, so nothing in the
+// header moves when they appear.
+//
+// The type badge deliberately does NOT hide — it is information, not a control,
+// and on a table it carries the column count, which is real spec.
+const actionClass = (size) =>
+  `no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm ${size} leading-none text-gray-400 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100`
+
 function UnknownPlaceholder() {
   return (
     <div className="flex h-full items-center justify-center rounded-sm border border-dashed border-gray-200 text-[11px] text-gray-400 dark:border-gray-600">
@@ -49,6 +60,10 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   const onRename = (title) => dispatch({ type: 'rename', id, title })
   const onComment = (comment) => dispatch({ type: 'setComment', id, comment })
 
+  // A selected card shows its chrome unconditionally; an unselected one waits
+  // for the pointer. `opacity-0` still leaves the button clickable and focusable.
+  const actionState = selected ? 'opacity-100' : 'opacity-0'
+
   // An imported file may contain a type this build doesn't know about.
   // Show it as a labelled empty box rather than crashing the canvas.
   const def = COMPONENT_TYPES[component.type] ?? {
@@ -64,7 +79,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
     return (
       <div
         onMouseDown={onSelect}
-        className={`flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white dark:bg-gray-800 px-3 select-none ${
+        className={`group flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white dark:bg-gray-800 px-3 select-none ${
           selected
             ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
             : 'border-gray-200 dark:border-gray-700'
@@ -84,7 +99,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           dispatch={dispatch}
         />
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+          className={`${actionClass('text-sm')} ${actionState}`}
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -92,7 +107,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+          className={`${actionClass('text-base')} ${actionState}`}
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
@@ -103,13 +118,25 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
     )
   }
 
+  // The description is the spec note, so a card that has one always shows it.
+  // Empty, it used to put an identical grey prompt and hairline on every card
+  // on the page, which is what made a canvas of cards read as a form rather
+  // than as a dashboard. So an empty, unselected card shows a blank strip:
+  // same 40px, no border, no prompt — hovering, selecting or focusing brings
+  // both back. The height is reserved in every case, so the chart above never
+  // resizes under the cursor.
+  const hasComment = (component.comment ?? '').length > 0
+  const noteRevealed = selected || hasComment
+
   // cursor-move advertises that the card itself is the drag handle; the
   // title, description and buttons opt out of dragging via `no-drag`.
   return (
     <div
       onMouseDown={onSelect}
-      className={`flex h-full cursor-move flex-col overflow-hidden rounded-sm border bg-white dark:bg-gray-800 select-none ${
-        selected ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200 dark:border-gray-700'
+      className={`group flex h-full cursor-move flex-col overflow-hidden rounded-sm border bg-white dark:bg-gray-800 select-none ${
+        selected
+          ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
+          : 'border-gray-200 dark:border-gray-700'
       }`}
     >
       <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
@@ -135,7 +162,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           />
         )}
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+          className={`${actionClass('text-sm')} ${actionState}`}
           onClick={onDuplicate}
           title="Duplicate component (⌘D)"
           aria-label="Duplicate component"
@@ -143,7 +170,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
           ⧉
         </button>
         <button
-          className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-base leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+          className={`${actionClass('text-base')} ${actionState}`}
           onClick={onDelete}
           title="Delete component"
           aria-label="Delete component"
@@ -167,7 +194,11 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
       </div>
 
       <textarea
-        className="no-drag h-10 shrink-0 cursor-text resize-none border-t border-gray-100 bg-transparent px-3 py-1.5 text-[11px] leading-snug text-gray-600 outline-none select-text placeholder:text-gray-300 focus:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:focus:bg-gray-700"
+        className={`no-drag h-10 shrink-0 cursor-text resize-none border-t bg-transparent px-3 py-1.5 text-[11px] leading-snug text-gray-600 outline-none select-text focus:bg-gray-50 dark:text-gray-300 dark:focus:bg-gray-700 ${
+          noteRevealed
+            ? 'border-gray-100 placeholder:text-gray-300 dark:border-gray-700'
+            : 'border-transparent placeholder:text-transparent group-hover:border-gray-100 group-hover:placeholder:text-gray-300 focus:border-gray-100 focus:placeholder:text-gray-300 dark:group-hover:border-gray-700 dark:focus:border-gray-700'
+        }`}
         value={component.comment ?? ''}
         maxLength={COMMENT_MAX}
         onChange={(e) => onComment(e.target.value)}
