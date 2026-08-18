@@ -316,10 +316,17 @@ const ROW = GRID_ROW_HEIGHT
 // properties; see the note on ACCENT in components/placeholderArt.js. An absent
 // or unknown theme resolves to the neutral greys, so an older document exports
 // exactly as it always did.
+// The frame's two greys are written out as well. The drawings reference them
+// with the light value as a fallback, so the file would render correctly without
+// this — but an exported page that declares every property it uses is easier to
+// read and to restyle by hand. They are constants rather than per-scheme: axes
+// and gridlines stay grey under every scheme, and the export is always light.
+const EXPORT_FRAME = '--fd-grid:#e5e7eb;--fd-axis:#c9cdd4'
+
 function themeVars(theme) {
   const { accent, ramp } = themeById(theme)
   const steps = ramp.map((hex, i) => `--fd-a${i + 1}:${hex}`).join(';')
-  return `:root{--fd-accent:${accent};${steps}}\n`
+  return `:root{${EXPORT_FRAME};--fd-accent:${accent};${steps}}\n`
 }
 
 const STYLES = `

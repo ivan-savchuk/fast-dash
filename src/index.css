@@ -32,6 +32,13 @@
    shipped first is unchanged by the ramp arriving. The neutral ramp is exactly
    the greys the drawings have always used. */
 :root {
+  /* The chart frame: gridlines behind the data, and the axis the data sits on.
+     Scheme-independent — axes and gridlines stay grey under every colour scheme,
+     which is the rule that keeps a themed card from reading as a poster. Only
+     the surface they sit on changes them. */
+  --fd-grid: #e5e7eb;
+  --fd-axis: #c9cdd4;
+
   --fd-accent: #9ca3af;
   --fd-a1: #f0f1f3;
   --fd-a2: #e5e7eb;
@@ -69,6 +76,18 @@
   --fd-a4: #df6c71;
   --fd-a5: #c81e3c;
   --fd-a6: #94001d;
+}
+
+/* The frame on a dark card steps UP from the surface instead of down from white.
+   The light values are near-white, so on a #1f2937 card they came out brighter
+   than the data they sit behind — the gridlines shouted over the chart. These
+   land between the card and the data: the gridline is the card's own border
+   colour, the axis one step above it, and the data (#9ca3af in neutral) well
+   above both. Ordering matters here rather than specificity: `.dark` and `:root`
+   are the same strength, so this has to come after. */
+.dark {
+  --fd-grid: #374151;
+  --fd-axis: #4b5563;
 }
 
 .dark[data-scheme='blue-rei'] {

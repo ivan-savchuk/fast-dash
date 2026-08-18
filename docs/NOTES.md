@@ -251,6 +251,34 @@ round. In the browser they came out as large ovals. librsvg is not a browser —
 checks against it are sound, but anything resting on a specific SVG feature needs checking
 where it actually ships.
 
+## The chart frame dims itself on a dark card (2026-08-18)
+
+The frame — gridlines, the axis, the ticks, the waterfall's connectors — was written as two
+fixed light greys, `GRAY.light` behind and `GRAY.mid` on top. Correct against white and
+exactly inverted against a `#1f2937` card, where `#e5e7eb` is the *brightest* thing on the
+card and the gridlines shouted over the data they sit behind.
+
+They are custom properties now — `--fd-grid` and `--fd-axis`, via `GRID_LINE` / `AXIS_LINE`
+in `placeholderArt.js` — with the light value as the `var()` fallback, so a light card and
+the HTML export render byte-for-byte what they always did. `index.css` redefines both under
+`.dark`, where they step *up* from the card surface instead of down from white: the
+gridline is the card's own border colour (`#374151`), the axis one step above (`#4b5563`),
+and the data well above both. `.dark` and `:root` are the same specificity, so the dark
+block has to come after — checked in `dist/assets`, not by eye.
+
+**Scheme-independent on purpose.** Axes and gridlines stay grey under every colour scheme;
+that rule is what keeps a themed card from reading as a poster, and only *which* grey
+changed. The data ramp was deliberately not touched — `ACCENT_FILL` is still
+`var(--fd-a2, #e5e7eb)`, which is a value colour that happens to share a hex with the old
+gridline.
+
+`var()` in an SVG presentation attribute is not a new bet: the fills have shipped as
+`fill="var(--fd-accent, …)"` since colour schemes landed.
+
+`baseline()` and `leftAxis()` lost their colour parameter here. It existed so the bar charts
+could sit on a heavier axis than everything else; the frame pass ended that split, after
+which every caller passed the same value.
+
 ## Chart variants (2026-08-16)
 
 A component carries an optional `variant` — `{ type: 'bar', variant: 'horizontal' }`. This

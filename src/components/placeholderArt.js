@@ -80,20 +80,41 @@ export const ACCENT_FILL = RAMP[1]
 // back to `GRAY.dark` and would quietly darken every neutral bar chart.
 export const ACCENT_SOLID = `var(--fd-accent, ${GRAY.mid})`
 
+// --- the frame's two colours ---
+//
+// The frame was written as two fixed light greys, which is correct on a white
+// card and inverted on a dark one: `#e5e7eb` against a `#1f2937` card is the
+// *brightest* thing on it, so the gridlines shouted over the data they sit
+// behind. The whole point of the frame is that it is subordinate.
+//
+// So they are custom properties now, like the ramp, with the light value as the
+// fallback — an unthemed light card renders exactly what it always did, and the
+// export (always light) needs nothing. `index.css` redefines both under `.dark`,
+// where they step up from the card surface instead of down from white.
+//
+// Scheme-independent on purpose: axes, gridlines and ticks stay grey under every
+// colour scheme. That rule is what keeps a themed card from reading as a poster,
+// and it is unchanged here — only which grey.
+const GRID_LINE = `var(--fd-grid, ${GRAY.light})`
+const AXIS_LINE = `var(--fd-axis, ${GRAY.mid})`
+
 // Charts that sit on an axis share this baseline: same y, same full width, so
 // two of them placed side by side line up.
 const BASE_Y = 58
-const baseline = (stroke) => [
+// The colour is no longer a parameter. It was one so the bar charts could sit on
+// a heavier axis than everything else; the frame pass ended that split, and every
+// caller then passed the same value, which is a parameter asking to be removed.
+const baseline = () => [
   'line',
-  { x1: 0, y1: BASE_Y, x2: 100, y2: BASE_Y, stroke, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  { x1: 0, y1: BASE_Y, x2: 100, y2: BASE_Y, stroke: AXIS_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ]
 
 // The mirror of `baseline` for charts whose categories run down the left rather
 // than along the bottom — a horizontal bar chart's axis.
 const AXIS_X = 2
-const leftAxis = (stroke) => [
+const leftAxis = () => [
   'line',
-  { x1: AXIS_X, y1: 0, x2: AXIS_X, y2: 60, stroke, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  { x1: AXIS_X, y1: 0, x2: AXIS_X, y2: 60, stroke: AXIS_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ]
 
 const cartesian = (shapes) => ({ viewBox: '0 0 100 60', stretch: true, shapes })
@@ -148,7 +169,7 @@ const GRID_LEVELS = [15, 30, 45]
 
 const gridlines = GRID_LEVELS.map((y) => [
   'line',
-  { x1: 0, y1: y, x2: 100, y2: y, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  { x1: 0, y1: y, x2: 100, y2: y, stroke: GRID_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ])
 
 // The mirror, for the horizontal bar chart: its value axis runs left to right,
@@ -156,7 +177,7 @@ const gridlines = GRID_LEVELS.map((y) => [
 // the axis at x=2 out to the longest bar at x=90.
 const vGridlines = [24, 46, 68].map((x) => [
   'line',
-  { x1: x, y1: 0, x2: x, y2: 60, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  { x1: x, y1: 0, x2: x, y2: 60, stroke: GRID_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ])
 
 // Ticks mark categories, so only a chart that has categories gets them: a bar's
@@ -170,7 +191,7 @@ const TICK = 1.6
 
 const tick = (x1, y1, x2, y2) => [
   'line',
-  { x1, y1, x2, y2, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+  { x1, y1, x2, y2, stroke: AXIS_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ]
 
 // Below the baseline, for a chart whose categories run along the bottom.
@@ -194,7 +215,7 @@ const TIMESERIES = cartesian([
   ...gridlines,
   seriesLine(TS_UPPER, ACCENT, false),
   seriesLine(TS_LOWER, ACCENT_MID, true),
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 // The same two series filled to the baseline — magnitude over time rather than
@@ -205,7 +226,7 @@ const TIMESERIES_AREA = cartesian([
   ['polygon', { points: areaPts(TS_UPPER), fill: ACCENT_FILL }],
   ['polygon', { points: areaPts(TS_LOWER), fill: ACCENT_MID }],
   seriesLine(TS_UPPER, ACCENT, false),
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 // Stacked: the top edge is the total, and each band is one series' share of it.
@@ -219,7 +240,7 @@ const TIMESERIES_STACKED = cartesian([
   ['polygon', { points: areaPts(TS_STACK_LOWER), fill: ACCENT_MID }],
   ['polygon', { points: bandPts(TS_STACK_TOTAL, TS_STACK_LOWER), fill: ACCENT_FILL }],
   seriesLine(TS_STACK_TOTAL, ACCENT, false),
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 const BAR_HEIGHTS = [34, 46, 26, 52, 40, 56, 30]
@@ -234,7 +255,7 @@ const BAR = cartesian([
     'rect',
     { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_SOLID },
   ]),
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(BAR_CENTRES),
 ])
 
@@ -252,7 +273,7 @@ const BAR_HORIZONTAL = cartesian([
     'rect',
     { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: ACCENT_SOLID },
   ]),
-  leftAxis(GRAY.mid),
+  leftAxis(),
   ...yTicks(BAR_H_WIDTHS.map((_, i) => i * 10 + 5)),
 ])
 
@@ -272,7 +293,7 @@ const BAR_STACKED = cartesian([
       return ['rect', { x: i * 14 + 2, y, width: 10, height, fill: STACK_FILLS[s] }]
     })
   }),
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(BAR_CENTRES),
 ])
 
@@ -295,7 +316,7 @@ const BAR_GROUPED = cartesian([
       ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: ACCENT_MID }],
     ]
   }),
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(GROUP_CENTRES),
 ])
 
@@ -305,7 +326,7 @@ const BAR_GROUPED = cartesian([
 // cannot say it — a reader had to take the bars-plus-line on trust. Every other
 // chart has one value scale, so drawing its axis would add ink and no meaning.
 const comboAxis = (x, out) => [
-  ['line', { x1: x, y1: 0, x2: x, y2: BASE_Y, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+  ['line', { x1: x, y1: 0, x2: x, y2: BASE_Y, stroke: AXIS_LINE, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
   ...GRID_LEVELS.map((y) => tick(x, y, x + out, y)),
 ]
 
@@ -335,7 +356,7 @@ const COMBO = cartesian([
   // Ticks point outward on both, away from the plot.
   ...comboAxis(AXIS_X, -TICK),
   ...comboAxis(98, TICK),
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(COMBO_CENTRES),
 ])
 
@@ -382,7 +403,7 @@ const dot = (cx, cy, size, color, opacity) => [
 // as density rather than as a smear.
 const dots = (points) => points.map(([cx, cy]) => dot(cx, cy, 5, ACCENT, 0.5))
 
-const SCATTER = cartesian([...gridlines, ...dots(SCATTER_PTS), baseline(GRAY.mid)])
+const SCATTER = cartesian([...gridlines, ...dots(SCATTER_PTS), baseline()])
 
 // Least-squares fit, computed rather than drawn by eye, so the line actually
 // follows the cloud — and keeps following it if the points are ever changed.
@@ -432,7 +453,7 @@ const SCATTER_TREND = cartesian([
       vectorEffect: 'non-scaling-stroke',
     },
   ],
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 // Bubble: fewer marks, and a third measure carried by their size. Thinned out
@@ -452,7 +473,7 @@ const SCATTER_BUBBLE = cartesian([
     const size = round2(r * 3.4)
     return [dot(cx, cy, size, ACCENT), dot(cx, cy, size - 2, ACCENT_MID)]
   }),
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 // Centred bars narrowing downward — reads as a funnel without the trapezoid
@@ -525,13 +546,13 @@ const WATERFALL = cartesian([
       y1: WF_LEVELS[i],
       x2: WF_X[i],
       y2: WF_LEVELS[i],
-      stroke: GRAY.mid,
+      stroke: AXIS_LINE,
       strokeWidth: 1,
       strokeDasharray: '2 2',
       vectorEffect: 'non-scaling-stroke',
     },
   ]),
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(WF_X.map((x) => x + WF_W / 2)),
 ])
 
@@ -544,7 +565,7 @@ const HISTOGRAM = cartesian([
     'rect',
     { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: ACCENT_SOLID },
   ]),
-  baseline(GRAY.mid),
+  baseline(),
 ])
 
 // Three vertical box-and-whisker plots.
@@ -570,7 +591,7 @@ const BOXPLOT = cartesian([
   ]),
   // It had no baseline at all before this pass — the one cartesian chart with
   // nothing under it. Its groups run along the bottom like a bar chart's.
-  baseline(GRAY.mid),
+  baseline(),
   ...xTicks(BOX_CENTRES),
 ])
 
