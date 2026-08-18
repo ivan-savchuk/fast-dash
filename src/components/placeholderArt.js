@@ -136,10 +136,47 @@ const areaPts = (ys) => `${pts(ys)} 100,${BASE_Y} 0,${BASE_Y}`
 const bandPts = (top, bottom) =>
   `${pts(top)} ${bottom.map((y, i) => `${TS_X[i]},${y}`).reverse().join(' ')}`
 
-const gridlines = [15, 30, 45].map((y) => [
+// --- the shared chart frame ---
+//
+// Every chart drawn on a pair of axes wears the same frame, so two cards side by
+// side do not read as coming from two different tools. Three weights, and the
+// order they are drawn in matters: gridlines are the lightest and go down first
+// so every mark sits on top of them, the axis is a step darker, the data darker
+// still. Before this pass the bar charts sat on a GRAY.dark axis while
+// everything else used GRAY.mid, and only the time series had gridlines at all.
+const GRID_LEVELS = [15, 30, 45]
+
+const gridlines = GRID_LEVELS.map((y) => [
   'line',
   { x1: 0, y1: y, x2: 100, y2: y, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
 ])
+
+// The mirror, for the horizontal bar chart: its value axis runs left to right,
+// so its gridlines stand up. Spaced across the range the bars actually use —
+// the axis at x=2 out to the longest bar at x=90.
+const vGridlines = [24, 46, 68].map((x) => [
+  'line',
+  { x1: x, y1: 0, x2: x, y2: 60, stroke: GRAY.light, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+])
+
+// Ticks mark categories, so only a chart that has categories gets them: a bar's
+// groups, a combo's periods, a waterfall's steps, a box plot's groups. A time
+// series, a scatter and a histogram run on a continuous axis, where a tick would
+// invent a break that is not there.
+//
+// A tick is 1.6 viewBox units long and so scales with the card, like every other
+// length in this file; only the stroke width is held constant.
+const TICK = 1.6
+
+const tick = (x1, y1, x2, y2) => [
+  'line',
+  { x1, y1, x2, y2, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' },
+]
+
+// Below the baseline, for a chart whose categories run along the bottom.
+const xTicks = (centres) => centres.map((cx) => tick(cx, BASE_Y, cx, BASE_Y + TICK))
+// Left of the axis, for the one chart whose categories run down the side.
+const yTicks = (centres) => centres.map((cy) => tick(AXIS_X, cy, AXIS_X - TICK, cy))
 
 const seriesLine = (ys, stroke, dashed) => [
   'polyline',
@@ -187,23 +224,36 @@ const TIMESERIES_STACKED = cartesian([
 
 const BAR_HEIGHTS = [34, 46, 26, 52, 40, 56, 30]
 
+// The seven bars are 10 wide starting at x=2, so their centres — which is where
+// the category ticks go — are 14 apart from x=7.
+const BAR_CENTRES = BAR_HEIGHTS.map((_, i) => i * 14 + 7)
+
 const BAR = cartesian([
+  ...gridlines,
   ...BAR_HEIGHTS.map((h, i) => [
     'rect',
     { x: i * 14 + 2, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_SOLID },
   ]),
-  baseline(GRAY.dark),
+  baseline(GRAY.mid),
+  ...xTicks(BAR_CENTRES),
 ])
 
 // Ranked left-to-right bars off a left-hand axis. Descending on purpose: a
 // horizontal bar chart is what you reach for when the categories have long
 // names and the point is the ranking.
+// The one cartesian chart with no bottom baseline, and correctly so: its axes are
+// rotated, so the frame rotates with them — a left-hand category axis with its
+// ticks, and gridlines that stand up.
+const BAR_H_WIDTHS = [88, 72, 60, 45, 33, 20]
+
 const BAR_HORIZONTAL = cartesian([
-  ...[88, 72, 60, 45, 33, 20].map((w, i) => [
+  ...vGridlines,
+  ...BAR_H_WIDTHS.map((w, i) => [
     'rect',
     { x: AXIS_X, y: i * 10 + 1.5, width: w, height: 7, fill: ACCENT_SOLID },
   ]),
-  leftAxis(GRAY.dark),
+  leftAxis(GRAY.mid),
+  ...yTicks(BAR_H_WIDTHS.map((_, i) => i * 10 + 5)),
 ])
 
 // Same bars as the vertical chart, each cut into three parts stacked bottom-up:
@@ -212,6 +262,7 @@ const STACK_PARTS = [0.45, 0.35, 0.2]
 const STACK_FILLS = [ACCENT, ACCENT_MID, ACCENT_FILL]
 
 const BAR_STACKED = cartesian([
+  ...gridlines,
   ...BAR_HEIGHTS.flatMap((total, i) => {
     let below = 0
     return STACK_PARTS.map((share, s) => {
@@ -221,7 +272,8 @@ const BAR_STACKED = cartesian([
       return ['rect', { x: i * 14 + 2, y, width: 10, height, fill: STACK_FILLS[s] }]
     })
   }),
-  baseline(GRAY.dark),
+  baseline(GRAY.mid),
+  ...xTicks(BAR_CENTRES),
 ])
 
 // Two series side by side per category — the same measure split by a second
@@ -229,7 +281,12 @@ const BAR_STACKED = cartesian([
 const GROUP_A = [40, 52, 30, 46, 36]
 const GROUP_B = [28, 38, 44, 25, 50]
 
+// Each group is two 7-wide bars 1 apart starting at x=i*20+3, so the group spans
+// 15 and its centre — the tick — sits at i*20+10.5.
+const GROUP_CENTRES = GROUP_A.map((_, i) => i * 20 + 10.5)
+
 const BAR_GROUPED = cartesian([
+  ...gridlines,
   ...GROUP_A.flatMap((a, i) => {
     const x = i * 20 + 3
     const b = GROUP_B[i]
@@ -238,13 +295,32 @@ const BAR_GROUPED = cartesian([
       ['rect', { x: x + 8, y: BASE_Y - b, width: 7, height: b, fill: ACCENT_MID }],
     ]
   }),
-  baseline(GRAY.dark),
+  baseline(GRAY.mid),
+  ...xTicks(GROUP_CENTRES),
 ])
 
+// The combo is the only chart here that draws its vertical axes, and the reason
+// is not decoration: it is the only chart with two of them. "Two measures, dual
+// axis" is what the card's own default title promises, and a single baseline
+// cannot say it — a reader had to take the bars-plus-line on trust. Every other
+// chart has one value scale, so drawing its axis would add ink and no meaning.
+const comboAxis = (x, out) => [
+  ['line', { x1: x, y1: 0, x2: x, y2: BASE_Y, stroke: GRAY.mid, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }],
+  ...GRID_LEVELS.map((y) => tick(x, y, x + out, y)),
+]
+
+const COMBO_CENTRES = [10, 26, 42, 58, 74, 90]
+
 const COMBO = cartesian([
+  ...gridlines,
+  // ACCENT_MID, not ACCENT_FILL. The bars used to be the palest in the app — a
+  // whole series drawn a step lighter than every other bar chart's — and once
+  // gridlines went in behind them the two were the same grey in neutral mode, so
+  // the line vanished inside the bar. Mid also keeps the bars a clear ramp step
+  // away from the line above them, which is the point of a combo.
   ...[30, 44, 26, 50, 38, 54].map((h, i) => [
     'rect',
-    { x: i * 16 + 5, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_FILL },
+    { x: i * 16 + 5, y: BASE_Y - h, width: 10, height: h, fill: ACCENT_MID },
   ]),
   [
     'polyline',
@@ -256,7 +332,11 @@ const COMBO = cartesian([
       vectorEffect: 'non-scaling-stroke',
     },
   ],
+  // Ticks point outward on both, away from the plot.
+  ...comboAxis(AXIS_X, -TICK),
+  ...comboAxis(98, TICK),
   baseline(GRAY.mid),
+  ...xTicks(COMBO_CENTRES),
 ])
 
 // A dense cloud drawn edge to edge, the way a real scatter looks: enough marks
@@ -302,7 +382,7 @@ const dot = (cx, cy, size, color, opacity) => [
 // as density rather than as a smear.
 const dots = (points) => points.map(([cx, cy]) => dot(cx, cy, 5, ACCENT, 0.5))
 
-const SCATTER = cartesian([...dots(SCATTER_PTS), baseline(GRAY.mid)])
+const SCATTER = cartesian([...gridlines, ...dots(SCATTER_PTS), baseline(GRAY.mid)])
 
 // Least-squares fit, computed rather than drawn by eye, so the line actually
 // follows the cloud — and keeps following it if the points are ever changed.
@@ -340,6 +420,7 @@ function fitBand(points, steps = 10) {
 // different question from "what does the spread look like". Band first so the
 // dots sit on top of it and the fit line on top of both.
 const SCATTER_TREND = cartesian([
+  ...gridlines,
   ['polygon', { points: fitBand(SCATTER_PTS), fill: ACCENT, opacity: 0.16 }],
   ...dots(SCATTER_PTS),
   [
@@ -366,6 +447,7 @@ const BUBBLE_PTS = [
 // inner one sits 2px inside it, which leaves a 1px ring — the separation that
 // stops overlapping bubbles merging into one blob. Sizes are screen pixels.
 const SCATTER_BUBBLE = cartesian([
+  ...gridlines,
   ...BUBBLE_PTS.flatMap(([cx, cy, r]) => {
     const size = round2(r * 3.4)
     return [dot(cx, cy, size, ACCENT), dot(cx, cy, size - 2, ACCENT_MID)]
@@ -385,21 +467,79 @@ const FUNNEL = cartesian(
   ].map(([w, fill], i) => ['rect', { x: 50 - w / 2, y: 4 + i * 11, width: w, height: 8, fill }]),
 )
 
-// Floating bars stepping up, with the start and total as full pillars.
+// A waterfall is cumulative: every step starts exactly where the last one ended,
+// and the dashed connectors are what say so out loud. They were missing — and so
+// was the property they depend on. The old numbers had step 3 spanning 24..32
+// while step 2 topped out at 24, so each step floated at a level of its own and
+// drawing a connector would have drawn the chart's own inconsistency.
+//
+// So it is written as running levels instead of as six independent rectangles.
+// The bars and the connectors are both derived from the same list, which makes
+// them agree by construction rather than by eye.
+//
+// Rises and the fall are told apart by ramp step, not by hue. Red for a fall and
+// green for a rise is exactly the per-card colour argument principle #1 exists to
+// prevent — so the two pillars take the darkest step, rises the middle one, and
+// the fall the lightest.
+//
+// L0 is the zero line; L1..L5 are the running totals: start, +, +, −, +.
+const WF_LEVELS = [BASE_Y, 34, 26, 20, 24, 14]
+const WF_X = [6, 22, 38, 54, 70, 86]
+const WF_W = 10
+
+// A falling step is outlined rather than filled solid: at ACCENT_FILL against a
+// white card it was very nearly invisible, and a step you cannot see reads as a
+// bug. The outline is the direction cue, so the ramp still does the work and no
+// red/green semantics creep in.
+const wfBar = (x, from, to, fill, outlined) => [
+  'rect',
+  {
+    x,
+    y: Math.min(from, to),
+    width: WF_W,
+    height: Math.abs(from - to),
+    fill,
+    ...(outlined
+      ? { stroke: ACCENT_MID, strokeWidth: 1, vectorEffect: 'non-scaling-stroke' }
+      : {}),
+  },
+]
+
 const WATERFALL = cartesian([
-  ...[
-    [6, 34, 22, ACCENT],
-    [22, 24, 10, ACCENT_MID],
-    [38, 24, 8, ACCENT_MID],
-    [54, 16, 8, ACCENT_MID],
-    [70, 16, 6, ACCENT_MID],
-    [86, 10, 46, ACCENT],
-  ].map(([x, y, height, fill]) => ['rect', { x, y, width: 10, height, fill }]),
+  ...gridlines,
+  // Opening pillar, standing on the baseline.
+  wfBar(WF_X[0], WF_LEVELS[0], WF_LEVELS[1], ACCENT),
+  // The four steps. A step that ends higher up the card (a smaller y) is a rise.
+  ...[1, 2, 3, 4].map((i) => {
+    const rise = WF_LEVELS[i + 1] < WF_LEVELS[i]
+    return wfBar(WF_X[i], WF_LEVELS[i], WF_LEVELS[i + 1], rise ? ACCENT_MID : ACCENT_FILL, !rise)
+  }),
+  // Closing pillar, back down to the baseline.
+  wfBar(WF_X[5], WF_LEVELS[0], WF_LEVELS[5], ACCENT),
+  // Each connector carries the running level across one gap: the right edge of
+  // bar i-1 to the left edge of bar i, at the level the two share.
+  ...[1, 2, 3, 4, 5].map((i) => [
+    'line',
+    {
+      x1: WF_X[i - 1] + WF_W,
+      y1: WF_LEVELS[i],
+      x2: WF_X[i],
+      y2: WF_LEVELS[i],
+      stroke: GRAY.mid,
+      strokeWidth: 1,
+      strokeDasharray: '2 2',
+      vectorEffect: 'non-scaling-stroke',
+    },
+  ]),
   baseline(GRAY.mid),
+  ...xTicks(WF_X.map((x) => x + WF_W / 2)),
 ])
 
 // Contiguous bars in a rough bell — a distribution, not a category bar chart.
+// Gridlines but no ticks: the bins are contiguous, so the bar edges already mark
+// where one ends and the next begins.
 const HISTOGRAM = cartesian([
+  ...gridlines,
   ...[8, 14, 22, 34, 46, 52, 50, 42, 30, 20, 12, 7].map((h, i) => [
     'rect',
     { x: i * 8 + 2, y: BASE_Y - h, width: 7.5, height: h, fill: ACCENT_SOLID },
@@ -409,8 +549,11 @@ const HISTOGRAM = cartesian([
 
 // Three vertical box-and-whisker plots.
 // [centre, whiskerTop, q3, median, q1, whiskerBottom]
-const BOXPLOT = cartesian(
-  [
+const BOX_CENTRES = [22, 50, 78]
+
+const BOXPLOT = cartesian([
+  ...gridlines,
+  ...[
     [22, 10, 20, 28, 38, 50],
     [50, 6, 16, 22, 34, 46],
     [78, 14, 24, 30, 40, 54],
@@ -425,7 +568,11 @@ const BOXPLOT = cartesian(
       ['line', { x1: cx - 9, y1: med, x2: cx + 9, y2: med, stroke: ACCENT, strokeWidth: 1.2, vectorEffect: 'non-scaling-stroke' }],
     ],
   ]),
-)
+  // It had no baseline at all before this pass — the one cartesian chart with
+  // nothing under it. Its groups run along the bottom like a bar chart's.
+  baseline(GRAY.mid),
+  ...xTicks(BOX_CENTRES),
+])
 
 // A grid of cells shaded by intensity — one grayscale ramp, blob in the middle.
 // The heatmap ramp is the accent ramp: one hue, light to dark, which is what
