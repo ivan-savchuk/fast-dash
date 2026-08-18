@@ -42,6 +42,19 @@ export default function App() {
       return true
     }
   })
+  // Present mode: the dashboard as a viewer sees it, live — the same view the
+  // HTML export gives you, without the download and the tab switch in the
+  // middle of a conversation. It is a mode rather than a preference, so it is
+  // deliberately not persisted and not part of the document.
+  const [presenting, setPresenting] = useState(false)
+
+  // Entering clears the selection: a selection ring is editing chrome, and
+  // there is nothing selected from a viewer's point of view.
+  const startPresenting = useCallback(() => {
+    dispatch({ type: 'select', id: null })
+    setPresenting(true)
+  }, [])
+
   // Dark theme. Persisted; falls back to the OS preference the first time.
   const [dark, setDark] = useState(() => {
     try {
@@ -117,6 +130,16 @@ export default function App() {
       // would both pick from the menu and add a second component below.
       if (picker) return
 
+      // Present mode is read-only, so it owns the keyboard outright: nothing
+      // can add, move, delete or undo while it is on. Only leaving it.
+      if (presenting) {
+        if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+          e.preventDefault()
+          setPresenting(false)
+        }
+        return
+      }
+
       // Undo/redo is checked first, and deliberately works while a text field
       // has focus. The title and description are controlled inputs, so the
       // browser's own undo cannot restore them anyway — and because a burst of
@@ -162,6 +185,14 @@ export default function App() {
         return
       }
 
+      // Checked after the text-field guard above, so typing a "p" into a title
+      // or a description does not start a presentation.
+      if (e.key.toLowerCase() === 'p') {
+        e.preventDefault()
+        startPresenting()
+        return
+      }
+
       const nudges = {
         ArrowLeft: { dx: -1, dy: 0 },
         ArrowRight: { dx: 1, dy: 0 },
@@ -194,7 +225,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, picker])
+  }, [selectedId, picker, presenting, startPresenting])
 
   async function handleImportFile(file) {
     try {
@@ -242,39 +273,57 @@ export default function App() {
   return (
     // App shell: fixed to the viewport, with the filter rail and the canvas
     // each scrolling on their own.
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-      <Toolbar
-        doc={doc}
-        dispatch={dispatch}
-        count={components.length}
-        canUndo={state.past.length > 0}
-        canRedo={state.future.length > 0}
-        dark={dark}
-        onToggleTheme={() => setDark((d) => !d)}
-        onExport={() => downloadDocument(doc)}
-        onExportHtml={() => downloadHtmlExport(doc)}
-        onImportFile={handleImportFile}
-        onNew={handleNew}
-        onPickTemplate={handlePickTemplate}
-        onMore={setPicker}
-      />
+    <div
+      className={`flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100${
+        presenting ? ' presenting' : ''
+      }`}
+    >
+      {presenting ? (
+        <PresentBar
+          title={doc.title}
+          pages={doc.pages}
+          activeId={activePage.id}
+          dispatch={dispatch}
+          onExit={() => setPresenting(false)}
+        />
+      ) : (
+        <>
+          <Toolbar
+            doc={doc}
+            dispatch={dispatch}
+            count={components.length}
+            canUndo={state.past.length > 0}
+            canRedo={state.future.length > 0}
+            dark={dark}
+            onToggleTheme={() => setDark((d) => !d)}
+            onExport={() => downloadDocument(doc)}
+            onExportHtml={() => downloadHtmlExport(doc)}
+            onImportFile={handleImportFile}
+            onNew={handleNew}
+            onPickTemplate={handlePickTemplate}
+            onMore={setPicker}
+            onPresent={startPresenting}
+          />
 
-      {error && (
-        <div className="border-b border-gray-300 bg-gray-100 px-4 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-          {error}
-          <button className="ml-2 underline" onClick={() => setError(null)}>
-            dismiss
-          </button>
-        </div>
+          {error && (
+            <div className="border-b border-gray-300 bg-gray-100 px-4 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+              {error}
+              <button className="ml-2 underline" onClick={() => setError(null)}>
+                dismiss
+              </button>
+            </div>
+          )}
+
+          <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
+        </>
       )}
-
-      <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
 
       <div className="flex min-h-0 flex-1">
         <FilterRail
           filters={doc.filters ?? []}
           open={filtersOpen}
           onToggle={toggleFilters}
+          readOnly={presenting}
           dispatch={dispatch}
         />
 
@@ -299,6 +348,7 @@ export default function App() {
             // page would put a one-click "wipe everything" in the middle of the
             // canvas.
             docEmpty={doc.pages.every((p) => p.components.length === 0)}
+            readOnly={presenting}
             dispatch={dispatch}
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}
@@ -331,5 +381,48 @@ export default function App() {
         />
       )}
     </div>
+  )
+}
+
+// The header while presenting: what the dashboard is called, which page you are
+// looking at, and the way out. Everything that could change the document is
+// gone rather than disabled, which is the same rule the HTML export follows.
+//
+// The page tabs are written here rather than reusing PageTabs, because almost
+// nothing survives the trip: no rename on double-click, no delete, no add. What
+// is left is eight lines, and threading a `readOnly` through PageTabs to hide
+// most of it would have been the longer way round.
+function PresentBar({ title, pages, activeId, dispatch, onExit }) {
+  return (
+    <header className="flex shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800">
+      <h1 className="min-w-0 shrink truncate text-lg font-semibold text-gray-900 dark:text-gray-100">
+        {title}
+      </h1>
+
+      {pages.length > 1 && (
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
+          {pages.map((page) => (
+            <button
+              key={page.id}
+              onClick={() => dispatch({ type: 'selectPage', id: page.id })}
+              className={`shrink-0 rounded-sm border px-3 py-1 text-sm ${
+                page.id === activeId
+                  ? 'border-[var(--fd-accent)] bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
+              }`}
+            >
+              {page.name}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      <button
+        className="ml-auto shrink-0 rounded-sm border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+        onClick={onExit}
+      >
+        Exit <kbd className="ml-1 text-xs text-gray-400">esc</kbd>
+      </button>
+    </header>
   )
 }

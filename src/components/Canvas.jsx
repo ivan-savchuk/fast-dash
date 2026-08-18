@@ -33,6 +33,9 @@ const GRID_CONFIG = {
 // grid would refuse to drag its own children too.
 const DRAG_CONFIG = { enabled: true, cancel: '.no-drag, [data-tabs-content]', threshold: 1 }
 const RESIZE_CONFIG = { enabled: true, handles: ['se'] }
+// Present mode. Module constants for the same reason as the two above.
+const LOCKED_DRAG = { enabled: false }
+const LOCKED_RESIZE = { enabled: false }
 
 // react-grid-layout does the placement, snapping, collision and resizing.
 // It needs its own layout array (`i` = our component id) and hands the
@@ -88,6 +91,7 @@ export default function Canvas({
   activeTabs,
   freezeAnim,
   docEmpty,
+  readOnly,
   dispatch,
   onEmptyClick,
   onAddInto,
@@ -142,16 +146,24 @@ export default function Canvas({
     <div
       ref={containerRef}
       className={`min-h-full${freezeAnim ? ' rgl-instant' : ''}`}
-      onMouseDownCapture={(e) => {
-        if (e.target.closest('input, textarea, button')) return
-        e.preventDefault()
-        // preventDefault suppresses the text selection, but it also suppresses
-        // the browser's focus change. Without this, a title or description
-        // field you typed in earlier keeps focus forever, and every keyboard
-        // shortcut is then swallowed by the "ignore while typing" guard —
-        // arrow keys scroll the page instead of moving the selected card.
-        document.activeElement?.blur()
-      }}
+      // Nothing drags in present mode, so there is no drag-selection to
+      // suppress — and not suppressing it is what lets a viewer select and copy
+      // a card's title or note.
+      onMouseDownCapture={
+        readOnly
+          ? undefined
+          : (e) => {
+              if (e.target.closest('input, textarea, button')) return
+              e.preventDefault()
+              // preventDefault suppresses the text selection, but it also
+              // suppresses the browser's focus change. Without this, a title or
+              // description field you typed in earlier keeps focus forever, and
+              // every keyboard shortcut is then swallowed by the "ignore while
+              // typing" guard — arrow keys scroll the page instead of moving
+              // the selected card.
+              document.activeElement?.blur()
+            }
+      }
     >
       {/* The grid is only as tall as its content, so this wrapper provides the
           empty space the quick picker is summoned from: a minimum height for an
@@ -162,8 +174,18 @@ export default function Canvas({
           the template gallery occupies swallowed its clicks — the handler is on
           this element — so on an empty canvas you could not summon the picker
           anywhere near the cards. */}
-      <div ref={gridAreaRef} className="min-h-[70vh] pb-40" onClick={handleBackgroundClick}>
-        {components.length === 0 && (
+      <div
+        ref={gridAreaRef}
+        // The click space exists so the picker can be summoned from it. In
+        // present mode there is no picker, so the page ends where the dashboard
+        // does instead of trailing 40rem of nothing.
+        className={readOnly ? '' : 'min-h-[70vh] pb-40'}
+        onClick={readOnly ? undefined : handleBackgroundClick}
+      >
+        {components.length === 0 && readOnly && (
+          <p className="px-1 pt-6 text-sm text-gray-400">This page has no components.</p>
+        )}
+        {components.length === 0 && !readOnly && (
           <div className="mx-auto max-w-4xl px-1 pt-8 pb-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {docEmpty
@@ -202,8 +224,8 @@ export default function Canvas({
             width={width}
             layout={layout}
             gridConfig={GRID_CONFIG}
-            dragConfig={DRAG_CONFIG}
-            resizeConfig={RESIZE_CONFIG}
+            dragConfig={readOnly ? LOCKED_DRAG : DRAG_CONFIG}
+            resizeConfig={readOnly ? LOCKED_RESIZE : RESIZE_CONFIG}
             onDragStop={commitLayout}
             onResizeStop={commitLayout}
           >
@@ -222,6 +244,7 @@ export default function Canvas({
                     selected={c.id === selectedId}
                     activeTabId={activeTabId}
                     selectedChildId={selectedChildId}
+                    readOnly={readOnly}
                     onAddInto={onAddInto}
                     dispatch={dispatch}
                   />

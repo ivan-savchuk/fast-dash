@@ -19,6 +19,7 @@ export default function Toolbar({
   onNew,
   onPickTemplate,
   onMore,
+  onPresent,
   count,
   canUndo,
   canRedo,
@@ -55,6 +56,13 @@ export default function Toolbar({
             Redo
           </Button>
           <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-600" />
+
+          {/* Showing what a viewer sees used to mean exporting the HTML and
+              opening the file — a download and a tab switch in the middle of a
+              conversation. */}
+          <Button onClick={onPresent} title="Show the dashboard as a viewer sees it (P)">
+            Present
+          </Button>
 
           {/* Export has its own button rather than a line inside a menu called
               "Options". The export is what the tool is for — everyone else's

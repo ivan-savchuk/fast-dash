@@ -1,7 +1,7 @@
 import { memo } from 'react'
 
 import ColumnEditor from './ColumnEditor.jsx'
-import { COMPONENT_TYPES } from './registry.jsx'
+import { COMPONENT_TYPES, typeLabel } from './registry.jsx'
 import TabsBody from './TabsBody.jsx'
 import TypeBadge from './TypeBadge.jsx'
 
@@ -27,6 +27,10 @@ export const COMMENT_MAX = 280
 const actionClass = (size) =>
   `no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm ${size} leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100`
 
+// The shell every card wears, editing or not.
+const SHELL = 'flex h-full overflow-hidden rounded-sm border bg-white dark:bg-gray-800'
+const QUIET_BORDER = 'border-gray-200 dark:border-gray-700'
+
 function UnknownPlaceholder() {
   return (
     <div className="flex h-full items-center justify-center rounded-sm border border-dashed border-gray-200 text-[11px] text-gray-400 dark:border-gray-600">
@@ -42,7 +46,7 @@ export default memo(Card)
 // `dispatch` is taken directly rather than as four callback props: a callback
 // created inline in the parent is a new value on every render, which would
 // defeat the memo above.
-function Card({ component, selected, activeTabId, selectedChildId, onAddInto, dispatch }) {
+function Card({ component, selected, activeTabId, selectedChildId, readOnly, onAddInto, dispatch }) {
   const id = component.id
   const isTabs = component.type === 'tabs'
 
@@ -69,6 +73,69 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   }
   const Placeholder = def.Placeholder
 
+  // --- present mode ---
+  //
+  // The same rule the HTML export follows: anything that could change the
+  // document is not rendered at all, rather than rendered and disabled. So the
+  // title is text rather than an input, the buttons are gone, the type badge is
+  // a label rather than a menu, and the description strip only exists when
+  // there is a description — no reserved height, because nothing is going to be
+  // typed into it.
+  if (readOnly) {
+    // The export names a non-default variant ("Bar (horizontal)") because there
+    // the silhouette is all a reader has. Same reasoning here.
+    const label = typeLabel(component.type, component.variant)
+
+    if (component.type === 'section') {
+      return (
+        <div className={`${SHELL} ${QUIET_BORDER} items-center gap-2 px-3`}>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-wide text-gray-600 uppercase dark:text-gray-200">
+            {component.title}
+          </span>
+          <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
+            {label}
+          </span>
+        </div>
+      )
+    }
+
+    return (
+      <div className={`${SHELL} ${QUIET_BORDER} flex-col`}>
+        <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {component.title}
+          </span>
+          <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
+            {label}
+          </span>
+        </div>
+
+        <div className="min-h-0 flex-1 px-3 py-2">
+          {isTabs ? (
+            <TabsBody
+              component={component}
+              activeTabId={activeTabId}
+              readOnly
+              dispatch={dispatch}
+            />
+          ) : (
+            <Placeholder variant={component.variant} spec={component.spec} id={id} />
+          )}
+        </div>
+
+        {component.comment && (
+          <div className="shrink-0 border-t border-gray-100 px-3 py-1.5 text-[11px] leading-snug text-gray-600 dark:border-gray-700 dark:text-gray-300">
+            {component.comment}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const ring = selected
+    ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
+    : QUIET_BORDER
+
   // A Section header is a thin labelled band, not a chart card: its title is
   // the section label, and it has no chart body and no description. Duplicate
   // and delete stay, and it drags and resizes like any other card.
@@ -76,11 +143,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
     return (
       <div
         onMouseDown={onSelect}
-        className={`group flex h-full cursor-move items-center gap-2 overflow-hidden rounded-sm border bg-white dark:bg-gray-800 px-3 select-none ${
-          selected
-            ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
-            : 'border-gray-200 dark:border-gray-700'
-        }`}
+        className={`group ${SHELL} ${ring} cursor-move items-center gap-2 px-3 select-none`}
       >
         <input
           className="no-drag min-w-0 flex-1 cursor-text truncate bg-transparent text-sm font-semibold tracking-wide text-gray-600 uppercase outline-none select-text focus:bg-gray-50 dark:text-gray-200 dark:focus:bg-gray-700"
@@ -130,11 +193,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
   return (
     <div
       onMouseDown={onSelect}
-      className={`group flex h-full cursor-move flex-col overflow-hidden rounded-sm border bg-white dark:bg-gray-800 select-none ${
-        selected
-          ? 'border-[var(--fd-accent)] ring-1 ring-[var(--fd-accent)]'
-          : 'border-gray-200 dark:border-gray-700'
-      }`}
+      className={`group ${SHELL} ${ring} cursor-move flex-col select-none`}
     >
       <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5 dark:border-gray-700">
         <input

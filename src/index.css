@@ -172,3 +172,13 @@
   outline: 2px solid var(--fd-accent);
   outline-offset: 1px;
 }
+
+/* Nothing drags while presenting, so the blanket ban on selecting text — which
+   exists only to stop a drag sweeping a selection across every card — has no
+   job to do. Letting a viewer select and copy a card's title or note is worth
+   more. Canvas drops its mousedown preventDefault in the same mode; both are
+   needed, since `user-select` alone does not stop a suppressed mousedown and a
+   suppressed mousedown alone does not beat this rule. */
+.presenting .react-grid-layout {
+  user-select: text;
+}

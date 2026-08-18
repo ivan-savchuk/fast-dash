@@ -31,8 +31,12 @@ const NESTED_GRID = {
 }
 const NESTED_DRAG = { enabled: true, cancel: '.no-drag', threshold: 1 }
 const NESTED_RESIZE = { enabled: true, handles: ['se'] }
+// Present mode. Module constants like the rest — react-grid-layout memoises its
+// item rendering on the identity of these objects (see docs/NOTES.md, trap 3).
+const LOCKED_DRAG = { enabled: false }
+const LOCKED_RESIZE = { enabled: false }
 
-export default function TabsBody({ component, activeTabId, selectedChildId, dispatch, onAddInto }) {
+export default function TabsBody({ component, activeTabId, selectedChildId, readOnly, dispatch, onAddInto }) {
   const tabs = component.tabs ?? []
   const active = tabs.find((t) => t.id === activeTabId) ?? tabs[0]
   const [editingId, setEditingId] = useState(null)
@@ -61,7 +65,7 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
     <div data-tabs-content className="flex h-full flex-col">
       <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 pb-1 dark:border-gray-700">
         {tabs.map((t) => {
-          if (editingId === t.id) {
+          if (editingId === t.id && !readOnly) {
             return (
               <input
                 key={t.id}
@@ -94,12 +98,15 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
               <button
                 className="max-w-[10rem] truncate py-0.5 pl-2 pr-1"
                 onClick={() => dispatch({ type: 'selectTab', containerId: component.id, tabId: t.id })}
-                onDoubleClick={() => setEditingId(t.id)}
-                title="Click to open · double-click to rename"
+                onDoubleClick={() => !readOnly && setEditingId(t.id)}
+                title={readOnly ? t.name : 'Click to open · double-click to rename'}
               >
                 {t.name}
               </button>
-              {tabs.length > 1 && (
+              {/* Switching tabs is navigation, which a viewer may do — the HTML
+                  export allows it too. Renaming, deleting and adding are edits,
+                  so in present mode they are not rendered at all. */}
+              {!readOnly && tabs.length > 1 && (
                 <button
                   className="px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   onClick={() => dispatch({ type: 'deleteTab', containerId: component.id, tabId: t.id })}
@@ -112,13 +119,15 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
             </div>
           )
         })}
-        <button
-          className="shrink-0 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          onClick={() => dispatch({ type: 'addTab', id: component.id })}
-          title="Add tab"
-        >
-          +
-        </button>
+        {!readOnly && (
+          <button
+            className="shrink-0 rounded-sm border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            onClick={() => dispatch({ type: 'addTab', id: component.id })}
+            title="Add tab"
+          >
+            +
+          </button>
+        )}
       </div>
 
       <div ref={containerRef} className="mt-2 min-h-0 flex-1 overflow-auto">
@@ -127,19 +136,24 @@ export default function TabsBody({ component, activeTabId, selectedChildId, disp
             width={width}
             layout={layout}
             gridConfig={NESTED_GRID}
-            dragConfig={NESTED_DRAG}
-            resizeConfig={NESTED_RESIZE}
+            dragConfig={readOnly ? LOCKED_DRAG : NESTED_DRAG}
+            resizeConfig={readOnly ? LOCKED_RESIZE : NESTED_RESIZE}
             onDragStop={commitLayout}
             onResizeStop={commitLayout}
           >
             {children.map((child) => (
               <div key={child.id}>
-                <Card component={child} selected={child.id === selectedChildId} dispatch={dispatch} />
+                <Card
+                component={child}
+                selected={child.id === selectedChildId}
+                readOnly={readOnly}
+                dispatch={dispatch}
+              />
               </div>
             ))}
           </GridLayout>
         )}
-        {active && (
+        {active && !readOnly && (
           <button
             className="mt-2 flex w-full items-center justify-center rounded-sm border border-dashed border-gray-300 py-3 text-xs text-gray-400 hover:border-gray-400 hover:text-gray-600 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-300"
             onClick={(e) => onAddInto(component.id, active.id, { clientX: e.clientX, clientY: e.clientY })}

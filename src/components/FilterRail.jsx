@@ -12,7 +12,7 @@ import { FILTER_TYPES } from '../state/document.js'
 // so react-grid-layout tracks the animating width frame-by-frame and the cards
 // slide smoothly with it instead of jerking. `overflow-hidden` plus a fixed
 // inner width keeps the content from squishing while the width animates.
-export default function FilterRail({ filters, open, onToggle, dispatch }) {
+export default function FilterRail({ filters, open, onToggle, readOnly, dispatch }) {
   return (
     <aside
       className={`flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out dark:border-gray-700 dark:bg-gray-800 ${
@@ -34,7 +34,7 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
           </div>
 
           <div className="flex flex-col gap-3 px-3 py-3">
-            {filters.length === 0 && (
+            {filters.length === 0 && !readOnly && (
               <p className="text-xs text-gray-400">
                 No filters yet. Add the dashboard-level filters people will use.
               </p>
@@ -44,6 +44,7 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
               <FilterRow
                 key={filter.id}
                 filter={filter}
+                readOnly={readOnly}
                 dispatch={dispatch}
                 isFirst={i === 0}
                 isLast={i === filters.length - 1}
@@ -52,12 +53,14 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
               />
             ))}
 
-            <button
-              className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
-              onClick={() => dispatch({ type: 'addFilter' })}
-            >
-              + add filter
-            </button>
+            {!readOnly && (
+              <button
+                className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                onClick={() => dispatch({ type: 'addFilter' })}
+              >
+                + add filter
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -82,7 +85,21 @@ export default function FilterRail({ filters, open, onToggle, dispatch }) {
 
 // Reorder is by the up/down buttons or Alt+Arrow. Drag-and-drop was tried and
 // removed — native HTML5 DnD felt laggy in a narrow rail and was not worth it.
-function FilterRow({ filter, dispatch, isFirst, isLast, onUp, onDown }) {
+function FilterRow({ filter, readOnly, dispatch, isFirst, isLast, onUp, onDown }) {
+  // Present mode: a viewer sees the filter's name and the shape of its control,
+  // which is exactly what the HTML export shows. The label field, the type
+  // select and the reorder buttons are edits, so they are not rendered.
+  if (readOnly) {
+    return (
+      <div className="rounded-sm border border-gray-200 p-2 dark:border-gray-700">
+        <div className="mb-2 truncate text-xs font-medium text-gray-700 dark:text-gray-200">
+          {filter.label}
+        </div>
+        <ControlPreview type={filter.type} />
+      </div>
+    )
+  }
+
   // Alt+Arrow reorders even while the label input has focus: plain arrows move
   // the text caret, and outside a field they nudge the selected canvas card.
   const onKeyDown = (e) => {
