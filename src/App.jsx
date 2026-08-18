@@ -383,7 +383,6 @@ export default function App() {
             // canvas.
             docEmpty={doc.pages.every((p) => p.components.length === 0)}
             readOnly={presenting}
-            pages={doc.pages}
             activePageId={activePage.id}
             dispatch={dispatch}
             onEmptyClick={setPicker}

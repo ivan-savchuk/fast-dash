@@ -36,7 +36,7 @@ const NESTED_RESIZE = { enabled: true, handles: ['se'] }
 const LOCKED_DRAG = { enabled: false }
 const LOCKED_RESIZE = { enabled: false }
 
-export default function TabsBody({ component, activeTabId, selectedChildId, readOnly, pages, activePageId, dispatch, onAddInto }) {
+export default function TabsBody({ component, activeTabId, selectedChildId, readOnly, dispatch, onAddInto }) {
   const tabs = component.tabs ?? []
   const active = tabs.find((t) => t.id === activeTabId) ?? tabs[0]
   const [editingId, setEditingId] = useState(null)
@@ -147,8 +147,6 @@ export default function TabsBody({ component, activeTabId, selectedChildId, read
                 component={child}
                 selected={child.id === selectedChildId}
                 readOnly={readOnly}
-                pages={pages}
-                activePageId={activePageId}
                 dispatch={dispatch}
               />
               </div>

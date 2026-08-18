@@ -98,7 +98,6 @@ function Canvas({
   freezeAnim,
   docEmpty,
   readOnly,
-  pages,
   activePageId,
   dispatch,
   onEmptyClick,
@@ -324,8 +323,6 @@ function Canvas({
                     activeTabId={activeTabId}
                     selectedChildId={selectedChildId}
                     readOnly={readOnly}
-                    pages={pages}
-                    activePageId={activePageId}
                     onAddInto={onAddInto}
                     dispatch={dispatch}
                   />

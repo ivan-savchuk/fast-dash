@@ -23,7 +23,6 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
 | `src/components/PageTabs.jsx` | The page tab strip: switch, rename (double-click), reorder, delete |
-| `src/components/PageMover.jsx` | The card-header control that sends a card to another page |
 | `src/components/TabsBody.jsx` | Inside a Tabs container: the inner tab strip and the active tab's nested grid |
 | `src/templates.js` | The three starter dashboards |
 | `src/components/FilterRail.jsx` | The collapsible left filter rail |
@@ -96,15 +95,14 @@ race it; taking the library's moment removes the ordering question entirely.
 
 **Nested cards are deliberately not wired to this.** A tab's grid sits inside an
 `overflow-auto` container, so dragging a child out toward the strip clips it under the
-container's edge — a poor gesture rather than a missing one. The `→` menu is their route,
-which is one reason it stays.
+container's edge — a poor gesture rather than a missing one. `⌘⌥←` / `⌘⌥→` is their route.
 
-The `→` control appears **only on the selected card**, and only above one page (Ivan's
-call, 2026-08-18 — on every card it was a fourth control competing with the title for room
-in every header). This is not the hover-hiding that was tried and reverted for duplicate
-and delete: those apply to any card you point at and get used constantly, whereas moving a
-card happens a handful of times per dashboard and can only ever act on the selection —
-`⌘⌥←`/`⌘⌥→` needs one too. So gating it hides nothing that was usable.
+There was a `→` menu in the card header first, gated to the selected card. It is **gone**
+(Ivan's call, 2026-08-18): once the drag existed the button was a third route to the same
+place, and a control in every header for something you do a handful of times per dashboard.
+`PageMover.jsx` was deleted with it, along with the `pages` / `activePageId` props it
+needed threaded through `Canvas`, `Card` and `TabsBody` — `Canvas` keeps `activePageId`
+only because the drop-target filter uses it.
 
 `movePage` reorders, exactly the shape of `moveFilter`. It is driven by **dragging a tab**
 (Ivan's call, 2026-08-18); a pair of `‹` `›` buttons on the active tab shipped first and

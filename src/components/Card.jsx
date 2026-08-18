@@ -1,7 +1,6 @@
 import { memo } from 'react'
 
 import ColumnEditor from './ColumnEditor.jsx'
-import PageMover from './PageMover.jsx'
 import { COMPONENT_TYPES, typeLabel } from './registry.jsx'
 import TabsBody from './TabsBody.jsx'
 import TypeBadge from './TypeBadge.jsx'
@@ -53,8 +52,6 @@ function Card({
   activeTabId,
   selectedChildId,
   readOnly,
-  pages,
-  activePageId,
   onAddInto,
   dispatch,
 }) {
@@ -78,17 +75,6 @@ function Card({
 
   // An imported file may contain a type this build doesn't know about.
   // Show it as a labelled empty box rather than crashing the canvas.
-  // Only worth a header slot once there is somewhere to send the card, and only
-  // on the card it can actually act on.
-  //
-  // A `→` on every card put a fourth control in every header for something you
-  // do a handful of times per dashboard. Gating it on selection hides nothing
-  // usable: you have to select a card before moving it, and ⌘⌥←/→ needs a
-  // selection too. That is what makes this different from hiding duplicate and
-  // delete, which was tried and reverted — those apply to any card you point at
-  // and get used constantly.
-  const canMove = !readOnly && selected && (pages?.length ?? 0) > 1
-
   const def = COMPONENT_TYPES[component.type] ?? {
     label: component.type,
     Placeholder: UnknownPlaceholder,
@@ -180,9 +166,6 @@ function Card({
           label={def.label}
           dispatch={dispatch}
         />
-        {canMove && (
-          <PageMover id={id} pages={pages} activePageId={activePageId} dispatch={dispatch} />
-        )}
         <button
           className={actionClass('text-sm')}
           onClick={onDuplicate}
@@ -242,9 +225,6 @@ function Card({
             dispatch={dispatch}
           />
         )}
-        {canMove && (
-          <PageMover id={id} pages={pages} activePageId={activePageId} dispatch={dispatch} />
-        )}
         <button
           className={actionClass('text-sm')}
           onClick={onDuplicate}
@@ -269,8 +249,6 @@ function Card({
             component={component}
             activeTabId={activeTabId}
             selectedChildId={selectedChildId}
-            pages={pages}
-            activePageId={activePageId}
             onAddInto={onAddInto}
             dispatch={dispatch}
           />
