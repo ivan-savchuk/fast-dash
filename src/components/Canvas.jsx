@@ -103,6 +103,11 @@ export default function Canvas({
   function handleBackgroundClick(e) {
     // Clicks that land on a card are the card's business.
     if (e.target.closest('.react-grid-item')) return
+    // And a click on a template card is the gallery's: without this, picking a
+    // template would also open the quick picker on top of the dashboard it just
+    // loaded. The only buttons inside this region are the gallery's — a card's
+    // own buttons are already excluded above.
+    if (e.target.closest('button')) return
 
     const rect = gridAreaRef.current.getBoundingClientRect()
     const [gapX, gapY] = GRID_CONFIG.margin
@@ -148,78 +153,83 @@ export default function Canvas({
         document.activeElement?.blur()
       }}
     >
-      {components.length === 0 && (
-        <div className="mx-auto max-w-4xl px-1 pt-8 pb-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {docEmpty
-              ? 'Start from a template — or click anywhere below to place your first component.'
-              : 'This page is empty. Click anywhere below to add a component, or press 1–5.'}
-          </p>
-
-          {/* Only when the whole document is empty: picking a template replaces
-              it, and that must not be one stray click away from a dashboard
-              that already has pages in it. */}
-          {docEmpty && (
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {TEMPLATE_LIST.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => onPickTemplate(template.id)}
-                  className="cursor-pointer rounded-sm border border-gray-200 bg-white p-3 text-left hover:border-[var(--fd-accent)] dark:border-gray-700 dark:bg-gray-800"
-                >
-                  <TemplateThumb preview={template.preview} />
-                  <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
-                    {template.name}
-                  </div>
-                  <div className="text-xs text-gray-400">{template.summary}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* The grid is only as tall as its content, so this wrapper provides the
           empty space the quick picker is summoned from: a minimum height for an
           empty canvas, and padding below that survives however tall the grid
-          grows. Without the padding a full dashboard leaves nowhere to click. */}
+          grows. Without the padding a full dashboard leaves nowhere to click.
+
+          The empty state lives INSIDE it, not above it. Outside, the whole band
+          the template gallery occupies swallowed its clicks — the handler is on
+          this element — so on an empty canvas you could not summon the picker
+          anywhere near the cards. */}
       <div ref={gridAreaRef} className="min-h-[70vh] pb-40" onClick={handleBackgroundClick}>
-      {/* v2 of react-grid-layout groups its settings into config objects.
-          Passing cols/rowHeight/draggableCancel at the top level does
-          nothing — they are silently ignored. */}
-      {mounted && (
-        <GridLayout
-          width={width}
-          layout={layout}
-          gridConfig={GRID_CONFIG}
-          dragConfig={DRAG_CONFIG}
-          resizeConfig={RESIZE_CONFIG}
-          onDragStop={commitLayout}
-          onResizeStop={commitLayout}
-        >
-          {components.map((c) => {
-            // Only Tabs containers need the nested props; for every other card
-            // these stay null, so the memo on Card is not disturbed when the
-            // selection or a tab changes elsewhere.
-            const isTabs = c.type === 'tabs'
-            const activeTabId = isTabs ? (activeTabs[c.id] ?? c.tabs?.[0]?.id ?? null) : null
-            const selectedChildId =
-              isTabs && tabChildIds(c).includes(selectedId) ? selectedId : null
-            return (
-              <div key={c.id}>
-                <Card
-                  component={c}
-                  selected={c.id === selectedId}
-                  activeTabId={activeTabId}
-                  selectedChildId={selectedChildId}
-                  onAddInto={onAddInto}
-                  dispatch={dispatch}
-                />
+        {components.length === 0 && (
+          <div className="mx-auto max-w-4xl px-1 pt-8 pb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {docEmpty
+                ? 'Start from a template — or click anywhere below to place your first component.'
+                : 'This page is empty. Click anywhere below to add a component, or press 1–5.'}
+            </p>
+
+            {/* Only when the whole document is empty: picking a template replaces
+                it, and that must not be one stray click away from a dashboard
+                that already has pages in it. */}
+            {docEmpty && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {TEMPLATE_LIST.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => onPickTemplate(template.id)}
+                    className="cursor-pointer rounded-sm border border-gray-200 bg-white p-3 text-left hover:border-[var(--fd-accent)] dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    <TemplateThumb preview={template.preview} />
+                    <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                      {template.name}
+                    </div>
+                    <div className="text-xs text-gray-400">{template.summary}</div>
+                  </button>
+                ))}
               </div>
-            )
-          })}
-        </GridLayout>
-      )}
+            )}
+          </div>
+        )}
+
+        {/* v2 of react-grid-layout groups its settings into config objects.
+            Passing cols/rowHeight/draggableCancel at the top level does
+            nothing — they are silently ignored. */}
+        {mounted && (
+          <GridLayout
+            width={width}
+            layout={layout}
+            gridConfig={GRID_CONFIG}
+            dragConfig={DRAG_CONFIG}
+            resizeConfig={RESIZE_CONFIG}
+            onDragStop={commitLayout}
+            onResizeStop={commitLayout}
+          >
+            {components.map((c) => {
+              // Only Tabs containers need the nested props; for every other card
+              // these stay null, so the memo on Card is not disturbed when the
+              // selection or a tab changes elsewhere.
+              const isTabs = c.type === 'tabs'
+              const activeTabId = isTabs ? (activeTabs[c.id] ?? c.tabs?.[0]?.id ?? null) : null
+              const selectedChildId =
+                isTabs && tabChildIds(c).includes(selectedId) ? selectedId : null
+              return (
+                <div key={c.id}>
+                  <Card
+                    component={c}
+                    selected={c.id === selectedId}
+                    activeTabId={activeTabId}
+                    selectedChildId={selectedChildId}
+                    onAddInto={onAddInto}
+                    dispatch={dispatch}
+                  />
+                </div>
+              )
+            })}
+          </GridLayout>
+        )}
       </div>
     </div>
   )
