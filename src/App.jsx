@@ -215,7 +215,10 @@ export default function App() {
   }
 
   function handleNew() {
-    if (components.length > 0 && !window.confirm('Discard the current dashboard?')) return
+    // Every page, not just the one on screen. Standing on an empty second page
+    // of a full dashboard, this used to wipe the lot without asking.
+    const total = doc.pages.reduce((n, page) => n + page.components.length, 0)
+    if (total > 0 && !window.confirm('Discard the current dashboard?')) return
     dispatch({ type: 'reset' })
     setError(null)
   }
@@ -253,6 +256,7 @@ export default function App() {
         onImportFile={handleImportFile}
         onNew={handleNew}
         onPickTemplate={handlePickTemplate}
+        onMore={setPicker}
       />
 
       {error && (
@@ -313,6 +317,12 @@ export default function App() {
             if (picker.container) {
               // Auto-placed inside the tab — no grid cell to honour yet (4b).
               dispatch({ type: 'add', componentType, container: picker.container })
+            } else if (picker.x == null) {
+              // Opened from the toolbar's "+ N more", so the click was on a
+              // button rather than on a spot in the grid. With no cell to
+              // honour it takes the first gap it fits, exactly like the number
+              // keys. Passing `at` here would clamp `undefined` into a NaN.
+              dispatch({ type: 'add', componentType })
             } else {
               dispatch({ type: 'add', componentType, at: { x: picker.x, y: picker.y } })
             }

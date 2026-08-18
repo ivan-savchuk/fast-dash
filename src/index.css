@@ -157,3 +157,18 @@
 .react-grid-layout textarea {
   user-select: text;
 }
+
+/* Keyboard focus is visible, and takes the dashboard's accent like the rest of
+   the chrome. The app is keyboard-first (design principle 5), so a focus you
+   cannot see is a real gap rather than a polish item — tabbing through cards
+   otherwise moved an invisible cursor.
+
+   `:focus-visible`, not `:focus`, so clicking a button with the mouse does not
+   leave a ring behind it. `:where()` keeps the selector at zero specificity for
+   the element part, so this is a one-class rule — the same strength as
+   Tailwind's `outline-none`, which several inputs carry. It wins on source
+   order, being after the `@import` at the top of this file. */
+:where(button, input, textarea, select, a):focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 1px;
+}
