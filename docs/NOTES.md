@@ -73,8 +73,30 @@ from the page you are looking at is indistinguishable from a deleted one. `findI
 `removeInList` reach one level down, so a card inside a Tabs container can be sent out to
 a page of its own and arrives as an ordinary top-level card.
 
-`movePage` reorders, exactly the shape of `moveFilter`, driven by `‹` `›` on the active
-tab only — a pair of arrows on every tab makes the strip unreadable.
+`movePage` reorders, exactly the shape of `moveFilter`. It is driven by **dragging a tab**
+(Ivan's call, 2026-08-18); a pair of `‹` `›` buttons on the active tab shipped first and
+was too small to aim at, and only ever moved a page one slot per click.
+
+**This is not HTML5 drag-and-drop.** That was tried for the filter rail and removed for the
+browser's own drag latency (see below) — this is plain pointer events, the same thing
+react-grid-layout uses for cards, so there is no drag image and nothing to feel late. Two
+things make it correct rather than merely smooth:
+
+- **The tab rects are measured once, at mousedown**, and every later decision is made
+  against that snapshot. The strip visibly reflows during the drag — a gap opens where the
+  tab will land — so measuring live would mean deciding against positions that are
+  themselves moving.
+- **`dropIndex(rects, x, from)` is exported and tested.** The insertion slot is how many
+  midpoints the pointer has passed, minus one if the tab came from the left of it, because
+  pulling it out shifts everything after it. That off-by-one is invisible on screen and
+  wrong in only one direction, so it is checked against real coordinates rather than by
+  eye. Exporting it costs one `only-export-components` lint warning, which is the whole
+  reason the count is 9 rather than 8.
+
+Below the 4px threshold nothing is a drag, so a plain click still switches page and a
+double-click still starts a rename. `Alt+←` / `Alt+→` reorder from the keyboard — the
+convention the filter rail already uses, and what keeps design principle 5 true now that
+the buttons are gone.
 
 The HTML export renders every page. One page looks exactly as before; two or more get a
 tab strip whose switching is driven by a small **navigation-only** inline script (the one
