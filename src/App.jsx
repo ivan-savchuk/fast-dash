@@ -290,9 +290,15 @@ export default function App() {
             selectedId={selectedId}
             activeTabs={activeTabs}
             freezeAnim={railSettling}
+            // A template replaces the whole document, so it is only offered when
+            // there is nothing to replace. Otherwise standing on an empty second
+            // page would put a one-click "wipe everything" in the middle of the
+            // canvas.
+            docEmpty={doc.pages.every((p) => p.components.length === 0)}
             dispatch={dispatch}
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}
+            onPickTemplate={handlePickTemplate}
           />
         </main>
       </div>

@@ -9,6 +9,7 @@ import { useMemo, useRef } from 'react'
 
 import Card from './Card.jsx'
 import { GRID_COLS, GRID_ROW_HEIGHT, tabChildIds } from '../state/document.js'
+import { TEMPLATE_LIST } from '../templates.js'
 
 // These must be module constants, not inline object literals. The library
 // memoises its item rendering on the identity of these objects, so a fresh
@@ -38,14 +39,59 @@ const RESIZE_CONFIG = { enabled: true, handles: ['se'] }
 // positions back through onDragStop / onResizeStop, which we push into the
 // reducer so the document stays the single source of truth.
 
+// --- the empty canvas ---
+//
+// A blank grid with one line of grey text was the first thing anyone saw, which
+// is the worst possible opening frame for a tool whose pitch is speed. The three
+// starter dashboards were also buried in the Options menu, where nobody looking
+// at an empty canvas would think to go.
+//
+// Grid cells are not square — a column is roughly 100px against a 40px row — so
+// a thumbnail drawn on square cells would make every dashboard look like a
+// tower. CELL_W is that real ratio, and GAP is the 12px gutter measured in the
+// same units (12/100 of a column, 12/40 of a row: the same 0.3 either way).
+const CELL_W = 2.5
+const GAP = 0.3
+
+// One viewBox height for all three, so they share a scale and line up: a shorter
+// dashboard should look shorter, not be blown up to fill the same box.
+const THUMB_ROWS = Math.max(
+  ...TEMPLATE_LIST.map((t) => t.preview.reduce((max, c) => Math.max(max, c.y + c.h), 0)),
+)
+
+// The template's shape, drawn from the layout it is actually built from.
+function TemplateThumb({ preview }) {
+  return (
+    <svg
+      viewBox={`0 0 ${GRID_COLS * CELL_W} ${THUMB_ROWS}`}
+      className="w-full rounded-sm bg-gray-50 dark:bg-gray-900"
+      aria-hidden="true"
+    >
+      {preview.map((c, i) => (
+        <rect
+          key={i}
+          x={c.x * CELL_W}
+          y={c.y}
+          width={c.w * CELL_W - GAP}
+          height={c.h - GAP}
+          rx="0.15"
+          className="fill-gray-300 dark:fill-gray-600"
+        />
+      ))}
+    </svg>
+  )
+}
+
 export default function Canvas({
   components,
   selectedId,
   activeTabs,
   freezeAnim,
+  docEmpty,
   dispatch,
   onEmptyClick,
   onAddInto,
+  onPickTemplate,
 }) {
   // `mounted` is false until the container has been measured. Rendering the
   // grid before that places cards using a guessed 1280px width.
@@ -103,10 +149,34 @@ export default function Canvas({
       }}
     >
       {components.length === 0 && (
-        <p className="px-1 pt-6 text-sm text-gray-400">
-          Empty canvas. Click anywhere to add a component, press 1–5, or start from a
-          template in the toolbar.
-        </p>
+        <div className="mx-auto max-w-4xl px-1 pt-8 pb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {docEmpty
+              ? 'Start from a template — or click anywhere below to place your first component.'
+              : 'This page is empty. Click anywhere below to add a component, or press 1–5.'}
+          </p>
+
+          {/* Only when the whole document is empty: picking a template replaces
+              it, and that must not be one stray click away from a dashboard
+              that already has pages in it. */}
+          {docEmpty && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {TEMPLATE_LIST.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => onPickTemplate(template.id)}
+                  className="cursor-pointer rounded-sm border border-gray-200 bg-white p-3 text-left hover:border-[var(--fd-accent)] dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <TemplateThumb preview={template.preview} />
+                  <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    {template.name}
+                  </div>
+                  <div className="text-xs text-gray-400">{template.summary}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* The grid is only as tall as its content, so this wrapper provides the

@@ -65,7 +65,15 @@ const TEMPLATES = [
   },
 ]
 
-export const TEMPLATE_LIST = TEMPLATES.map(({ id, name, summary }) => ({ id, name, summary }))
+// `preview` is the layout and nothing else — enough to draw a thumbnail of the
+// template's shape. It is mapped from the very array `buildTemplate` builds
+// from, so the picture and what clicking it produces cannot drift apart.
+export const TEMPLATE_LIST = TEMPLATES.map(({ id, name, summary, components }) => ({
+  id,
+  name,
+  summary,
+  preview: components.map(([type, x, y, w, h]) => ({ type, x, y, w, h })),
+}))
 
 // Build a fresh document. Ids are generated per call so opening the same
 // template twice never collides, and the result is an ordinary document with
