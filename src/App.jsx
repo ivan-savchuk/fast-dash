@@ -165,6 +165,22 @@ export default function App() {
         return
       }
 
+      // ⌘⌥← / ⌘⌥→ send the selected card to the previous or next page — the
+      // keyboard half of the card header's page menu. Checked here, before the
+      // text-field guard and before the plain arrows below, which bail out on
+      // any modifier. A step past either end does nothing rather than wrapping.
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.altKey &&
+        (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+      ) {
+        e.preventDefault()
+        if (selectedId) {
+          dispatch({ type: 'moveToPage', delta: e.key === 'ArrowRight' ? 1 : -1 })
+        }
+        return
+      }
+
       // Escape is handled before the text-field guard so it doubles as "give
       // me the keyboard back" when a title or description has focus.
       if (e.key === 'Escape') {
@@ -356,6 +372,8 @@ export default function App() {
             // canvas.
             docEmpty={doc.pages.every((p) => p.components.length === 0)}
             readOnly={presenting}
+            pages={doc.pages}
+            activePageId={activePage.id}
             dispatch={dispatch}
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}

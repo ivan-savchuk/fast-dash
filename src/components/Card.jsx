@@ -1,6 +1,7 @@
 import { memo } from 'react'
 
 import ColumnEditor from './ColumnEditor.jsx'
+import PageMover from './PageMover.jsx'
 import { COMPONENT_TYPES, typeLabel } from './registry.jsx'
 import TabsBody from './TabsBody.jsx'
 import TypeBadge from './TypeBadge.jsx'
@@ -46,7 +47,17 @@ export default memo(Card)
 // `dispatch` is taken directly rather than as four callback props: a callback
 // created inline in the parent is a new value on every render, which would
 // defeat the memo above.
-function Card({ component, selected, activeTabId, selectedChildId, readOnly, onAddInto, dispatch }) {
+function Card({
+  component,
+  selected,
+  activeTabId,
+  selectedChildId,
+  readOnly,
+  pages,
+  activePageId,
+  onAddInto,
+  dispatch,
+}) {
   const id = component.id
   const isTabs = component.type === 'tabs'
 
@@ -67,6 +78,9 @@ function Card({ component, selected, activeTabId, selectedChildId, readOnly, onA
 
   // An imported file may contain a type this build doesn't know about.
   // Show it as a labelled empty box rather than crashing the canvas.
+  // Only worth a header slot once there is somewhere to send the card.
+  const canMove = !readOnly && (pages?.length ?? 0) > 1
+
   const def = COMPONENT_TYPES[component.type] ?? {
     label: component.type,
     Placeholder: UnknownPlaceholder,
@@ -158,6 +172,9 @@ function Card({ component, selected, activeTabId, selectedChildId, readOnly, onA
           label={def.label}
           dispatch={dispatch}
         />
+        {canMove && (
+          <PageMover id={id} pages={pages} activePageId={activePageId} dispatch={dispatch} />
+        )}
         <button
           className={actionClass('text-sm')}
           onClick={onDuplicate}
@@ -217,6 +234,9 @@ function Card({ component, selected, activeTabId, selectedChildId, readOnly, onA
             dispatch={dispatch}
           />
         )}
+        {canMove && (
+          <PageMover id={id} pages={pages} activePageId={activePageId} dispatch={dispatch} />
+        )}
         <button
           className={actionClass('text-sm')}
           onClick={onDuplicate}
@@ -241,6 +261,8 @@ function Card({ component, selected, activeTabId, selectedChildId, readOnly, onA
             component={component}
             activeTabId={activeTabId}
             selectedChildId={selectedChildId}
+            pages={pages}
+            activePageId={activePageId}
             onAddInto={onAddInto}
             dispatch={dispatch}
           />

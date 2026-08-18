@@ -601,6 +601,62 @@ function applyAction(state, action) {
       return { ...state, activePageId: action.id, selectedId: null }
     }
 
+    // Send the selected card to another page, by id (the card's menu) or by a
+    // step left or right (⌘⌥←/→). Multi-page dashboards were build-only before
+    // this: split a page after the fact and you rebuilt its cards by hand.
+    //
+    // The card lands in the first gap it fits on the destination rather than
+    // keeping its x and y, because those describe a spot on a page it has never
+    // been on — the cell it came from may be occupied, or halfway down a much
+    // longer page. That is the same rule a component added from the toolbar
+    // follows.
+    //
+    // We follow it there and keep it selected. A card that silently vanishes
+    // from the page you are looking at is indistinguishable from one that was
+    // deleted.
+    case 'moveToPage': {
+      const id = action.id ?? state.selectedId
+      if (!id) return state
+      const pages = state.doc.pages
+      const here = pages.findIndex((p) => p.id === page.id)
+      // A step past either end does nothing rather than wrapping around, which
+      // would move a card somewhere you were not looking.
+      const target =
+        action.pageId != null
+          ? pages.find((p) => p.id === action.pageId)
+          : pages[here + action.delta]
+      if (!target || target.id === page.id) return state
+
+      // findInList reaches into a Tabs container, so a nested child can be sent
+      // out to a page of its own; it arrives as an ordinary top-level card.
+      const moving = findInList(page.components, id)
+      if (!moving) return state
+      const slot = firstFreeSlot(target.components, moving.layout.w, moving.layout.h)
+      const landed = { ...moving, layout: { ...moving.layout, ...slot } }
+
+      const emptied = replaceComponents(state.doc, page.id, removeInList(page.components, id))
+      return {
+        ...state,
+        activePageId: target.id,
+        selectedId: id,
+        doc: replaceComponents(emptied, target.id, [...target.components, landed]),
+      }
+    }
+
+    // Reorder, the same shape as moveFilter: pull the page out and put it back
+    // at `toIndex`. Which page is active does not change — only where it sits.
+    case 'movePage': {
+      const list = state.doc.pages
+      const from = list.findIndex((p) => p.id === action.id)
+      if (from === -1) return state
+      const to = clamp(action.toIndex, 0, list.length - 1)
+      if (to === from) return state
+      const pages = [...list]
+      const [moved] = pages.splice(from, 1)
+      pages.splice(to, 0, moved)
+      return { ...state, doc: { ...state.doc, pages } }
+    }
+
     case 'renamePage': {
       const pages = state.doc.pages.map((p) =>
         p.id === action.id ? { ...p, name: action.name } : p,

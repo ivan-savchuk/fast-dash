@@ -92,6 +92,8 @@ export default function Canvas({
   freezeAnim,
   docEmpty,
   readOnly,
+  pages,
+  activePageId,
   dispatch,
   onEmptyClick,
   onAddInto,
@@ -245,6 +247,8 @@ export default function Canvas({
                     activeTabId={activeTabId}
                     selectedChildId={selectedChildId}
                     readOnly={readOnly}
+                    pages={pages}
+                    activePageId={activePageId}
                     onAddInto={onAddInto}
                     dispatch={dispatch}
                   />

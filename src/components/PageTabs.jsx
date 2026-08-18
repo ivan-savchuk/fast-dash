@@ -34,7 +34,7 @@ export default function PageTabs({ pages, activeId, dispatch }) {
 
   return (
     <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-1.5 dark:border-gray-700 dark:bg-gray-800">
-      {pages.map((page) => {
+      {pages.map((page, i) => {
         const active = page.id === activeId
         if (editingId === page.id) {
           return (
@@ -73,6 +73,31 @@ export default function PageTabs({ pages, activeId, dispatch }) {
             >
               {page.name}
             </button>
+            {/* Reorder, on the active tab only — the same convention the filter
+                rail uses, and putting a pair of arrows on every tab would make
+                the strip unreadable. */}
+            {active && (
+              <>
+                <button
+                  className="px-0.5 text-xs text-gray-400 enabled:hover:text-gray-700 disabled:opacity-30 dark:enabled:hover:text-gray-200"
+                  onClick={() => dispatch({ type: 'movePage', id: page.id, toIndex: i - 1 })}
+                  disabled={i === 0}
+                  title="Move page left"
+                  aria-label={`Move ${page.name} left`}
+                >
+                  ‹
+                </button>
+                <button
+                  className="px-0.5 text-xs text-gray-400 enabled:hover:text-gray-700 disabled:opacity-30 dark:enabled:hover:text-gray-200"
+                  onClick={() => dispatch({ type: 'movePage', id: page.id, toIndex: i + 1 })}
+                  disabled={i === pages.length - 1}
+                  title="Move page right"
+                  aria-label={`Move ${page.name} right`}
+                >
+                  ›
+                </button>
+              </>
+            )}
             {pages.length > 1 && (
               <button
                 className="px-1.5 text-gray-400 hover:text-gray-700"

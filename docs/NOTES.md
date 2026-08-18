@@ -22,7 +22,8 @@ now multi-page. Next in Phase 4: making the Tabs element host real nested cards.
 | `src/components/ColumnEditor.jsx` | A table's column list: name, role, format, reorder, add, remove |
 | `src/components/Canvas.jsx` | `react-grid-layout` wiring, and click-to-grid-cell maths |
 | `src/components/QuickPicker.jsx` | The menu that opens where you click the canvas — a search box over the full component catalog |
-| `src/components/PageTabs.jsx` | The page tab strip: switch, add, rename (double-click), delete |
+| `src/components/PageTabs.jsx` | The page tab strip: switch, rename (double-click), reorder, delete |
+| `src/components/PageMover.jsx` | The card-header control that sends a card to another page |
 | `src/components/TabsBody.jsx` | Inside a Tabs container: the inner tab strip and the active tab's nested grid |
 | `src/templates.js` | The three starter dashboards |
 | `src/components/FilterRail.jsx` | The collapsible left filter rail |
@@ -43,7 +44,8 @@ saved; `selectedId` is view state.
 
 Actions: `add`, `duplicate`, `delete`, `select`, `setLayout`, `nudge`, `rename`,
 `setComment`, `setColumns`, `setVariant`, `cycleVariant`, `setDocTitle`, `setTheme`,
-`load`, `reset`, `undo`, `redo`, plus the filter and page actions below.
+`moveToPage`, `movePage`, `load`, `reset`, `undo`, `redo`, plus the filter and page
+actions below.
 
 **Pages.** `doc.pages` was always an array but only `pages[0]` was ever used; it now holds
 many. `activePageId` is view state on the reducer (like `selectedId`), not part of the
@@ -53,6 +55,26 @@ Page actions: `addPage`, `selectPage` (view-only, not history, like `select`),
 `renamePage` (coalesces), `deletePage` (never removes the last page; moves to a neighbour
 if the active one goes). `validPageId` keeps `activePageId` pointing at a real page after
 undo, redo, import or reset. Dashboard filters stay document-level, shared across pages.
+
+**The strip only renders above one page** (2026-08-18). A single tab you cannot switch
+away from was a whole bar of chrome for nothing, so `App` renders `PageTabs` only when
+`doc.pages.length > 1`. `+ Page` therefore cannot live on the strip — hidden at one page
+there would be no way back to two — so it sits in the toolbar's second row, its single
+home at any page count.
+
+**Cards can move between pages** (2026-08-18). Before this, multi-page was build-only:
+you could make a second page but nothing could get to it. `moveToPage` takes either a
+`pageId` (the card header's `→` menu) or a `delta` of ±1 (`⌘⌥←` / `⌘⌥→`); a step past
+either end does nothing rather than wrapping. The card **lands in the first free slot on
+the destination** rather than keeping its x and y, which describe a spot on a page it has
+never been on — the same rule a component added from the toolbar follows. The reducer then
+switches to that page and keeps the card selected, because a card that silently vanishes
+from the page you are looking at is indistinguishable from a deleted one. `findInList` and
+`removeInList` reach one level down, so a card inside a Tabs container can be sent out to
+a page of its own and arrives as an ordinary top-level card.
+
+`movePage` reorders, exactly the shape of `moveFilter`, driven by `‹` `›` on the active
+tab only — a pair of arrows on every tab makes the strip unreadable.
 
 The HTML export renders every page. One page looks exactly as before; two or more get a
 tab strip whose switching is driven by a small **navigation-only** inline script (the one
@@ -338,7 +360,8 @@ or in a tab. A tab's nested grid is 12 columns wide as well, so the clamp is the
 Trap 4 below applies in both places equally: nudging down into empty space is applied and
 then undone by the vertical compactor.
 
-`⌘D` duplicates the selected card. `⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These fire even
+`⌘D` duplicates the selected card. `⌘⌥←` / `⌘⌥→` send it to the previous or next page.
+`P` enters Present mode, `Esc` leaves it. `⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These fire even
 while a text field has focus — the title and description are controlled inputs where
 the browser's native undo cannot restore anything, and intercepting `⌘D` stops the
 browser opening its bookmark dialog.
