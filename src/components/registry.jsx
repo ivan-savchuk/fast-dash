@@ -15,8 +15,8 @@ import {
   artFor,
   columnTemplate,
   hasFormats,
-  KPI_SPARK,
-  KPI_TEXT,
+  kpiSample,
+  kpiSpark,
   TABLE,
   tableColumns,
   TABS_LABELS,
@@ -60,21 +60,27 @@ const chart = (type) =>
 
 // The KPI is text and layout rather than a drawing, so its variants drop pieces
 // instead of swapping silhouettes. Which pieces is shared with the export.
-function KpiPlaceholder({ variant }) {
+function KpiPlaceholder({ variant, id }) {
   const parts = variantParts('kpi', variant)
+  // The number varies per card, from the card's own id; see kpiSample.
+  const sample = kpiSample(id)
   return (
     <div className="flex h-full flex-col justify-center gap-1">
-      <div className="text-2xl leading-none font-semibold text-gray-400 tabular-nums">
-        {KPI_TEXT.value}
+      {/* The big number is the point of a KPI card, so it carries the weight to
+          match. Grey still — this is darker, not coloured — but at gray-400 it
+          was the palest large element on the page and read as lighter than the
+          card title above it. */}
+      <div className="text-3xl leading-none font-semibold text-gray-700 tabular-nums dark:text-gray-200">
+        {sample.value}
       </div>
       {/* The delta is the KPI's primary mark when there is no sparkline, and
           reads as one either way — a real KPI card colours its change. */}
       {parts.delta && (
         <div className="text-[11px]" style={{ color: 'var(--fd-accent)' }}>
-          {KPI_TEXT.delta}
+          {sample.delta}
         </div>
       )}
-      {parts.spark && <SvgArt art={KPI_SPARK} className="mt-1 h-5 w-full" />}
+      {parts.spark && <SvgArt art={kpiSpark(sample)} className="mt-1 h-5 w-full" />}
     </div>
   )
 }

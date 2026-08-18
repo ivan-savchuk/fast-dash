@@ -189,7 +189,7 @@ function Card({ component, selected, activeTabId, selectedChildId, onAddInto, di
             dispatch={dispatch}
           />
         ) : (
-          <Placeholder variant={component.variant} spec={component.spec} />
+          <Placeholder variant={component.variant} spec={component.spec} id={id} />
         )}
       </div>
 

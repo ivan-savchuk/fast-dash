@@ -656,14 +656,18 @@ const PIE = {
 
 // The KPI sparkline. The rest of a KPI card is text and layout, not a drawing,
 // so only the line itself lives here.
-export const KPI_SPARK = {
+//
+// There are two, because the samples below include KPIs that fall: a card whose
+// delta reads ▼ over a rising sparkline is a contradiction the eye catches at
+// once, and that is worse than the identical numbers this replaced.
+const sparkline = (points) => ({
   viewBox: '0 0 100 20',
   stretch: true,
   shapes: [
     [
       'polyline',
       {
-        points: '0,16 14,12 28,14 42,8 56,10 70,5 84,7 100,2',
+        points,
         fill: 'none',
         stroke: ACCENT,
         strokeWidth: 1.5,
@@ -671,7 +675,11 @@ export const KPI_SPARK = {
       },
     ],
   ],
-}
+})
+
+// The rising line is the one this file has always drawn, unchanged.
+export const KPI_SPARK = sparkline('0,16 14,12 28,14 42,8 56,10 70,5 84,7 100,2')
+const KPI_SPARK_DOWN = sparkline('0,3 14,7 28,5 42,12 56,9 70,15 84,13 100,18')
 
 // Keyed by component type. Only the types whose placeholder is pure drawing —
 // the rest (KPI, table, text, tabs, section) are text and boxes, and
@@ -796,7 +804,47 @@ export function variantLabel(type, variant) {
 // canvas, hand-written CSS in the export), but the *content* should not. These
 // are the values both sides read.
 
-export const KPI_TEXT = { value: '1,234', delta: '▲ 12.5% vs. prior period' }
+// --- a KPI card's number ---
+//
+// One shared constant meant a row of four KPI cards showed `1,234` and
+// `▲ 12.5%` four times over. That does not read as "these are placeholders", it
+// reads as a bug — and a KPI row is the most common thing anyone builds here, so
+// it is the first thing a viewer looks at.
+//
+// This is still a placeholder rather than data. The values are round and
+// obviously invented, and nothing is derived from anything else on the page.
+// **No sample carries a unit** — no `%`, no currency, no `×`. A card titled
+// "Revenue" showing `86.4%` reads as a mistake, and which unit a measure has is
+// the card's business, not the placeholder's. Only the magnitudes vary. Varying them costs nothing and stops the row
+// looking copy-pasted. Some of them fall, because a row where every arrow points
+// up is a mock-up of good news rather than a layout.
+//
+// The delta keeps the accent in both directions. Colouring a fall red and a rise
+// green would be exactly the per-card colour argument principle #1 exists to
+// prevent.
+export const KPI_SAMPLES = [
+  { value: '1,234', delta: '▲ 12.5% vs. prior period', up: true },
+  { value: '2,846', delta: '▲ 3.1% vs. prior period', up: true },
+  { value: '4,902', delta: '▼ 2.8% vs. prior period', up: false },
+  { value: '312', delta: '▲ 8.0% vs. prior period', up: true },
+  { value: '57.9k', delta: '▼ 5.4% vs. prior period', up: false },
+  { value: '18.2', delta: '▲ 1.6% vs. prior period', up: true },
+]
+
+// Which sample a card shows, derived from its own id — so the canvas and the
+// export always agree, and a card keeps its number across a reload, a re-import
+// and an undo. A character sum is enough: ids differ in their counter, so cards
+// added one after another land on consecutive samples, which is what a KPI row
+// wants. An id this build has never seen still lands somewhere valid.
+export function kpiSample(id) {
+  const s = String(id ?? '')
+  let sum = 0
+  for (let i = 0; i < s.length; i++) sum += s.charCodeAt(i)
+  return KPI_SAMPLES[sum % KPI_SAMPLES.length]
+}
+
+// The sparkline that agrees with the sample's direction.
+export const kpiSpark = (sample) => (sample.up ? KPI_SPARK : KPI_SPARK_DOWN)
 
 export const TABLE = {
   columns: ['Dimension', 'Measure 1', 'Measure 2', 'Measure 3'],

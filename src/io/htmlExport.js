@@ -21,8 +21,8 @@ import {
   artFor,
   columnTemplate,
   hasFormats,
-  KPI_SPARK,
-  KPI_TEXT,
+  kpiSample,
+  kpiSpark,
   TABLE,
   tableColumns,
   TEXT_LINES,
@@ -178,7 +178,7 @@ function renderCard(c) {
   const body =
     c.type === 'tabs'
       ? renderTabsCard(c)
-      : (PLACEHOLDERS[c.type] ?? placeholderUnknown)(c.variant, c.spec)
+      : (PLACEHOLDERS[c.type] ?? placeholderUnknown)(c.variant, c.spec, c.id)
   const comment = c.comment
     ? `<div class="card-note">${esc(c.comment)}</div>`
     : ''
@@ -245,11 +245,13 @@ const chart = (type) => (variant) => artToHtml(artFor(type, variant))
 const PLACEHOLDERS = {
   // Built line by line rather than as one template, so a dropped piece leaves no
   // blank line behind and the default variant is exactly what it always was.
-  kpi: (variant) => {
+  kpi: (variant, _spec, id) => {
     const parts = variantParts('kpi', variant)
-    const lines = [`<div class="kpi-num">${KPI_TEXT.value}</div>`]
-    if (parts.delta) lines.push(`<div class="kpi-delta">${KPI_TEXT.delta}</div>`)
-    if (parts.spark) lines.push(artToHtml(KPI_SPARK, 'kpi-spark'))
+    // Same id, same sample as the canvas drew — the two cannot drift.
+    const sample = kpiSample(id)
+    const lines = [`<div class="kpi-num">${sample.value}</div>`]
+    if (parts.delta) lines.push(`<div class="kpi-delta">${sample.delta}</div>`)
+    if (parts.spark) lines.push(artToHtml(kpiSpark(sample), 'kpi-spark'))
     return `<div class="kpi">\n${lines.join('\n')}\n</div>`
   },
   timeseries: chart('timeseries'),
@@ -349,7 +351,7 @@ body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 .card-note{flex:none;border-top:1px solid #f3f4f6;padding:6px 12px;font-size:11px;line-height:1.35;color:#4b5563}
 .fill{width:100%;height:100%}
 .kpi{display:flex;flex-direction:column;justify-content:center;gap:4px;height:100%}
-.kpi-num{font-size:24px;line-height:1;font-weight:600;color:#9ca3af;font-variant-numeric:tabular-nums}
+.kpi-num{font-size:30px;line-height:1;font-weight:600;color:#374151;font-variant-numeric:tabular-nums}
 .kpi-delta{font-size:11px;color:var(--fd-accent)}
 .kpi-spark{height:20px;width:100%;margin-top:4px}
 .table{display:flex;flex-direction:column;height:100%;font-size:11px}
