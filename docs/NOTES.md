@@ -331,6 +331,13 @@ bootstrap falls back to an empty document.
 through the ways its chart can be drawn · `Delete` / `Backspace` removes it · `Esc`
 deselects. Shortcuts are ignored while a text field has focus.
 
+Arrows reach a card **inside a Tabs container** too (2026-08-18). `nudge` looks the
+selection up with `findInList` and writes it back with `updateInList`, both of which
+search one level down, so it no longer matters whether the selected card is on the page
+or in a tab. A tab's nested grid is 12 columns wide as well, so the clamp is the same one.
+Trap 4 below applies in both places equally: nudging down into empty space is applied and
+then undone by the vertical compactor.
+
 `⌘D` duplicates the selected card. `⌘Z` undo, `⇧⌘Z` or `Ctrl+Y` redo. These fire even
 while a text field has focus — the title and description are controlled inputs where
 the browser's native undo cannot restore anything, and intercepting `⌘D` stops the

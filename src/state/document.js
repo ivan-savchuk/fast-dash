@@ -470,17 +470,34 @@ function applyAction(state, action) {
     }
 
     // Keyboard nudge: arrow keys move the selected component one cell.
+    //
+    // `findInList` and `updateInList` both reach one level down, so this works
+    // on a card nested inside a Tabs container as well as on one sitting on the
+    // page. It used to walk `page.components` directly, which meant arrows were
+    // silently dead for anything inside a tab — a hole in the keyboard-first
+    // principle rather than a missing feature.
+    //
+    // A tab's nested grid is 12 columns wide too (NESTED_GRID in TabsBody), so
+    // the same clamp is the right one either way.
+    //
+    // The compaction caveat is also the same in both places: the grid runs the
+    // default vertical compactor, so nudging down into empty space is applied
+    // and then immediately undone. See docs/NOTES.md, trap 4 — it is a package
+    // deal with auto-rearranging, not something this fixes.
     case 'nudge': {
-      if (!state.selectedId) return state
-      const moved = page.components.map((c) => {
-        if (c.id !== state.selectedId) return c
-        const x = clamp(c.layout.x + action.dx, 0, GRID_COLS - c.layout.w)
-        const y = Math.max(0, c.layout.y + action.dy)
-        if (x === c.layout.x && y === c.layout.y) return c
-        return { ...c, layout: { ...c.layout, x, y } }
-      })
-      // Arrow key held against the edge of the canvas: nothing moved.
-      if (moved.every((c, i) => c === page.components[i])) return state
+      const id = state.selectedId
+      if (!id) return state
+      const current = findInList(page.components, id)
+      if (!current) return state
+      const x = clamp(current.layout.x + action.dx, 0, GRID_COLS - current.layout.w)
+      const y = Math.max(0, current.layout.y + action.dy)
+      // Arrow held against the edge: nothing moved, so this must not become an
+      // undo step that appears to do nothing.
+      if (x === current.layout.x && y === current.layout.y) return state
+      const moved = updateInList(page.components, id, (c) => ({
+        ...c,
+        layout: { ...c.layout, x, y },
+      }))
       return { ...state, doc: replaceComponents(state.doc, page.id, moved) }
     }
 

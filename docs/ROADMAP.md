@@ -163,9 +163,10 @@ Shipped so far in Phase 4:
    - **4c** — inner tab switching in the HTML export (a navigation-only script, scoped per
      container), and the export compacts each grid vertically so it matches the canvas.
 
-   Not yet done, deliberately: keyboard nudge of a nested child (arrows are a no-op inside a
-   tab for now), and no tabs-inside-tabs (the picker excludes `tabs` when adding into a tab;
-   the helpers assume one level).
+   Keyboard nudge of a nested child was left out here and **done later** (2026-08-18) —
+   arrows were silently dead inside a tab, which is a hole in the keyboard-first principle
+   rather than a missing feature. Still not done: tabs-inside-tabs (the picker excludes
+   `tabs` when adding into a tab; the helpers assume one level).
 
 6. ~~**Section header (Tier 3 chrome)**~~ — **done** (2026-08-02). A catalog-only type: a
    full-width, short labelled band (its title is the label) to group a page into zones.
