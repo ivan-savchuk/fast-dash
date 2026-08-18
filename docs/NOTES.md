@@ -152,16 +152,23 @@ Sea, land and graticule are fixed dark neutrals rather than theme colours: one d
 works under both the light and the dark theme, and the accent is reserved for the data on
 top of it.
 
-**Maps use `fit: 'xMidYMid slice'`, not the usual stretch** (`mapView` in
+**Maps use `fit: 'xMidYMid meet'`, not the usual stretch** (`mapView` in
 `placeholderArt.js`; both renderers honour `art.fit`). A stretched map reads as wrong in a
 way a stretched bar chart does not — and the practical payoff is that a uniform scale keeps
-a `<circle>` circular, so the markers need no tricks at all. `slice` fills the card and lets
-the land bleed off the edges, which is what a real map does. The cost is cropping: markers
-are kept toward the middle band so a very wide or very tall card still shows most of them.
+a `<circle>` circular, so the markers need no tricks at all. `slice` was tried first and
+was wrong: it scales by the *larger* axis, so on a wide short card it zoomed until only the
+middle third of the viewBox was visible, the land filled every edge and all the sea context
+was gone. `meet` keeps the whole map in view at any card shape. The sea rect and the
+graticule extend far past the viewBox so the leftover space is ocean rather than a void —
+SVG clips to the viewport, not the viewBox, so the overspill is free.
 
-Measured by rasterising the real export markup at four card shapes, stretches 0.34x to
-3.80x: marker width-to-height 1.00-1.01, and 6 or 7 of the 7 markers visible except on the
-narrowest tall card.
+The choropleth's regions are spread across **all six ramp steps, shuffled so no two
+neighbours match**. Filling every region from the top three steps made the card read as a
+wall of one colour instead of as a magnitude scale.
+
+Measured by rasterising the real export markup at several card shapes: marker
+width-to-height 1.00-1.01, and on the 12-wide-by-4 card that exposed the `slice` problem the
+land is now 18% of the area with sea on every side and nothing cropped.
 
 **A caution about verifying SVG.** The tile version used a zero-length round-cap stroke with
 `vector-effect: non-scaling-stroke` for its markers, checked with `rsvg-convert` and found

@@ -98,15 +98,19 @@ const leftAxis = (stroke) => [
 
 const cartesian = (shapes) => ({ viewBox: '0 0 100 60', stretch: true, shapes })
 
-// Maps scale uniformly and crop, rather than stretching to the card's shape.
-// Two reasons: a stretched map reads as wrong in a way a stretched bar chart
-// does not, and — the practical one — under a uniform scale a `<circle>` is
-// still a circle, so the markers need no tricks. `slice` fills the card and
-// lets the land bleed off the edges, which is what a real map does.
+// Maps scale uniformly, rather than stretching to the card's shape: a stretched
+// map reads as wrong in a way a stretched bar chart does not, and under a
+// uniform scale a `<circle>` is still a circle, so the markers need no tricks.
+//
+// `meet`, not `slice`. `slice` scales by the *larger* axis, so on a wide short
+// card it zoomed until only the middle third of the viewBox was visible — the
+// land then filled every edge and all the sea context was gone. `meet` keeps the
+// whole map in view at any card shape; the sea and graticule below extend far
+// past the viewBox so the leftover space is still ocean rather than a void.
 const mapView = (shapes) => ({
   viewBox: '0 0 100 60',
   stretch: true,
-  fit: 'xMidYMid slice',
+  fit: 'xMidYMid meet',
   shapes,
 })
 
@@ -493,16 +497,42 @@ const MAP_SEA = '#0f1620'
 const MAP_LAND = '#1f2a37'
 const MAP_GRID = '#2c3a4b'
 
+// The sea and the grid run far outside the viewBox on purpose. With `meet` the
+// map is scaled to *fit*, so on a card that is much wider or taller than the
+// viewBox there is leftover space on two sides; these make that space ocean and
+// grid rather than an empty void. SVG clips to the viewport, not to the viewBox,
+// so the overspill costs nothing.
+// The sea rect is one shape, so it can be enormous cheaply. The grid lines are
+// one shape each, so they only span the range a card can actually reveal: with
+// `meet` the widest realistic card exposes roughly x -60..160 and the tallest
+// y -60..120, so this covers both with margin.
+const SEA_MIN = -600
+const SEA_MAX = 700
+const GRID_MIN = -170
+const GRID_MAX = 270
+const seaLine = (from, to, vertical) => (v) => [
+  'line',
+  {
+    x1: vertical ? v : from,
+    y1: vertical ? from : v,
+    x2: vertical ? v : to,
+    y2: vertical ? to : v,
+    stroke: MAP_GRID,
+    strokeWidth: 0.6,
+    vectorEffect: 'non-scaling-stroke',
+  },
+]
+
+const gridLines = (start, end, step) => {
+  const out = []
+  for (let v = start; v <= end; v += step) out.push(v)
+  return out
+}
+
 const graticule = [
-  ['rect', { x: -20, y: -20, width: 140, height: 100, fill: MAP_SEA }],
-  ...[10, 30, 50, 70, 90].map((x) => [
-    'line',
-    { x1: x, y1: -20, x2: x, y2: 80, stroke: MAP_GRID, strokeWidth: 0.6, vectorEffect: 'non-scaling-stroke' },
-  ]),
-  ...[8, 22, 38, 52].map((y) => [
-    'line',
-    { x1: -20, y1: y, x2: 120, y2: y, stroke: MAP_GRID, strokeWidth: 0.6, vectorEffect: 'non-scaling-stroke' },
-  ]),
+  ['rect', { x: SEA_MIN, y: SEA_MIN, width: SEA_MAX - SEA_MIN, height: SEA_MAX - SEA_MIN, fill: MAP_SEA }],
+  ...gridLines(GRID_MIN, GRID_MAX, 20).map(seaLine(GRID_MIN, GRID_MAX, true)),
+  ...gridLines(GRID_MIN + 2, GRID_MAX, 16).map(seaLine(GRID_MIN, GRID_MAX, false)),
 ]
 
 const MAP_REGIONS = [
@@ -513,7 +543,11 @@ const MAP_REGIONS = [
   '34,30 50,28 58,32 60,44 46,40',
   '58,32 78,30 88,40 74,52 60,44',
 ]
-const MAP_SHADES = [ACCENT_FILL, ACCENT_MID, ACCENT, ACCENT_MID, ACCENT_FILL, ACCENT]
+// Spread across the whole ramp rather than clustering at the bright end, and
+// shuffled so no two neighbouring regions land on the same step. Filling every
+// region from the top three steps made the card read as a wall of one colour
+// instead of as a magnitude scale.
+const MAP_SHADES = [RAMP[2], RAMP[4], RAMP[0], RAMP[5], RAMP[1], RAMP[3]]
 // Kept toward the middle band on purpose: `slice` crops, so a marker parked near
 // an edge disappears on a very wide or very tall card.
 const MAP_POINTS = [[26, 26], [41, 22], [60, 23], [70, 34], [46, 37], [30, 40], [64, 36]]
