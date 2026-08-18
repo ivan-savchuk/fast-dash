@@ -20,6 +20,7 @@ export default function Toolbar({
   onPickTemplate,
   onMore,
   onPresent,
+  onAddPage,
   count,
   canUndo,
   canRedo,
@@ -171,6 +172,13 @@ export default function Toolbar({
           }}
         >
           + {HIDDEN_TYPES} more…
+        </Button>
+        {/* Adding a page belongs with adding a component — both put something
+            new on the canvas — and it has to live here rather than on the tab
+            strip, because that strip is hidden while there is only one page. */}
+        <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-600" />
+        <Button onClick={onAddPage} title="Add a page to this dashboard">
+          + Page
         </Button>
         <span className="ml-auto text-xs text-gray-400">
           click canvas to add · ⌘D duplicates · arrows move · delete removes · ⌘Z undo

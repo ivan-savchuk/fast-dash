@@ -7,6 +7,12 @@ import { useState } from 'react'
 //
 // Double-click a tab to rename it. The × removes a page — with a confirm if it
 // still holds components, and never on the last remaining page.
+//
+// The strip is only rendered at all once there are two pages (see App), so a
+// single-page dashboard does not pay a whole bar of chrome for a tab it cannot
+// switch away from. "+ Page" therefore cannot live here — there would be no way
+// back to two pages from one — so it sits in the toolbar, which is its single
+// home whatever the page count.
 export default function PageTabs({ pages, activeId, dispatch }) {
   const [editingId, setEditingId] = useState(null)
 
@@ -80,13 +86,6 @@ export default function PageTabs({ pages, activeId, dispatch }) {
           </div>
         )
       })}
-      <button
-        className="shrink-0 rounded-sm border border-gray-300 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-        onClick={() => dispatch({ type: 'addPage' })}
-        title="Add page"
-      >
-        + Page
-      </button>
     </div>
   )
 }

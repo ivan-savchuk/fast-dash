@@ -303,6 +303,7 @@ export default function App() {
             onPickTemplate={handlePickTemplate}
             onMore={setPicker}
             onPresent={startPresenting}
+            onAddPage={() => dispatch({ type: 'addPage' })}
           />
 
           {error && (
@@ -314,7 +315,13 @@ export default function App() {
             </div>
           )}
 
-          <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
+          {/* Three stacked bars of chrome stood between the window and the
+              canvas, and one of them was a tab strip for a dashboard with a
+              single page — a row you cannot switch away from. It appears once
+              there is somewhere to switch to. */}
+          {doc.pages.length > 1 && (
+            <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
+          )}
         </>
       )}
 
