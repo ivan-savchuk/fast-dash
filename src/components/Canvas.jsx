@@ -259,36 +259,51 @@ function Canvas({
         onClick={readOnly ? undefined : handleBackgroundClick}
       >
         {components.length === 0 && readOnly && (
-          <p className="px-1 pt-6 text-sm text-gray-400">This page has no components.</p>
+          <div className="flex min-h-[60vh] items-center justify-center px-4">
+            <p className="text-sm text-gray-400">This page has no components.</p>
+          </div>
         )}
-        {components.length === 0 && !readOnly && (
+
+        {/* A page with nothing on it and no gallery to show is a whole screen of
+            empty, and one line of grey text pinned to the top left of it reads
+            as a stray label rather than as an invitation. Centred, it sits where
+            the eye already is. The block is still inside the click region, so
+            clicking the message itself opens the picker like any other empty
+            spot. */}
+        {components.length === 0 && !readOnly && !docEmpty && (
+          <div className="flex min-h-[60vh] items-center justify-center px-4">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              This page is empty. Click anywhere to add a component, or press 1–5.
+            </p>
+          </div>
+        )}
+
+        {components.length === 0 && !readOnly && docEmpty && (
           <div className="mx-auto max-w-4xl px-1 pt-8 pb-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {docEmpty
-                ? 'Start from a template — or click anywhere below to place your first component.'
-                : 'This page is empty. Click anywhere below to add a component, or press 1–5.'}
+            {/* Centred over the three cards it introduces, rather than hanging
+                off their left edge. */}
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Start from a template — or click anywhere to place your first component.
             </p>
 
-            {/* Only when the whole document is empty: picking a template replaces
-                it, and that must not be one stray click away from a dashboard
-                that already has pages in it. */}
-            {docEmpty && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {TEMPLATE_LIST.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => onPickTemplate(template.id)}
-                    className="cursor-pointer rounded-sm border border-gray-200 bg-white p-3 text-left hover:border-[var(--fd-accent)] dark:border-gray-700 dark:bg-gray-800"
-                  >
-                    <TemplateThumb preview={template.preview} />
-                    <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
-                      {template.name}
-                    </div>
-                    <div className="text-xs text-gray-400">{template.summary}</div>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* This branch only runs when the whole document is empty: picking
+                a template replaces it, and that must not be one stray click away
+                from a dashboard that already has pages in it. */}
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {TEMPLATE_LIST.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => onPickTemplate(template.id)}
+                  className="cursor-pointer rounded-sm border border-gray-200 bg-white p-3 text-left hover:border-[var(--fd-accent)] dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <TemplateThumb preview={template.preview} />
+                  <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    {template.name}
+                  </div>
+                  <div className="text-xs text-gray-400">{template.summary}</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
