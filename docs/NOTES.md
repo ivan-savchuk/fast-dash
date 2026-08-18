@@ -73,6 +73,13 @@ from the page you are looking at is indistinguishable from a deleted one. `findI
 `removeInList` reach one level down, so a card inside a Tabs container can be sent out to
 a page of its own and arrives as an ordinary top-level card.
 
+The `→` control appears **only on the selected card**, and only above one page (Ivan's
+call, 2026-08-18 — on every card it was a fourth control competing with the title for room
+in every header). This is not the hover-hiding that was tried and reverted for duplicate
+and delete: those apply to any card you point at and get used constantly, whereas moving a
+card happens a handful of times per dashboard and can only ever act on the selection —
+`⌘⌥←`/`⌘⌥→` needs one too. So gating it hides nothing that was usable.
+
 `movePage` reorders, exactly the shape of `moveFilter`. It is driven by **dragging a tab**
 (Ivan's call, 2026-08-18); a pair of `‹` `›` buttons on the active tab shipped first and
 was too small to aim at, and only ever moved a page one slot per click.

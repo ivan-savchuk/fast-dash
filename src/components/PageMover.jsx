@@ -10,8 +10,12 @@ import Popover from './Popover.jsx'
 //
 // It lives in the card header for the same reason the variant menu does — the
 // card itself is the drag handle, so a control on an edge would sit exactly
-// where you grab to move or resize. And it is rendered only once there are two
-// pages, so a single-page dashboard pays no header space for it.
+// where you grab to move or resize.
+//
+// It appears only on the **selected** card, and only once there are two pages
+// (both decided in Card). A `→` on every header was a fourth control competing
+// with the title for room, for something you do a handful of times per
+// dashboard.
 //
 // `Popover` owns the portal, the backdrop and Escape; this file owns the list.
 
@@ -35,7 +39,7 @@ export default function PageMover({ id, pages, activePageId, dispatch }) {
         aria-expanded={open}
         title="Move this card to another page (⌘⌥← / ⌘⌥→)"
         aria-label="Move to another page"
-        className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-sm leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+        className="no-drag flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm text-xs leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-100"
       >
         →
       </button>
