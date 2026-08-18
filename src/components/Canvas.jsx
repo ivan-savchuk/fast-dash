@@ -5,7 +5,7 @@ import 'react-grid-layout/css/styles.css'
 // of the corner of the whole canvas.
 import 'react-resizable/css/styles.css'
 
-import { useMemo, useRef } from 'react'
+import { memo, useMemo, useRef } from 'react'
 
 import Card from './Card.jsx'
 import { GRID_COLS, GRID_ROW_HEIGHT, tabChildIds } from '../state/document.js'
@@ -85,7 +85,13 @@ function TemplateThumb({ preview }) {
   )
 }
 
-export default function Canvas({
+// memo: the drop-target highlight lives on App, so every time a dragged card
+// crosses onto or off a page tab, App re-renders. Without this that would
+// re-render the grid in the middle of a react-grid-layout drag. Its props are
+// all primitives, reducer-stable values or stable callbacks, so the memo holds.
+export default memo(Canvas)
+
+function Canvas({
   components,
   selectedId,
   activeTabs,
@@ -98,6 +104,7 @@ export default function Canvas({
   onEmptyClick,
   onAddInto,
   onPickTemplate,
+  onDropTarget,
 }) {
   // `mounted` is false until the container has been measured. Rendering the
   // grid before that places cards using a guessed 1280px width.
@@ -139,6 +146,74 @@ export default function Canvas({
     // e.g. one started before the pointer entered a card.
     window.getSelection()?.removeAllRanges()
     dispatch({ type: 'setLayout', layout: next })
+  }
+
+  // --- dragging a card onto a page tab ---
+  //
+  // Drag a card up to the page strip and drop it on another page's tab and it
+  // goes there. This is what replaced a permanent control in every card header.
+  //
+  // react-grid-layout owns the pointer during a card drag, so this hangs off its
+  // own callbacks rather than window listeners. onDragStart / onDrag /
+  // onDragStop all hand back `(layout, oldItem, newItem, placeholder, e, node)`,
+  // so the mouse event — and with it the pointer position — arrives for free,
+  // and `newItem.i` is the dragged card's id at the moment of the drop.
+  //
+  // Deciding in onDragStop rather than on a mouseup of our own is the point.
+  // The library fires that callback from inside its own mouseup handler, so a
+  // window listener here would race it; taking the library's moment means there
+  // is no ordering question to get wrong.
+  const tabRects = useRef([])
+  const dropTarget = useRef(null)
+
+  // onDrag fires on every mousemove, so the highlight is pushed up to App only
+  // when the answer changes — otherwise this re-renders the app shell
+  // continuously for the length of a drag.
+  const setDrop = (id) => {
+    if (dropTarget.current === id) return
+    dropTarget.current = id
+    onDropTarget?.(id)
+  }
+
+  const pageUnder = (e) => {
+    const x = e?.clientX
+    const y = e?.clientY
+    if (x == null || y == null) return null
+    const hit = tabRects.current.find(
+      (t) => x >= t.rect.left && x <= t.rect.right && y >= t.rect.top && y <= t.rect.bottom,
+    )
+    return hit?.id ?? null
+  }
+
+  const handleDragStart = () => {
+    // Measured once. The strip cannot move during a card drag — the canvas
+    // scrolls on its own and the strip does not — and reading layout on every
+    // mousemove mid-drag is exactly what makes a drag feel heavy.
+    //
+    // The active page is filtered out here, so it is never a target and never
+    // lights up: dropping a card on the page it is already on is an ordinary
+    // move, not a page change.
+    tabRects.current = [...document.querySelectorAll('[data-page-tab]')]
+      .map((el) => ({ id: el.dataset.pageTab, rect: el.getBoundingClientRect() }))
+      .filter((t) => t.id && t.id !== activePageId)
+    setDrop(null)
+  }
+
+  const handleDrag = (_layout, _old, _item, _placeholder, e) => setDrop(pageUnder(e))
+
+  const handleDragStop = (next, _old, item, _placeholder, e) => {
+    const target = pageUnder(e)
+    setDrop(null)
+    tabRects.current = []
+    if (target) {
+      // The card is leaving this page, so the arrangement this drag produced
+      // here is about to stop existing. Committing it would add a second,
+      // pointless undo step describing a page the card is no longer on.
+      window.getSelection()?.removeAllRanges()
+      dispatch({ type: 'moveToPage', id: item?.i, pageId: target })
+      return
+    }
+    commitLayout(next)
   }
 
   return (
@@ -228,7 +303,9 @@ export default function Canvas({
             gridConfig={GRID_CONFIG}
             dragConfig={readOnly ? LOCKED_DRAG : DRAG_CONFIG}
             resizeConfig={readOnly ? LOCKED_RESIZE : RESIZE_CONFIG}
-            onDragStop={commitLayout}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragStop={handleDragStop}
             onResizeStop={commitLayout}
           >
             {components.map((c) => {

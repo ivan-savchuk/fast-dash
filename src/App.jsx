@@ -42,6 +42,11 @@ export default function App() {
       return true
     }
   })
+  // Which page tab a dragged card is currently over, if any. Lives here because
+  // the tab strip and the canvas are siblings: Canvas decides it, PageTabs draws
+  // it. Canvas only reports changes, so this settles rather than churning.
+  const [dropPageId, setDropPageId] = useState(null)
+
   // Present mode: the dashboard as a viewer sees it, live — the same view the
   // HTML export gives you, without the download and the tab switch in the
   // middle of a conversation. It is a mode rather than a preference, so it is
@@ -252,14 +257,15 @@ export default function App() {
     }
   }
 
-  function handlePickTemplate(templateId) {
+  // useCallback so the memo on Canvas holds — see the note there.
+  const handlePickTemplate = useCallback((templateId) => {
     const doc = buildTemplate(templateId)
     if (!doc) return
     // No confirmation prompt: this is undoable like any other change, and a
     // dialog in the way of "show me what this looks like" is the wrong trade.
     dispatch({ type: 'load', doc })
     setError(null)
-  }
+  }, [])
 
   function handleNew() {
     // Every page, not just the one on screen. Standing on an empty second page
@@ -336,7 +342,12 @@ export default function App() {
               single page — a row you cannot switch away from. It appears once
               there is somewhere to switch to. */}
           {doc.pages.length > 1 && (
-            <PageTabs pages={doc.pages} activeId={activePage.id} dispatch={dispatch} />
+            <PageTabs
+              pages={doc.pages}
+              activeId={activePage.id}
+              dropTargetId={dropPageId}
+              dispatch={dispatch}
+            />
           )}
         </>
       )}
@@ -378,6 +389,7 @@ export default function App() {
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}
             onPickTemplate={handlePickTemplate}
+            onDropTarget={setDropPageId}
           />
         </main>
       </div>

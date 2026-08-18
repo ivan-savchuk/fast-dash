@@ -73,6 +73,32 @@ from the page you are looking at is indistinguishable from a deleted one. `findI
 `removeInList` reach one level down, so a card inside a Tabs container can be sent out to
 a page of its own and arrives as an ordinary top-level card.
 
+**Drag a card onto a page tab and it goes there** (2026-08-18). This hangs off
+react-grid-layout's own callbacks rather than window listeners, because the library owns
+the pointer during a card drag: `onDragStart` / `onDrag` / `onDragStop` all hand back
+`(layout, oldItem, newItem, placeholder, e, node)`, so the mouse event arrives for free and
+`newItem.i` is the dragged card's id at the moment of the drop.
+
+**Deciding in `onDragStop` rather than on a mouseup of our own is the whole trick.** The
+library fires that callback from inside its own mouseup handler, so a window listener would
+race it; taking the library's moment removes the ordering question entirely.
+
+- The tab rects are snapshotted at `onDragStart`, with the active page filtered out — it is
+  never a target and never lights up, because dropping a card on the page it is already on
+  is an ordinary move. Reading layout on every mousemove is what makes a drag feel heavy.
+- On a page drop the `setLayout` is **skipped**. The card is leaving, so the arrangement
+  that drag produced here is about to stop existing; committing it would add a second,
+  pointless undo step describing a page the card is no longer on.
+- `onDrag` fires per mousemove, so the highlight is pushed up to App only when the answer
+  changes. **`Canvas` is `memo`'d** for this: the drop-target state lives on App, so
+  without the memo every crossing would re-render the grid in the middle of an rgl drag.
+  That is also why `handlePickTemplate` is now a `useCallback`.
+
+**Nested cards are deliberately not wired to this.** A tab's grid sits inside an
+`overflow-auto` container, so dragging a child out toward the strip clips it under the
+container's edge — a poor gesture rather than a missing one. The `→` menu is their route,
+which is one reason it stays.
+
 The `→` control appears **only on the selected card**, and only above one page (Ivan's
 call, 2026-08-18 — on every card it was a fourth control competing with the title for room
 in every header). This is not the hover-hiding that was tried and reverted for duplicate

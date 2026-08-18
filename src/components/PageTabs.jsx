@@ -55,7 +55,7 @@ export function dropIndex(rects, x, from) {
   return Math.min(Math.max(slot, 0), rects.length - 1)
 }
 
-export default function PageTabs({ pages, activeId, dispatch }) {
+export default function PageTabs({ pages, activeId, dropTargetId, dispatch }) {
   const [editingId, setEditingId] = useState(null)
   // { id, from, to } while a tab is being dragged, otherwise null.
   const [drag, setDrag] = useState(null)
@@ -172,7 +172,12 @@ export default function PageTabs({ pages, activeId, dispatch }) {
           atTarget && drag.from > drag.to ? marker : null,
           <div
             key={page.id}
-            data-page-tab
+            // Canvas reads these at card-drag start to find the drop targets.
+            // A data attribute rather than a ref registry: the strip and the
+            // canvas are siblings, and one query at drag start is cheaper than
+            // wiring a shared collection through App for something that is only
+            // ever read at one instant.
+            data-page-tab={page.id}
             // Alt+arrow reorders from the keyboard. Plain arrows are left alone:
             // outside a field they nudge the selected card on the canvas.
             onKeyDown={(e) => {
@@ -187,6 +192,11 @@ export default function PageTabs({ pages, activeId, dispatch }) {
             }}
             className={`flex shrink-0 items-center rounded-sm border text-sm ${
               drag?.id === page.id ? 'opacity-40' : ''
+            } ${
+              // A card is being dragged over this tab and will land here.
+              dropTargetId === page.id
+                ? 'ring-2 ring-[var(--fd-accent)] ring-offset-1 dark:ring-offset-gray-800'
+                : ''
             } ${
               active
                 ? 'border-[var(--fd-accent)] bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100'
