@@ -124,6 +124,11 @@ Deliberately not built: Sankey, chord, radar, word cloud, anything 3D, real data
 connections, accounts, and collaboration. Leaving them out is a feature — they signal "I
 discovered a chart type", not "I have a question to answer".
 
+## Licence
+
+[MIT](LICENSE). Use it, fork it, ship it inside your company — the point is that nobody has
+to depend on one person to keep it alive.
+
 ## Docs
 
 - [`docs/SPEC.md`](docs/SPEC.md) — what the tool is, the component set, the JSON schema, and
