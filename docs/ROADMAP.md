@@ -352,10 +352,29 @@ good as it stands (2026-08-16).
 
 ---
 
-## Phase 5 — rollout
+## Phase 5 — rollout — *current*
 
 Pilot with two or three departments. Weekly feedback. Then internal announcement.
-Ship as a static build on an internal host or GitHub Pages.
+
+**Hosting decided (2026-08-19): GitHub Pages, public repo.** Free on any plan for a public
+repo; a private one would need a paid tier. `.github/workflows/deploy.yml` builds on every
+push to `main` and publishes `dist`, so the site is always built from source on a clean
+checkout rather than from a laptop.
+
+Two things that make the public-repo choice safe, worth having to hand when someone asks:
+the code carries no credentials, no internal data and no company names, and a user's
+dashboards live in their own browser's `localStorage` and are never uploaded — the JSON and
+HTML exports are local downloads. The only residual objection is that the tool itself is
+reachable from the public internet, which an internal static host would avoid with a
+byte-identical build.
+
+Still not run, and still the point of this phase — all three were marked met by owner
+decision without the test that was meant to catch the risk:
+
+- the unprompted 60-second test with someone who has never seen the tool (Phase 2 gate);
+- a BI developer reading a real HTML export **without narration** (Phase 3 gate) — the
+  moment it needs explaining, it has failed;
+- using it in a real meeting with a real stakeholder (the Phase 4 precondition).
 
 ---
 

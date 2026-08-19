@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Per-machine Claude Code permissions. `.claude/settings.json` is shared
+# settings and can be committed; this one is local to whoever is working.
+.claude/settings.local.json

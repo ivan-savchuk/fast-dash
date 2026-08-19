@@ -1,0 +1,70 @@
+# Build the static site and publish it to GitHub Pages.
+#
+# There is no backend and nothing to configure at runtime, so a deploy is just
+# `npm run build` and the three files it produces. `vite.config.js` sets
+# `base: './'`, which is what lets the same build run from a project subpath
+# (ivan-savchuk.github.io/fast-dash/) without a base-path step here.
+#
+# `dist` is gitignored, so the published site is always built from source on a
+# clean checkout rather than from whatever happened to be on someone's laptop.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # So a deploy can be re-run from the Actions tab without an empty commit.
+  workflow_dispatch:
+
+# The least the Pages deployment needs: read the code, write the site, and mint
+# the OIDC token deploy-pages uses to prove the deploy came from this workflow.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. `cancel-in-progress: false` on purpose — a queued deploy
+# should still land rather than being dropped because a newer push arrived while
+# it was mid-flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Pinned to the version this is developed against rather than `lts/*`,
+          # so CI cannot start building on a different runtime than the one the
+          # build was last verified on.
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it installs exactly what
+      # package-lock.json pins and fails if the two have drifted.
+      - run: npm ci
+
+      # oxlint does not fail on warnings, and the repo carries nine accepted
+      # ones, so this gates on errors only — which is what should stop a deploy.
+      - run: npm run lint
+
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
