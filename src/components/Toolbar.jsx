@@ -67,12 +67,20 @@ export default function Toolbar({
             {/* Export is what the tool is for, so it sits near the top even
                 folded into this menu. Its two files stay a step to the side. */}
             <Submenu label="Export" width="w-56">
-              <MenuItem onClick={() => { close(); onExportHtml() }}>
-                HTML — the hand-over file
-              </MenuItem>
-              <MenuItem onClick={() => { close(); onExport() }}>
-                JSON — the editable spec
-              </MenuItem>
+              <button
+                className="block w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => { close(); onExportHtml() }}
+              >
+                <span className="block text-sm text-gray-800 dark:text-gray-100">HTML</span>
+                <span className="block text-xs text-gray-400">The hand-over file</span>
+              </button>
+              <button
+                className="block w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => { close(); onExport() }}
+              >
+                <span className="block text-sm text-gray-800 dark:text-gray-100">JSON</span>
+                <span className="block text-xs text-gray-400">The editable spec</span>
+              </button>
             </Submenu>
 
             <button
