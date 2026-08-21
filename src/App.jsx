@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import Canvas from './components/Canvas.jsx'
 import FilterRail from './components/FilterRail.jsx'
+import KeyboardShortcuts from './components/KeyboardShortcuts.jsx'
 import PageTabs from './components/PageTabs.jsx'
 import QuickPicker from './components/QuickPicker.jsx'
 import Toolbar from './components/Toolbar.jsx'
@@ -52,6 +53,11 @@ export default function App() {
   // middle of a conversation. It is a mode rather than a preference, so it is
   // deliberately not persisted and not part of the document.
   const [presenting, setPresenting] = useState(false)
+
+  // The keyboard-shortcuts reference card. Like present mode it is a transient
+  // overlay, not a preference — the keydown handler below hands it the keyboard
+  // while it is open so shortcuts do not fire behind it.
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   // Entering clears the selection: a selection ring is editing chrome, and
   // there is nothing selected from a viewer's point of view.
@@ -134,6 +140,17 @@ export default function App() {
       // The quick picker owns the keyboard while it is open — otherwise 1-5
       // would both pick from the menu and add a second component below.
       if (picker) return
+
+      // The shortcuts card owns the keyboard while it is open — otherwise the
+      // keys it documents would fire against the canvas behind it. Only Escape,
+      // which closes it, gets through.
+      if (shortcutsOpen) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShortcutsOpen(false)
+        }
+        return
+      }
 
       // Present mode is read-only, so it owns the keyboard outright: nothing
       // can add, move, delete or undo while it is on. Only leaving it.
@@ -246,7 +263,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, picker, presenting, startPresenting])
+  }, [selectedId, picker, presenting, shortcutsOpen, startPresenting])
 
   async function handleImportFile(file) {
     try {
@@ -325,6 +342,7 @@ export default function App() {
             onPickTemplate={handlePickTemplate}
             onMore={setPicker}
             onPresent={startPresenting}
+            onShowShortcuts={() => setShortcutsOpen(true)}
             onAddPage={() => dispatch({ type: 'addPage' })}
           />
 
@@ -416,6 +434,8 @@ export default function App() {
           }}
         />
       )}
+
+      {shortcutsOpen && <KeyboardShortcuts onClose={() => setShortcutsOpen(false)} />}
     </div>
   )
 }
