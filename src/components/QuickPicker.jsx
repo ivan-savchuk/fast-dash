@@ -67,9 +67,15 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
     <>
       {/* Anything outside the menu dismisses it. */}
       <div className="fixed inset-0 z-40" onMouseDown={onClose} />
+      {/* This picker is neutral chrome, not part of the dashboard, so it must
+          not take the scheme accent. The global focus ring (index.css) is drawn
+          in var(--fd-accent); pinning that variable to grey on the picker root
+          keeps the search box's focus line neutral whatever scheme is chosen.
+          Set inline rather than in a class because the accent rule is unlayered
+          and outranks any Tailwind utility regardless of specificity. */}
       <div
         className="fixed z-50 overflow-hidden rounded-sm border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-        style={{ left, top, width: WIDTH }}
+        style={{ left, top, width: WIDTH, '--fd-accent': '#9ca3af' }}
         role="menu"
       >
         <input
