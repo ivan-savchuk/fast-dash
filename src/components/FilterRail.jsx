@@ -1,4 +1,5 @@
 import { FILTER_TYPES } from '../state/document.js'
+import { useT } from '../i18n.jsx'
 
 // Superset's collapsible filter rail on the left. Holds the dashboard-level
 // filters: a label and a control type each. They carry no data — the grayscale
@@ -13,6 +14,7 @@ import { FILTER_TYPES } from '../state/document.js'
 // slide smoothly with it instead of jerking. `overflow-hidden` plus a fixed
 // inner width keeps the content from squishing while the width animates.
 export default function FilterRail({ filters, open, onToggle, readOnly, dispatch }) {
+  const t = useT()
   return (
     <aside
       data-tour="filters"
@@ -23,12 +25,12 @@ export default function FilterRail({ filters, open, onToggle, readOnly, dispatch
       {open ? (
         <div className="flex h-full w-60 flex-col overflow-y-auto">
           <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2 dark:border-gray-700">
-            <span className="text-[10px] tracking-wide text-gray-400 uppercase">Filters</span>
+            <span className="text-[10px] tracking-wide text-gray-400 uppercase">{t('filters.title', 'Filters')}</span>
             <button
               className="flex size-6 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
               onClick={onToggle}
-              title="Hide filters"
-              aria-label="Hide filters"
+              title={t('filters.hide', 'Hide filters')}
+              aria-label={t('filters.hide', 'Hide filters')}
             >
               ◂
             </button>
@@ -37,7 +39,7 @@ export default function FilterRail({ filters, open, onToggle, readOnly, dispatch
           <div className="flex flex-col gap-3 px-3 py-3">
             {filters.length === 0 && !readOnly && (
               <p className="text-xs text-gray-400">
-                No filters yet. Add the dashboard-level filters people will use.
+                {t('filters.empty', 'No filters yet. Add the dashboard-level filters people will use.')}
               </p>
             )}
 
@@ -59,7 +61,7 @@ export default function FilterRail({ filters, open, onToggle, readOnly, dispatch
                 className="mt-1 rounded-sm border border-dashed border-gray-300 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
                 onClick={() => dispatch({ type: 'addFilter' })}
               >
-                + add filter
+                {t('filters.add', '+ add filter')}
               </button>
             )}
           </div>
@@ -69,14 +71,14 @@ export default function FilterRail({ filters, open, onToggle, readOnly, dispatch
         <button
           className="group flex h-full w-11 flex-col items-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700"
           onClick={onToggle}
-          title="Show filters"
-          aria-label="Show filters"
+          title={t('filters.show', 'Show filters')}
+          aria-label={t('filters.show', 'Show filters')}
         >
           <span className="flex size-8 items-center justify-center rounded-sm bg-gray-800 text-sm text-white group-hover:bg-gray-900 dark:bg-gray-600 dark:group-hover:bg-gray-500">
             »
           </span>
           <span className="text-[11px] font-medium tracking-wide text-gray-600 uppercase [writing-mode:vertical-rl] dark:text-gray-300">
-            Filters{filters.length > 0 ? ` · ${filters.length}` : ''}
+            {t('filters.title', 'Filters')}{filters.length > 0 ? ` · ${filters.length}` : ''}
           </span>
         </button>
       )}
@@ -87,6 +89,7 @@ export default function FilterRail({ filters, open, onToggle, readOnly, dispatch
 // Reorder is by the up/down buttons or Alt+Arrow. Drag-and-drop was tried and
 // removed — native HTML5 DnD felt laggy in a narrow rail and was not worth it.
 function FilterRow({ filter, readOnly, dispatch, isFirst, isLast, onUp, onDown }) {
+  const t = useT()
   // Present mode: a viewer sees the filter's name and the shape of its control,
   // which is exactly what the HTML export shows. The label field, the type
   // select and the reorder buttons are edits, so they are not rendered.
@@ -121,14 +124,14 @@ function FilterRow({ filter, readOnly, dispatch, isFirst, isLast, onUp, onDown }
           className="min-w-0 flex-1 bg-transparent text-xs font-medium text-gray-700 outline-none focus:bg-gray-50 dark:text-gray-200 dark:focus:bg-gray-700"
           value={filter.label}
           onChange={(e) => dispatch({ type: 'renameFilter', id: filter.id, label: e.target.value })}
-          aria-label="Filter label"
+          aria-label={t('filters.labelAria', 'Filter label')}
         />
         <button
           className="shrink-0 px-0.5 text-xs text-gray-300 enabled:hover:text-gray-700 disabled:opacity-30"
           onClick={onUp}
           disabled={isFirst}
-          title="Move up"
-          aria-label="Move filter up"
+          title={t('filters.upAria', 'Move filter up')}
+          aria-label={t('filters.upAria', 'Move filter up')}
         >
           ↑
         </button>
@@ -136,15 +139,15 @@ function FilterRow({ filter, readOnly, dispatch, isFirst, isLast, onUp, onDown }
           className="shrink-0 px-0.5 text-xs text-gray-300 enabled:hover:text-gray-700 disabled:opacity-30"
           onClick={onDown}
           disabled={isLast}
-          title="Move down"
-          aria-label="Move filter down"
+          title={t('filters.downAria', 'Move filter down')}
+          aria-label={t('filters.downAria', 'Move filter down')}
         >
           ↓
         </button>
         <button
           className="shrink-0 px-1 text-xs text-gray-300 hover:text-gray-700"
           onClick={() => dispatch({ type: 'removeFilter', id: filter.id })}
-          aria-label="Remove filter"
+          aria-label={t('filters.removeAria', 'Remove filter')}
         >
           ✕
         </button>
@@ -154,11 +157,13 @@ function FilterRow({ filter, readOnly, dispatch, isFirst, isLast, onUp, onDown }
         className="mb-2 w-full rounded-sm border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-600 outline-none focus:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
         value={filter.type}
         onChange={(e) => dispatch({ type: 'setFilterType', id: filter.id, filterType: e.target.value })}
-        aria-label="Filter type"
+        aria-label={t('filters.typeAria', 'Filter type')}
       >
+        {/* The value stays the English type id — that is what the document
+            stores and exports — while only the visible text is translated. */}
         {FILTER_TYPES.map((type) => (
           <option key={type} value={type}>
-            {type}
+            {t(`filterType.${type}`, type)}
           </option>
         ))}
       </select>

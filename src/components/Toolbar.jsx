@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { CATALOG_ORDER, COMPONENT_TYPES, TYPE_ORDER } from './registry.jsx'
 import { DEFAULT_THEME, THEMES } from '../state/document.js'
 import { TEMPLATE_LIST } from '../templates.js'
+import { LANGS, componentCount, useT, useTypeName } from '../i18n.jsx'
 
 // How many types the five buttons do not show. Computed rather than written
 // down, so adding a type to the catalog updates the label by itself.
@@ -24,11 +25,15 @@ export default function Toolbar({
   onStartTour,
   menuOpen,
   onMenuOpen,
+  lang,
+  onSetLang,
   onAddPage,
   count,
   canUndo,
   canRedo,
 }) {
+  const t = useT()
+  const typeName = useTypeName()
   const fileInput = useRef(null)
   // The open/closed state of the one Options menu lives in App now, so the tour
   // can pop it open and step through the items inside it.
@@ -50,16 +55,14 @@ export default function Toolbar({
           aria-label="Dashboard title"
         />
         <div className="ml-auto flex shrink-0 items-center gap-3">
-          <span className="text-xs text-gray-400">
-            {count} {count === 1 ? 'component' : 'components'}
-          </span>
+          <span className="text-xs text-gray-400">{componentCount(lang, count)}</span>
           <span className="h-5 w-px bg-gray-200 dark:bg-gray-600" />
           {/* One menu now holds everything that is not adding a component:
               the document actions, editing, presenting, how it looks, what to
               start from, and the reference card. The header used to carry five
               controls; it carries one, which is the point. */}
           <Menu
-            label="Options"
+            label={t('menu.options', 'Options')}
             anchor="options"
             panelAnchor="opt-menu"
             open={open}
@@ -67,24 +70,24 @@ export default function Toolbar({
             onClose={close}
           >
             {/* The two things you reach for first: start over, then hand off. */}
-            <MenuItem onClick={() => { close(); onNew() }}>New dashboard</MenuItem>
+            <MenuItem onClick={() => { close(); onNew() }}>{t('menu.new', 'New dashboard')}</MenuItem>
 
             {/* Export is what the tool is for, so it sits near the top even
                 folded into this menu. Its two files stay a step to the side. */}
-            <Submenu label="Export" width="w-56" anchor="opt-export">
+            <Submenu label={t('menu.export', 'Export')} width="w-56" anchor="opt-export">
               <button
                 className="block w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => { close(); onExportHtml() }}
               >
                 <span className="block text-sm text-gray-800 dark:text-gray-100">HTML</span>
-                <span className="block text-xs text-gray-400">The hand-over file</span>
+                <span className="block text-xs text-gray-400">{t('menu.export.html.sub', 'The hand-over file')}</span>
               </button>
               <button
                 className="block w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => { close(); onExport() }}
               >
                 <span className="block text-sm text-gray-800 dark:text-gray-100">JSON</span>
-                <span className="block text-xs text-gray-400">The editable spec</span>
+                <span className="block text-xs text-gray-400">{t('menu.export.json.sub', 'The editable spec')}</span>
               </button>
             </Submenu>
 
@@ -92,36 +95,36 @@ export default function Toolbar({
               className="block w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => { close(); fileInput.current?.click() }}
             >
-              <span className="block text-sm text-gray-800 dark:text-gray-100">Import…</span>
-              <span className="block text-xs text-gray-400">Open a saved JSON spec</span>
+              <span className="block text-sm text-gray-800 dark:text-gray-100">{t('menu.import', 'Import…')}</span>
+              <span className="block text-xs text-gray-400">{t('menu.import.sub', 'Open a saved JSON spec')}</span>
             </button>
 
             <Divider />
 
             {/* Undo and redo carry their shortcuts, so the menu doubles as the
                 place you learn them. Disabled when there is no history. */}
-            <Submenu label="Edit" width="w-44">
+            <Submenu label={t('menu.edit', 'Edit')} width="w-44">
               <MenuItem
                 onClick={() => { close(); dispatch({ type: 'undo' }) }}
                 disabled={!canUndo}
                 shortcut="⌘Z"
               >
-                Undo
+                {t('menu.undo', 'Undo')}
               </MenuItem>
               <MenuItem
                 onClick={() => { close(); dispatch({ type: 'redo' }) }}
                 disabled={!canRedo}
                 shortcut="⇧⌘Z"
               >
-                Redo
+                {t('menu.redo', 'Redo')}
               </MenuItem>
             </Submenu>
 
             <MenuItem onClick={() => { close(); onPresent() }} shortcut="P">
-              Present
+              {t('menu.present', 'Present')}
             </MenuItem>
 
-            <Submenu label="Colour scheme" width="w-56">
+            <Submenu label={t('menu.colour', 'Colour scheme')} width="w-56">
               {THEMES.map((theme) => {
                 const current = (doc.theme ?? DEFAULT_THEME) === theme.id
                 return (
@@ -145,7 +148,7 @@ export default function Toolbar({
               })}
             </Submenu>
 
-            <Submenu label="Start from template" width="w-64">
+            <Submenu label={t('menu.template', 'Start from template')} width="w-64">
               {TEMPLATE_LIST.map((template) => (
                 <button
                   key={template.id}
@@ -162,16 +165,32 @@ export default function Toolbar({
             </Submenu>
 
             <MenuItem onClick={() => { close(); onStartTour() }}>
-              Take a tour
+              {t('menu.tour', 'Take a tour')}
             </MenuItem>
             <MenuItem onClick={() => { close(); onShowShortcuts() }}>
-              Keyboard shortcuts
+              {t('menu.shortcuts', 'Keyboard shortcuts')}
             </MenuItem>
 
-            {/* Light/dark is a preference about this screen, not the document,
-                so it sits apart at the very bottom. */}
+            {/* Language and light/dark are preferences about this screen, not
+                the document — they change nothing in the exported JSON — so they
+                sit apart at the very bottom. Language names show in their own
+                language (endonyms), so they read the same whichever is active. */}
             <Divider />
-            <MenuItem onClick={onToggleTheme}>{dark ? '☀  Light mode' : '☾  Dark mode'}</MenuItem>
+            <Submenu label={t('menu.language', 'Language')} width="w-44">
+              {LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => { close(); onSetLang(l.id) }}
+                >
+                  <span>{l.name}</span>
+                  {lang === l.id && <span className="text-xs text-gray-400">✓</span>}
+                </button>
+              ))}
+            </Submenu>
+            <MenuItem onClick={onToggleTheme}>
+              {dark ? t('menu.light', '☀  Light mode') : t('menu.dark', '☾  Dark mode')}
+            </MenuItem>
           </Menu>
         </div>
         <input
@@ -193,7 +212,7 @@ export default function Toolbar({
         <span className="flex items-center gap-1.5" data-tour="add">
           {TYPE_ORDER.map((type) => (
             <Button key={type} onClick={() => dispatch({ type: 'add', componentType: type })}>
-              {COMPONENT_TYPES[type].label}
+              {typeName(type)}
               <kbd className="ml-2 text-xs text-gray-400">{COMPONENT_TYPES[type].key}</kbd>
             </Button>
           ))}
@@ -211,14 +230,14 @@ export default function Toolbar({
             onMore({ clientX: r.left, clientY: r.bottom + 4 })
           }}
         >
-          + {HIDDEN_TYPES} more…
+          + {HIDDEN_TYPES} {t('add.more', 'more…')}
         </Button>
         {/* Adding a page belongs with adding a component — both put something
             new on the canvas — and it has to live here rather than on the tab
             strip, because that strip is hidden while there is only one page. */}
         <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-600" />
         <Button dataTour="page" onClick={onAddPage} title="Add a page to this dashboard">
-          + Page
+          + {t('add.page', 'Page')}
         </Button>
       </div>
     </header>

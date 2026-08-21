@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Popover from './Popover.jsx'
 import { variantsFor } from './placeholderArt.js'
+import { useT } from '../i18n.jsx'
 
 // The small type label in a card's header.
 //
@@ -19,7 +20,11 @@ import { variantsFor } from './placeholderArt.js'
 const MENU_WIDTH = 150
 
 export default function TypeBadge({ id, type, variant, label, dispatch }) {
+  const t = useT()
   const list = variantsFor(type)
+  // The base type name and every variant name are translated for display only.
+  const baseLabel = t(`type.${type}`, label)
+  const variantName = (v) => t(`variant.${v}`, v)
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(0)
   const buttonRef = useRef(null)
@@ -69,14 +74,14 @@ export default function TypeBadge({ id, type, variant, label, dispatch }) {
   if (list.length < 2) {
     return (
       <span className="shrink-0 text-[10px] tracking-wide text-gray-300 uppercase dark:text-gray-500">
-        {label}
+        {baseLabel}
       </span>
     )
   }
 
   // Once a non-default variant is chosen the badge names it — "STACKED" says
   // more than "BAR", and the silhouette already says it is a bar.
-  const shown = list[current] === list[0] ? label : list[current].label
+  const shown = list[current] === list[0] ? baseLabel : variantName(list[current].label)
 
   return (
     <>
@@ -106,7 +111,7 @@ export default function TypeBadge({ id, type, variant, label, dispatch }) {
                   : 'text-gray-700 dark:text-gray-200'
               }`}
             >
-              {v.label}
+              {variantName(v.label)}
               {i === current && <span className="text-xs text-gray-400">✓</span>}
             </button>
           ))}

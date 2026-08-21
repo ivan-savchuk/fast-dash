@@ -1,55 +1,69 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { useT } from '../i18n.jsx'
+
 // A hand-rolled product tour — no library, the same React + Tailwind as the
 // rest of the app. Each step either spotlights an element found by its
 // `data-tour` selector, or (selector null) shows a centred card with no anchor.
 // The spotlight is one transparent box with an enormous box-shadow: the
 // standard dependency-free way to darken everything except a hole.
+//
+// `id` keys the translation; the English `title`/`body` here are also the
+// fallback when a language has no string for that step.
 const STEPS = [
   {
+    id: 'welcome',
     selector: null,
     title: 'Welcome to FastDash',
     body: 'A fast sketchpad for BI dashboards. Lay out the pieces, write a note on each, and export a spec a developer can build from. This quick tour shows where everything lives.',
   },
   {
+    id: 'add',
     selector: '[data-tour="add"]',
     title: 'Add a component',
     body: 'Click one of these to drop a KPI, chart, table or text block onto the canvas. The number keys 1–5 do the same without reaching for the mouse.',
   },
   {
+    id: 'more',
     selector: '[data-tour="more"]',
     title: 'The whole catalogue',
     body: 'Pie, scatter, funnel, maps, tabs and more live here — start typing to find one. Clicking an empty spot on the canvas opens the same searchable list.',
   },
   {
+    id: 'canvas',
     selector: '[data-tour="canvas"]',
     title: 'Place, move, resize',
     body: 'Drag a card to move it, drag a corner to resize; the grid snaps for you. Click an empty cell to add a component right where the cursor is.',
   },
   {
+    id: 'filters',
     selector: '[data-tour="filters"]',
     reveal: 'filters',
     title: 'Filters',
     body: 'This rail — opened for you now — lists the dashboard-level filters people will use, like a date range or a region picker. They become part of the exported spec too.',
   },
   {
+    id: 'page',
     selector: '[data-tour="page"]',
     title: 'More than one page',
     body: 'Split a dashboard across pages. A tab strip appears once there is a second page to switch between.',
   },
   {
+    id: 'optmenu',
     selector: '[data-tour="opt-menu"]',
     reveal: 'menu',
     title: 'The Options menu',
     body: 'Everything that is not adding a component lives here — open it and you get import, present as a viewer sees it, colour schemes, starter templates, the keyboard shortcuts, and this tour again.',
   },
   {
+    id: 'optexport',
     selector: '[data-tour="opt-export"]',
     reveal: 'menu',
     title: 'Export is the point',
     body: 'Hand off as an HTML file anyone can open in a browser, or as JSON that reads like a requirements spec a BI developer builds straight from — not just a picture of a layout.',
   },
   {
+    id: 'done',
     selector: null,
     title: "That's the tour",
     body: 'Start from a blank canvas or pick a template in Options. Anything you do is undoable with ⌘Z. Have at it.',
@@ -99,6 +113,7 @@ function placeTooltip(rect, tipH, vw, vh) {
 }
 
 export default function Tour({ onClose, onReveal }) {
+  const t = useT()
   const [step, setStep] = useState(0)
   const [target, setTarget] = useState(null) // spotlit element's rect, or null
   const [tip, setTip] = useState(null) // { left, top } for the tooltip
@@ -219,17 +234,17 @@ export default function Tour({ onClose, onReveal }) {
           {step + 1} / {total}
         </div>
         <h2 className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {current.title}
+          {t(`tour.${current.id}.title`, current.title)}
         </h2>
         <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-          {current.body}
+          {t(`tour.${current.id}.body`, current.body)}
         </p>
         <div className="flex items-center justify-between">
           <button
             className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             onClick={onClose}
           >
-            {isLast ? 'Close' : 'Skip tour'}
+            {isLast ? t('tour.btn.close', 'Close') : t('tour.btn.skip', 'Skip tour')}
           </button>
           <div className="flex items-center gap-2">
             {step > 0 && (
@@ -237,14 +252,14 @@ export default function Tour({ onClose, onReveal }) {
                 className="rounded-sm border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                 onClick={back}
               >
-                Back
+                {t('tour.btn.back', 'Back')}
               </button>
             )}
             <button
               className="rounded-sm border border-gray-800 bg-gray-800 px-3 py-1.5 text-sm text-white hover:bg-gray-900 dark:border-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500"
               onClick={isLast ? onClose : next}
             >
-              {isLast ? 'Done' : 'Next'}
+              {isLast ? t('tour.btn.done', 'Done') : t('tour.btn.next', 'Next')}
             </button>
           </div>
         </div>

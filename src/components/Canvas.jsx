@@ -10,6 +10,7 @@ import { memo, useMemo, useRef } from 'react'
 import Card from './Card.jsx'
 import { GRID_COLS, GRID_ROW_HEIGHT, tabChildIds } from '../state/document.js'
 import { TEMPLATE_LIST } from '../templates.js'
+import { useT } from '../i18n.jsx'
 
 // These must be module constants, not inline object literals. The library
 // memoises its item rendering on the identity of these objects, so a fresh
@@ -106,6 +107,7 @@ function Canvas({
   onStartTour,
   onDropTarget,
 }) {
+  const t = useT()
   // `mounted` is false until the container has been measured. Rendering the
   // grid before that places cards using a guessed 1280px width.
   const { width, containerRef, mounted } = useContainerWidth()
@@ -274,7 +276,7 @@ function Canvas({
         {components.length === 0 && !readOnly && !docEmpty && (
           <div className="flex min-h-[60vh] items-center justify-center px-4">
             <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-              This page is empty. Click anywhere to add a component, or press 1–5.
+              {t('empty.page', 'This page is empty. Click anywhere to add a component, or press 1–5.')}
             </p>
           </div>
         )}
@@ -284,7 +286,7 @@ function Canvas({
             {/* Centred over the three cards it introduces, rather than hanging
                 off their left edge. */}
             <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Start from a template — or click anywhere to place your first component.
+              {t('empty.start', 'Start from a template — or click anywhere to place your first component.')}
             </p>
 
             {/* This branch only runs when the whole document is empty: picking
@@ -312,14 +314,14 @@ function Canvas({
                 anything is placed. It is a <button>, so the background click
                 handler ignores it instead of opening the picker. */}
             <p className="mt-6 text-center text-xs text-gray-400">
-              New here?{' '}
+              {t('empty.tour.pre', 'New here?')}{' '}
               <button
                 onClick={onStartTour}
                 className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:decoration-gray-600 dark:hover:text-gray-200"
               >
-                Take a quick tour
+                {t('empty.tour.link', 'Take a quick tour')}
               </button>{' '}
-              of the interface.
+              {t('empty.tour.post', 'of the interface.')}
             </p>
           </div>
         )}

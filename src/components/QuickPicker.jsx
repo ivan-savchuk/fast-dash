@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { COMPONENT_TYPES, CATALOG_ORDER } from './registry.jsx'
+import { useT, useTypeName } from '../i18n.jsx'
 
 // Menu width, and a height estimate used only to keep it on screen near the
 // bottom edge. The list itself scrolls once it is taller than the cap.
@@ -12,6 +13,8 @@ const HEIGHT = 320
 // whole catalog is reachable by typing a few letters. Type to filter, arrows
 // plus Enter to browse, Esc to close.
 export default function QuickPicker({ at, onPick, onClose, exclude }) {
+  const t = useT()
+  const typeName = useTypeName()
   const [query, setQuery] = useState('')
   const [highlighted, setHighlighted] = useState(0)
 
@@ -21,8 +24,10 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
       ? CATALOG_ORDER.filter((type) => !exclude.includes(type))
       : CATALOG_ORDER
     if (!q) return pool
-    return pool.filter((type) => COMPONENT_TYPES[type].label.toLowerCase().includes(q))
-  }, [query, exclude])
+    // Search the name the user actually sees, so typing Ukrainian filters the
+    // Ukrainian labels.
+    return pool.filter((type) => typeName(type).toLowerCase().includes(q))
+  }, [query, exclude, typeName])
 
   // Keep the highlight in range as the list narrows under a new query.
   const active = Math.min(highlighted, Math.max(matches.length - 1, 0))
@@ -85,13 +90,13 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
             setQuery(e.target.value)
             setHighlighted(0)
           }}
-          placeholder="Search components…"
-          aria-label="Search components"
+          placeholder={t('picker.search', 'Search components…')}
+          aria-label={t('picker.searchAria', 'Search components')}
           className="w-full border-b border-gray-200 px-3 py-2 text-sm outline-none placeholder:text-gray-400 dark:border-gray-700 dark:text-gray-100"
         />
         <div className="max-h-64 overflow-auto py-1">
           {matches.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">No match</div>
+            <div className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">{t('picker.noMatch', 'No match')}</div>
           ) : (
             matches.map((type, i) => (
               <button
@@ -105,7 +110,7 @@ export default function QuickPicker({ at, onPick, onClose, exclude }) {
                 onMouseEnter={() => setHighlighted(i)}
                 onClick={() => onPick(type)}
               >
-                {COMPONENT_TYPES[type].label}
+                {typeName(type)}
                 {COMPONENT_TYPES[type].key && (
                   <kbd className="text-xs text-gray-400">{COMPONENT_TYPES[type].key}</kbd>
                 )}
