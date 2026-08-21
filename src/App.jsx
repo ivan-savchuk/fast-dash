@@ -6,6 +6,7 @@ import KeyboardShortcuts from './components/KeyboardShortcuts.jsx'
 import PageTabs from './components/PageTabs.jsx'
 import QuickPicker from './components/QuickPicker.jsx'
 import Tour from './components/Tour.jsx'
+import { DEFAULT_LANG, LangProvider } from './i18n.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
@@ -115,6 +116,24 @@ export default function App() {
       // remembering the theme is a nicety, not worth failing over
     }
   }, [dark])
+
+  // Interface language. A screen preference like dark mode — persisted, and
+  // deliberately NOT part of the document, so switching it never changes the
+  // exported JSON. Only what is drawn on screen is translated.
+  const [lang, setLang] = useState(() => {
+    try {
+      return localStorage.getItem('fastdash:lang') ?? DEFAULT_LANG
+    } catch {
+      return DEFAULT_LANG
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('fastdash:lang', lang)
+    } catch {
+      // remembering the language is a nicety, not worth failing over
+    }
+  }, [lang])
 
   // The colour scheme, unlike the dark/light preference, belongs to the
   // document — so it is mirrored onto <html> from `doc.theme` rather than from
@@ -346,7 +365,9 @@ export default function App() {
 
   return (
     // App shell: fixed to the viewport, with the filter rail and the canvas
-    // each scrolling on their own.
+    // each scrolling on their own. LangProvider makes the interface language
+    // available to every component via useT, without threading it as a prop.
+    <LangProvider lang={lang}>
     <div
       className={`flex h-screen flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100${
         presenting ? ' presenting' : ''
@@ -381,6 +402,8 @@ export default function App() {
             onStartTour={startTour}
             menuOpen={menuOpen}
             onMenuOpen={setMenuOpen}
+            lang={lang}
+            onSetLang={setLang}
             onAddPage={() => dispatch({ type: 'addPage' })}
           />
 
@@ -479,17 +502,10 @@ export default function App() {
 
       {tourOpen && <Tour onClose={endTour} onReveal={handleTourReveal} />}
     </div>
+    </LangProvider>
   )
 }
 
-// The header while presenting: what the dashboard is called, which page you are
-// looking at, and the way out. Everything that could change the document is
-// gone rather than disabled, which is the same rule the HTML export follows.
-//
-// The page tabs are written here rather than reusing PageTabs, because almost
-// nothing survives the trip: no rename on double-click, no delete, no add. What
-// is left is eight lines, and threading a `readOnly` through PageTabs to hide
-// most of it would have been the longer way round.
 function PresentBar({ title, pages, activeId, dispatch, onExit }) {
   return (
     <header className="flex shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800">

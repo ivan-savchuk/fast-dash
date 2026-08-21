@@ -1,7 +1,8 @@
 import { memo } from 'react'
 
 import ColumnEditor from './ColumnEditor.jsx'
-import { COMPONENT_TYPES, typeLabel } from './registry.jsx'
+import { COMPONENT_TYPES } from './registry.jsx'
+import { useTypeLabel } from '../i18n.jsx'
 import TabsBody from './TabsBody.jsx'
 import TypeBadge from './TypeBadge.jsx'
 
@@ -57,6 +58,7 @@ function Card({
 }) {
   const id = component.id
   const isTabs = component.type === 'tabs'
+  const typeLabel = useTypeLabel()
 
   // Text selection is suppressed one level up, in Canvas, so that the resize
   // handle is covered too.
