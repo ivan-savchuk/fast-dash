@@ -5,6 +5,7 @@ import FilterRail from './components/FilterRail.jsx'
 import KeyboardShortcuts from './components/KeyboardShortcuts.jsx'
 import PageTabs from './components/PageTabs.jsx'
 import QuickPicker from './components/QuickPicker.jsx'
+import Tour from './components/Tour.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { TYPE_BY_KEY } from './components/registry.jsx'
 import { downloadDocument, readDocumentFile } from './io/documentFile.js'
@@ -58,6 +59,36 @@ export default function App() {
   // overlay, not a preference — the keydown handler below hands it the keyboard
   // while it is open so shortcuts do not fire behind it.
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  // The guided tour. Another transient overlay like present mode and the
+  // shortcuts card: it owns the keyboard while it runs and is never persisted.
+  const [tourOpen, setTourOpen] = useState(false)
+
+  // The Options menu used to open itself from inside the toolbar. It is lifted
+  // here so the tour can pop it open and walk through its items. Whatever the
+  // filter rail was showing before the tour is remembered, so ending the tour
+  // puts it back rather than leaving it forced open.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const filtersBeforeTour = useRef(false)
+
+  const startTour = useCallback(() => {
+    filtersBeforeTour.current = filtersOpen
+    setTourOpen(true)
+  }, [filtersOpen])
+
+  const endTour = useCallback(() => {
+    setTourOpen(false)
+    setMenuOpen(false)
+    setFiltersOpen(filtersBeforeTour.current)
+  }, [])
+
+  // Each tour step names what it wants revealed. The menu is open only on its
+  // own steps; the filter rail is forced open for the filters step and put back
+  // to its pre-tour state everywhere else.
+  const handleTourReveal = useCallback((reveal) => {
+    setMenuOpen(reveal === 'menu')
+    setFiltersOpen(reveal === 'filters' ? true : filtersBeforeTour.current)
+  }, [])
 
   // Entering clears the selection: a selection ring is editing chrome, and
   // there is nothing selected from a viewer's point of view.
@@ -140,6 +171,10 @@ export default function App() {
       // The quick picker owns the keyboard while it is open — otherwise 1-5
       // would both pick from the menu and add a second component below.
       if (picker) return
+
+      // The tour drives itself from a capture-phase listener (Tour.jsx), so
+      // here we only need to keep the app's own shortcuts from firing behind it.
+      if (tourOpen) return
 
       // The shortcuts card owns the keyboard while it is open — otherwise the
       // keys it documents would fire against the canvas behind it. Only Escape,
@@ -263,7 +298,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedId, picker, presenting, shortcutsOpen, startPresenting])
+  }, [selectedId, picker, presenting, shortcutsOpen, tourOpen, startPresenting])
 
   async function handleImportFile(file) {
     try {
@@ -343,6 +378,9 @@ export default function App() {
             onMore={setPicker}
             onPresent={startPresenting}
             onShowShortcuts={() => setShortcutsOpen(true)}
+            onStartTour={startTour}
+            menuOpen={menuOpen}
+            onMenuOpen={setMenuOpen}
             onAddPage={() => dispatch({ type: 'addPage' })}
           />
 
@@ -380,6 +418,7 @@ export default function App() {
         />
 
         <main
+          data-tour="canvas"
           className="flex-1 overflow-auto p-4"
           onMouseDown={(e) => {
             // Click on empty canvas clears the selection and hands the keyboard
@@ -406,6 +445,7 @@ export default function App() {
             onEmptyClick={setPicker}
             onAddInto={handleAddInto}
             onPickTemplate={handlePickTemplate}
+            onStartTour={startTour}
             onDropTarget={setDropPageId}
           />
         </main>
@@ -436,6 +476,8 @@ export default function App() {
       )}
 
       {shortcutsOpen && <KeyboardShortcuts onClose={() => setShortcutsOpen(false)} />}
+
+      {tourOpen && <Tour onClose={endTour} onReveal={handleTourReveal} />}
     </div>
   )
 }
