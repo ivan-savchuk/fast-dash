@@ -301,9 +301,9 @@ function Canvas({
                 >
                   <TemplateThumb preview={template.preview} />
                   <div className="mt-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
-                    {template.name}
+                    {t(`template.${template.id}.name`, template.name)}
                   </div>
-                  <div className="text-xs text-gray-400">{template.summary}</div>
+                  <div className="text-xs text-gray-400">{t(`template.${template.id}.summary`, template.summary)}</div>
                 </button>
               ))}
             </div>

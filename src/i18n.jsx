@@ -137,6 +137,33 @@ const UK = {
   'tour.done.title': 'Ось і весь тур',
   'tour.done.body':
     'Почніть із порожнього полотна або оберіть шаблон в «Опціях». Будь-яку дію можна скасувати через ⌘Z. Гарної роботи!',
+
+  // --- starter templates (shown in Options and on the empty canvas) ---
+  'template.executive.name': 'Огляд для керівництва',
+  'template.executive.summary': 'Ряд KPI, тренд, розбивка, деталі',
+  'template.operational.name': 'Операційний моніторинг',
+  'template.operational.summary': 'Ряд статусів, широкий тренд, робоча таблиця',
+  'template.deepdive.name': 'Глибокий аналіз',
+  'template.deepdive.summary': 'Питання вгорі, докази нижче',
+
+  // --- keyboard shortcuts modal ---
+  'shortcuts.title': 'Гарячі клавіші',
+  'shortcuts.close': 'Закрити',
+  'shortcuts.group.editing': 'Редагування',
+  'shortcuts.group.add': 'Додати компонент',
+  'shortcuts.group.selection': 'Виділення та полотно',
+  'shortcuts.group.pages': 'Сторінки',
+  'shortcuts.group.view': 'Перегляд',
+  'shortcuts.undo': 'Скасувати',
+  'shortcuts.redo': 'Повторити',
+  'shortcuts.duplicate': 'Дублювати виділену картку',
+  'shortcuts.delete': 'Видалити виділену картку',
+  'shortcuts.click': 'Клацніть порожнє полотно, щоб додати',
+  'shortcuts.nudge': 'Посунути виділену картку',
+  'shortcuts.cycle': 'Перемкнути вигляд діаграми',
+  'shortcuts.deselect': 'Зняти виділення / повернути клавіатуру',
+  'shortcuts.movePage': 'Надіслати картку на попередню / наступну сторінку',
+  'shortcuts.present': 'Презентація (Esc — вихід)',
 }
 
 const LangContext = createContext(DEFAULT_LANG)
