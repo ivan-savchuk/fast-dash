@@ -158,8 +158,8 @@ export default function Toolbar({
                     onPickTemplate(template.id)
                   }}
                 >
-                  <span className="block text-sm text-gray-800 dark:text-gray-100">{template.name}</span>
-                  <span className="block text-xs text-gray-400">{template.summary}</span>
+                  <span className="block text-sm text-gray-800 dark:text-gray-100">{t(`template.${template.id}.name`, template.name)}</span>
+                  <span className="block text-xs text-gray-400">{t(`template.${template.id}.summary`, template.summary)}</span>
                 </button>
               ))}
             </Submenu>
