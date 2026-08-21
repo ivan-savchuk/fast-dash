@@ -103,6 +103,7 @@ function Canvas({
   onEmptyClick,
   onAddInto,
   onPickTemplate,
+  onStartTour,
   onDropTarget,
 }) {
   // `mounted` is false until the container has been measured. Rendering the
@@ -304,6 +305,22 @@ function Canvas({
                 </button>
               ))}
             </div>
+
+            {/* First-run discovery for the tour. It lives here — the whole-
+                document-empty state, which is what a brand-new user lands on —
+                rather than as standing chrome, and it disappears the moment
+                anything is placed. It is a <button>, so the background click
+                handler ignores it instead of opening the picker. */}
+            <p className="mt-6 text-center text-xs text-gray-400">
+              New here?{' '}
+              <button
+                onClick={onStartTour}
+                className="underline decoration-gray-300 underline-offset-2 hover:text-gray-600 dark:decoration-gray-600 dark:hover:text-gray-200"
+              >
+                Take a quick tour
+              </button>{' '}
+              of the interface.
+            </p>
           </div>
         )}
 

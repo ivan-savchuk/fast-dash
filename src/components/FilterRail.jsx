@@ -15,6 +15,7 @@ import { FILTER_TYPES } from '../state/document.js'
 export default function FilterRail({ filters, open, onToggle, readOnly, dispatch }) {
   return (
     <aside
+      data-tour="filters"
       className={`flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-out dark:border-gray-700 dark:bg-gray-800 ${
         open ? 'w-60' : 'w-11'
       }`}
