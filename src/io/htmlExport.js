@@ -29,8 +29,8 @@ import {
   variantParts,
 } from '../components/placeholderArt.js'
 
-export function downloadHtmlExport(doc) {
-  const html = renderDashboardHtml(doc)
+export function downloadHtmlExport(doc, dark = false) {
+  const html = renderDashboardHtml(doc, dark)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -42,7 +42,7 @@ export function downloadHtmlExport(doc) {
 
 // Pure: document object in, HTML string out. Kept side-effect-free so it can be
 // tested without a browser.
-export function renderDashboardHtml(doc) {
+export function renderDashboardHtml(doc, dark = false) {
   const title = doc.title || 'Untitled dashboard'
   const filters = doc.filters ?? []
   const pages = doc.pages ?? []
@@ -58,7 +58,7 @@ export function renderDashboardHtml(doc) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<style>${themeVars(doc.theme)}${STYLES}</style>
+<style>${themeVars(doc.theme, dark)}${STYLES}</style>
 </head>
 <body>
 <header class="head"><h1>${esc(title)}</h1></header>
@@ -311,92 +311,144 @@ function filterControl(type) {
 
 const ROW = GRID_ROW_HEIGHT
 
-// The document's colour scheme, resolved to plain values in the file itself so
-// the export needs nothing from the app. The drawings reference these two
-// properties; see the note on ACCENT in components/placeholderArt.js. An absent
-// or unknown theme resolves to the neutral greys, so an older document exports
-// exactly as it always did.
-// The frame's two greys are written out as well. The drawings reference them
-// with the light value as a fallback, so the file would render correctly without
-// this — but an exported page that declares every property it uses is easier to
-// read and to restyle by hand. They are constants rather than per-scheme: axes
-// and gridlines stay grey under every scheme, and the export is always light.
-const EXPORT_FRAME = '--fd-grid:#e5e7eb;--fd-axis:#c9cdd4'
+// The exported file carries the editor's light/dark setting: export while the
+// app is dark and the file is dark. Both palettes are written here as plain
+// values, because the export ships no Tailwind and no stylesheet of ours — the
+// file has to declare every colour it uses.
+//
+// `--fd-grid` and `--fd-axis` are the chart frame; the drawings reference them
+// (see the note on ACCENT in components/placeholderArt.js). They are constants
+// per mode rather than per scheme: axes and gridlines stay grey under every
+// colour scheme. On dark they step *up* from the card surface instead of down
+// from white, or the gridlines shout over the data — the same values `.dark`
+// uses in index.css.
+//
+// The rest are the page's own greys, one custom property per distinct value the
+// stylesheet used before, so the light file renders exactly the colours it
+// always did. `ink1`..`ink5` run from the strongest text to the weakest; on dark
+// they run the other way, palest to greyest, against a dark surface.
+const PALETTE = {
+  light: {
+    '--fd-grid': '#e5e7eb',
+    '--fd-axis': '#c9cdd4',
+    '--c-bg': '#f9fafb',
+    '--c-surface': '#fff',
+    '--c-border': '#e5e7eb',
+    '--c-hairline': '#f3f4f6',
+    '--c-hover': '#f3f4f6',
+    '--c-fill': '#e5e7eb',
+    '--c-faint': '#d1d5db',
+    '--c-muted': '#9ca3af',
+    '--c-ink1': '#111827',
+    '--c-ink2': '#1f2937',
+    '--c-ink3': '#374151',
+    '--c-ink4': '#4b5563',
+    '--c-ink5': '#6b7280',
+    '--c-print-bg': '#fff',
+  },
+  dark: {
+    '--fd-grid': '#374151',
+    '--fd-axis': '#4b5563',
+    '--c-bg': '#111827',
+    '--c-surface': '#1f2937',
+    '--c-border': '#374151',
+    '--c-hairline': '#374151',
+    '--c-hover': '#374151',
+    '--c-fill': '#4b5563',
+    '--c-faint': '#4b5563',
+    '--c-muted': '#9ca3af',
+    '--c-ink1': '#f3f4f6',
+    '--c-ink2': '#f3f4f6',
+    '--c-ink3': '#e5e7eb',
+    '--c-ink4': '#d1d5db',
+    '--c-ink5': '#9ca3af',
+    '--c-print-bg': '#111827',
+  },
+}
 
-function themeVars(theme) {
-  const { accent, ramp } = themeById(theme)
+// The document's colour scheme and the editor's light/dark setting, resolved to
+// plain values in the file itself so the export needs nothing from the app. An
+// absent or unknown theme resolves to the neutral greys, so an older document
+// exports exactly as it always did.
+function themeVars(theme, dark) {
+  const t = themeById(theme)
+  const accent = dark ? (t.darkAccent ?? t.accent) : t.accent
+  const ramp = dark ? (t.darkRamp ?? t.ramp) : t.ramp
+  const palette = Object.entries(dark ? PALETTE.dark : PALETTE.light)
+    .map(([name, value]) => `${name}:${value}`)
+    .join(';')
   const steps = ramp.map((hex, i) => `--fd-a${i + 1}:${hex}`).join(';')
-  return `:root{${EXPORT_FRAME};--fd-accent:${accent};${steps}}\n`
+  return `:root{${palette};--fd-accent:${accent};${steps}}\n`
 }
 
 const STYLES = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#111827;background:#f9fafb}
-.head{padding:14px 20px;border-bottom:1px solid #e5e7eb;background:#fff}
+body{font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--c-ink1);background:var(--c-bg)}
+.head{padding:14px 20px;border-bottom:1px solid var(--c-border);background:var(--c-surface)}
 .head h1{font-size:16px;font-weight:600}
 .shell{display:flex;align-items:flex-start}
-.rail{width:220px;flex:none;padding:12px;border-right:1px solid #e5e7eb;background:#fff;min-height:calc(100vh - 49px)}
-.rail-title{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#9ca3af;margin-bottom:10px}
-.filter{border:1px solid #e5e7eb;border-radius:2px;padding:8px;margin-bottom:12px}
-.filter-label{font-size:12px;font-weight:500;color:#374151;margin-bottom:6px}
+.rail{width:220px;flex:none;padding:12px;border-right:1px solid var(--c-border);background:var(--c-surface);min-height:calc(100vh - 49px)}
+.rail-title{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--c-muted);margin-bottom:10px}
+.filter{border:1px solid var(--c-border);border-radius:2px;padding:8px;margin-bottom:12px}
+.filter-label{font-size:12px;font-weight:500;color:var(--c-ink3);margin-bottom:6px}
 .canvas-wrap{flex:1;padding:16px;min-width:0}
 .canvas{display:grid;grid-template-columns:repeat(${GRID_COLS},1fr);grid-auto-rows:${ROW}px;gap:12px}
-.ptabs{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:16px;border-bottom:1px solid #e5e7eb}
-.ptab{padding:7px 14px;font-size:13px;color:#6b7280;text-decoration:none;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;margin-bottom:-1px}
-.ptab:hover{background:#f3f4f6;color:#111827}
-.ptab.on{color:#111827;background:#fff;border-color:#e5e7eb}
+.ptabs{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--c-border)}
+.ptab{padding:7px 14px;font-size:13px;color:var(--c-ink5);text-decoration:none;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;margin-bottom:-1px}
+.ptab:hover{background:var(--c-hover);color:var(--c-ink1)}
+.ptab.on{color:var(--c-ink1);background:var(--c-surface);border-color:var(--c-border)}
 .pages .page{display:none}
 .pages .page.on{display:block}
-.empty{color:#9ca3af;padding:24px}
-.card{display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e5e7eb;border-radius:2px;min-width:0}
+.empty{color:var(--c-muted);padding:24px}
+.card{display:flex;flex-direction:column;overflow:hidden;background:var(--c-surface);border:1px solid var(--c-border);border-radius:2px;min-width:0}
 .card.section{flex-direction:row;align-items:center;gap:8px;padding:0 12px}
-.section-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#4b5563}
-.card-head{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid #f3f4f6}
-.card-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600;color:#1f2937}
-.card-type{flex:none;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#d1d5db}
+.section-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--c-ink4)}
+.card-head{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--c-hairline)}
+.card-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600;color:var(--c-ink2)}
+.card-type{flex:none;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--c-faint)}
 .card-body{flex:1;min-height:0;padding:8px 12px}
-.card-note{flex:none;border-top:1px solid #f3f4f6;padding:6px 12px;font-size:11px;line-height:1.35;color:#4b5563}
+.card-note{flex:none;border-top:1px solid var(--c-hairline);padding:6px 12px;font-size:11px;line-height:1.35;color:var(--c-ink4)}
 .fill{width:100%;height:100%}
 .kpi{display:flex;flex-direction:column;justify-content:center;gap:4px;height:100%}
-.kpi-num{font-size:30px;line-height:1;font-weight:600;color:#374151;font-variant-numeric:tabular-nums}
+.kpi-num{font-size:30px;line-height:1;font-weight:600;color:var(--c-ink3);font-variant-numeric:tabular-nums}
 .kpi-delta{font-size:11px;color:var(--fd-accent)}
 .kpi-spark{height:20px;width:100%;margin-top:4px}
 .table{display:flex;flex-direction:column;height:100%;font-size:11px}
-.trow{display:grid;grid-template-columns:var(--cols);align-items:center;flex:1;border-bottom:1px solid #f3f4f6}
-.trow.thead{flex:none;color:#9ca3af;font-weight:500;border-bottom:1px solid #d1d5db;padding-bottom:4px}
-.trow.tformat{flex:none;border-bottom:none;color:#d1d5db;font-size:10px;padding:2px 0 4px}
+.trow{display:grid;grid-template-columns:var(--cols);align-items:center;flex:1;border-bottom:1px solid var(--c-hairline)}
+.trow.thead{flex:none;color:var(--c-muted);font-weight:500;border-bottom:1px solid var(--c-faint);padding-bottom:4px}
+.trow.tformat{flex:none;border-bottom:none;color:var(--c-faint);font-size:10px;padding:2px 0 4px}
 .trow span{padding-right:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trow span.m{text-align:right}
-.trow .bar{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.trow .bar{display:block;height:8px;border-radius:2px;background:var(--c-fill)}
 .trow .m .bar{margin-left:auto}
 .textblock{display:flex;flex-direction:column;gap:8px;padding-top:4px}
-.textblock .line{display:block;height:8px;border-radius:2px;background:#e5e7eb}
+.textblock .line{display:block;height:8px;border-radius:2px;background:var(--c-fill)}
 .tabs-ph{display:flex;flex-direction:column;height:100%}
-.tabs-strip{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #e5e7eb;font-size:11px}
-.itab{padding:2px 8px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:#9ca3af}
-.itab:hover{color:#6b7280}
-.itab.on{border-color:#d1d5db;background:#f3f4f6;color:#6b7280}
+.tabs-strip{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--c-border);font-size:11px}
+.itab{padding:2px 8px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:var(--c-muted)}
+.itab:hover{color:var(--c-ink5)}
+.itab.on{border-color:var(--c-faint);background:var(--c-hover);color:var(--c-ink5)}
 .tabs-body{flex:1;min-height:0;margin-top:8px;overflow:auto}
 .ipane{display:none}
 .ipane.on{display:block}
-.tabs-panel{height:100%;min-height:80px;border:1px dashed #e5e7eb;border-radius:2px;background:#f9fafb}
-.unknown{display:flex;align-items:center;justify-content:center;height:100%;border:1px dashed #e5e7eb;border-radius:2px;font-size:11px;color:#9ca3af}
-.box{display:flex;align-items:center;height:24px;border:1px solid #e5e7eb;border-radius:2px;background:#f9fafb;padding:0 8px;font-size:11px;color:#9ca3af}
+.tabs-panel{height:100%;min-height:80px;border:1px dashed var(--c-border);border-radius:2px;background:var(--c-bg)}
+.unknown{display:flex;align-items:center;justify-content:center;height:100%;border:1px dashed var(--c-border);border-radius:2px;font-size:11px;color:var(--c-muted)}
+.box{display:flex;align-items:center;height:24px;border:1px solid var(--c-border);border-radius:2px;background:var(--c-bg);padding:0 8px;font-size:11px;color:var(--c-muted)}
 .box.between{justify-content:space-between}
-.caret{color:#d1d5db}
-.chips i{display:inline-block;background:#e5e7eb;border-radius:2px;padding:0 4px;margin-right:4px;font-style:normal}
+.caret{color:var(--c-faint)}
+.chips i{display:inline-block;background:var(--c-fill);border-radius:2px;padding:0 4px;margin-right:4px;font-style:normal}
 .ctl-daterange{display:flex;align-items:center;gap:4px}
 .ctl-daterange .box{flex:1}
-.ctl-daterange .dash{color:#d1d5db}
-.ctl-range .track{position:relative;display:block;height:6px;border-radius:9999px;background:#e5e7eb}
-.ctl-range .fill-range{position:absolute;left:25%;right:34%;top:0;bottom:0;border-radius:9999px;background:#d1d5db}
-.ctl-range .knob{position:absolute;top:50%;width:12px;height:12px;margin-left:-6px;transform:translateY(-50%);border-radius:9999px;border:1px solid #d1d5db;background:#fff}
-.range-lbl{display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-top:4px}
+.ctl-daterange .dash{color:var(--c-faint)}
+.ctl-range .track{position:relative;display:block;height:6px;border-radius:9999px;background:var(--c-fill)}
+.ctl-range .fill-range{position:absolute;left:25%;right:34%;top:0;bottom:0;border-radius:9999px;background:var(--c-faint)}
+.ctl-range .knob{position:absolute;top:50%;width:12px;height:12px;margin-left:-6px;transform:translateY(-50%);border-radius:9999px;border:1px solid var(--c-faint);background:var(--c-surface)}
+.range-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--c-muted);margin-top:4px}
 .ctl-toggle{display:flex;align-items:center;gap:8px}
-.ctl-toggle .switch{display:inline-flex;align-items:center;width:36px;height:20px;border-radius:9999px;background:#e5e7eb;padding:2px}
-.ctl-toggle .switch i{display:block;width:16px;height:16px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-.ctl-toggle .muted{font-size:11px;color:#9ca3af}
-@media print{.rail{min-height:0}body{background:#fff}}
+.ctl-toggle .switch{display:inline-flex;align-items:center;width:36px;height:20px;border-radius:9999px;background:var(--c-fill);padding:2px}
+.ctl-toggle .switch i{display:block;width:16px;height:16px;border-radius:9999px;background:var(--c-surface);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.ctl-toggle .muted{font-size:11px;color:var(--c-muted)}
+@media print{.rail{min-height:0}body{background:var(--c-print-bg)}}
 `
 
 function esc(s) {
