@@ -191,8 +191,11 @@ round-trip. Version the schema from day one.
   the card header — "Bar (horizontal)" — because there the silhouette is all a reader has.
 - `theme` (added 2026-08-17) is the dashboard's colour scheme — `neutral` (the default),
   `blue-rei`, `green-matrix` or `red-rose`. Document-level rather than a personal setting,
-  so the JSON fully determines the HTML export and a colleague opening the file sees what
-  you showed them. Absent or unrecognised means neutral, so older documents are unaffected.
+  so the JSON determines the colour scheme of the HTML export and a colleague opening the
+  file sees the scheme you showed them. Light versus dark is the one thing the JSON does
+  *not* fix: it is a screen preference, so it is not in the document, and the HTML export
+  takes it from the editor at the moment you export (added 2026-08-24) — export while the
+  app is dark and the file is dark. The same document therefore exports as two files. Absent or unrecognised means neutral, so older documents are unaffected.
   It buys a **six-step ramp of one hue**: every mark that stands for a value takes a step,
   in every chart, and the heatmap uses the whole ramp as a gradient. Axes, baselines and
   gridlines stay grey, as do the table and text placeholders — they are not charts. Chrome

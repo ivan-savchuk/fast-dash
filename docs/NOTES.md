@@ -179,6 +179,16 @@ button, input, select, textarea, contenteditable or draggable. All user text is 
 The same 12-col / 40px / 12px-gap geometry is reproduced with CSS grid so the export
 matches the canvas.
 
+It carries the editor's light/dark setting (2026-08-24): `downloadHtmlExport(doc, dark)`,
+and `renderDashboardHtml(doc, dark)` under it. The file ships no stylesheet of ours, so
+both palettes live in `PALETTE` in `htmlExport.js` as plain values and `themeVars` writes
+the chosen one into `:root`. The stylesheet itself names no colour directly any more —
+every grey is a custom property, one per distinct value the light file already used, so
+the light output is byte-identical once the properties are substituted back (checked that
+way, not by eye). The scheme's dark ramp comes from `darkRamp`/`darkAccent` on the theme
+in `document.js`, which mirror the `.dark` blocks in `index.css` — **the two lists have to
+be edited together.**
+
 ## Placeholder art is shared (2026-08-16)
 
 Every chart placeholder used to be written twice — JSX in `registry.jsx`, an HTML string in

@@ -392,7 +392,7 @@ export default function App() {
             dark={dark}
             onToggleTheme={() => setDark((d) => !d)}
             onExport={() => downloadDocument(doc)}
-            onExportHtml={() => downloadHtmlExport(doc)}
+            onExportHtml={() => downloadHtmlExport(doc, dark)}
             onImportFile={handleImportFile}
             onNew={handleNew}
             onPickTemplate={handlePickTemplate}
